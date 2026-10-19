@@ -4,9 +4,10 @@ import sys
 import tomllib
 from importlib.metadata import distribution
 
-root = Path(SPECPATH).parent
+app_root = Path(SPECPATH).parent.parent
+root = app_root.parent
 version = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
-code = root
+code = app_root
 assets = code / "mockaize" / "assets"
 web = code / "mockaize" / "web"
 python_license = Path(sys.base_prefix) / "LICENSE.txt"
