@@ -1,9 +1,9 @@
 # MockAíZé
 
-![GitHub repo size](https://img.shields.io/github/repo-size/devphpaulo/mockaize-xml-mock-generator?style=for-the-badge)
-![GitHub language count](https://img.shields.io/github/languages/count/devphpaulo/mockaize-xml-mock-generator?style=for-the-badge)
-![GitHub last commit](https://img.shields.io/github/last-commit/devphpaulo/mockaize-xml-mock-generator?style=for-the-badge)
-![GitHub license](https://img.shields.io/github/license/devphpaulo/mockaize-xml-mock-generator?style=for-the-badge)
+![GitHub repo size](https://img.shields.io/github/repo-size/devphpaulo/MockAiZe?style=for-the-badge)
+![GitHub language count](https://img.shields.io/github/languages/count/devphpaulo/MockAiZe?style=for-the-badge)
+![GitHub last commit](https://img.shields.io/github/last-commit/devphpaulo/MockAiZe?style=for-the-badge)
+![GitHub license](https://img.shields.io/github/license/devphpaulo/MockAiZe?style=for-the-badge)
 
 <p align="center">
   <img src="app/mockaize-favicon.png" alt="Logo MockAíZé" width="128">
@@ -27,13 +27,13 @@ MockAíZé é um gerador local de mocks XML para Windows. Ele permite importar u
 
 ## Instalação
 
-Baixe o executável versionado na aba [Actions](https://github.com/devphpaulo/mockaize-xml-mock-generator/actions), abra a execução **Build** e baixe o artefato `mockaize-windows-portable`.
+Baixe o executável versionado na aba [Actions](https://github.com/devphpaulo/MockAiZe/actions), abra a execução **Build** e baixe o artefato `mockaize-windows-portable`.
 
 Ou rode a partir do código-fonte:
 
 ```powershell
-git clone https://github.com/devphpaulo/mockaize-xml-mock-generator.git
-cd mockaize-xml-mock-generator/app
+git clone https://github.com/devphpaulo/MockAiZe.git
+cd MockAiZe/app
 py run.py
 ```
 
