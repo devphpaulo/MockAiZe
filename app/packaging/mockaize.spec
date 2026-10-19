@@ -5,7 +5,8 @@ import tomllib
 from importlib.metadata import distribution
 
 app_root = Path(SPECPATH).parent
-root = app_root.parent
+root = app_root
+repo_root = app_root.parent
 version = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
 code = app_root
 assets = code / "mockaize" / "assets"
@@ -29,8 +30,8 @@ a = Analysis(
     pathex=[str(code)],
     binaries=[],
     datas=[
-        (str(root / "README.md"), "."),
-        (str(root / "LICENSE"), "."),
+        (str(repo_root / "README.md"), "."),
+        (str(repo_root / "LICENSE"), "."),
         (str(web / "index.html"), "mockaize/web"),
         (str(web / "style.css"), "mockaize/web"),
         (str(web / "engine.js"), "mockaize/web"),
@@ -47,7 +48,7 @@ a = Analysis(
         (str(assets), "mockaize/assets"),
         (str(python_license), "licenses"),
         (str(pyinstaller_license), "licenses"),
-        (str(root / "THIRD_PARTY_NOTICES.md"), "licenses"),
+        (str(repo_root / "THIRD_PARTY_NOTICES.md"), "licenses"),
     ],
     hiddenimports=[],
     hookspath=[],
