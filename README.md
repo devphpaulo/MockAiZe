@@ -49,6 +49,8 @@ O aplicativo abre a interface no navegador padrão e permanece disponível na ba
 
 O modo Manual começa com um registro, permite adicionar outros por páginas e exporta somente os registros confirmados.
 
+Em **Retorno**, use **+ Adicionar retorno** para criar outros modelos XML, cada um com seus vínculos, fórmulas, cabeçalhos e nome de arquivo. O seletor abaixo do XML de saída permite alternar o modelo em edição, renomear e excluir com confirmação. Em **Retornos**, no topo, marque os modelos desejados antes de gerar: um modelo é exportado como XML; vários são baixados juntos em um ZIP. A quantidade fica ao lado de **Gerar** e, no retorno, corresponde aos registros da entrada.
+
 ## Build no Windows
 
 O workflow [Build](.github/workflows/build.yml) executa no `windows-latest`, empacota o aplicativo com PyInstaller e publica somente o executável portátil como artefato. Também pode ser iniciado manualmente pelo botão **Run workflow**.

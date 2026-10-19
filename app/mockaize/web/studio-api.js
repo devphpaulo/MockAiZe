@@ -32,14 +32,14 @@ globalThis.StudioApi = (() => {
     if (config.rules) config.rulesByMode[config.mode] = config.rules;
     if (config.presence) config.presenceByMode[config.mode] = config.presence;
     if (config.filename) config.filenameByMode[config.mode] = config.filename;
-    return { ...structuredClone(config), id: record.id, name: record.name,
+    return ReturnModels.ensure({ ...structuredClone(config), id: record.id, name: record.name,
       sourceTemplate: config.inputXml, outputTemplate: config.outputXml,
       count: config.recordCount, fileIndex: record.file_index, revision: record.revision,
       baseDate: config.baseDate || new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza',
-        year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) };
+        year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) });
   }
   function configForSave(draft) {
-    return { manual: draft.manual || {templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:''}, inputByMode: draft.inputByMode || {}, inputXml: draft.sourceTemplate, outputXml: draft.outputTemplate,
+    return { returnModels: ReturnModels.forSave(draft), activeReturnId: draft.activeReturnId, manual: draft.manual || {templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:''}, inputByMode: draft.inputByMode || {}, inputXml: draft.sourceTemplate, outputXml: draft.outputTemplate,
       recordCount: draft.count, fileName: draft.fileName || 'mock', mode: draft.mode,
       inputGroup: draft.inputGroup, outputGroup: draft.outputGroup, returnSource: draft.returnSource,
       baseDate: draft.baseDate, rulesByMode: draft.rulesByMode,

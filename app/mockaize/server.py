@@ -138,6 +138,14 @@ class Handler(BaseHTTPRequestHandler):
             filename = "MockAize.ps1" if parts[3] == "ps1" else "MockAize.bat"
             content_type = "text/plain; charset=utf-8" if parts[3] == "ps1" else "application/octet-stream"
             return self._send(200, content, content_type, {"Content-Disposition": f'attachment; filename="{filename}"'})
+        if len(parts) == 4 and parts[:2] == ["api", "variations"] and parts[3] == "artifacts.zip":
+            from urllib.parse import parse_qs
+            try:
+                ids = parse_qs(urlparse(self.path).query).get("id", [])
+                body = storage.artifact_archive(parts[2], ids)
+            except ValueError as exc:
+                return self._send(400, json.dumps({"error": str(exc)}).encode(), "application/json; charset=utf-8")
+            return self._send(200, body, "application/zip", {"Content-Disposition": 'attachment; filename="MockAiZe-retornos.zip"'})
         if len(parts) == 4 and parts[:2] == ["api", "variations"] and parts[3] == "artifacts":
             body = json.dumps(storage.artifacts_for_variation(parts[2]), ensure_ascii=False).encode()
             return self._send(200, body, "application/json; charset=utf-8")
@@ -167,7 +175,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(404, b"Not found", "text/plain; charset=utf-8")
             asset = files("mockaize").joinpath("web/assets", filename).read_bytes()
             return self._send(200, asset, "image/png")
-        if route in {"/studio.js", "/studio-api.js", "/studio-layout.js", "/manual-studio.js", "/library.js", "/library.css", "/studio.css"}:
+        if route in {"/studio.js", "/studio-api.js", "/return-models.js", "/studio-layout.js", "/manual-studio.js", "/library.js", "/library.css", "/studio.css"}:
             asset = files("mockaize").joinpath("web", route.removeprefix("/")).read_bytes()
             content_type = "text/css; charset=utf-8" if route.endswith(".css") else "text/javascript; charset=utf-8"
             return self._send(200, asset, content_type)

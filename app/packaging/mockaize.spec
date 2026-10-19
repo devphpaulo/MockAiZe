@@ -39,6 +39,7 @@ a = Analysis(
         (str(web / "studio.html"), "mockaize/web"),
         (str(web / "studio.css"), "mockaize/web"),
         (str(web / "studio-api.js"), "mockaize/web"),
+        (str(web / "return-models.js"), "mockaize/web"),
         (str(web / "studio-layout.js"), "mockaize/web"),
         (str(web / "manual-studio.js"), "mockaize/web"),
         (str(web / "library.js"), "mockaize/web"),

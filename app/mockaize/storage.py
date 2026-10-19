@@ -227,6 +227,7 @@ CONFIG_DEFAULTS = {
     "filenameByMode": {"new": {"type": "literal", "value": "mock"}, "return": {"type": "literal", "value": "mock"}},
     "inputNotes": {}, "outputNotesByMode": {"new": {}, "return": {}},
     "headersByMode": {"new": [], "return": []},
+    "returnModels": [], "activeReturnId": "",
 }
 GENERATOR_TYPES = {"literal", "copy", "field", "config", "count", "cpf", "cnpj", "list", "hash", "person", "company", "address", "zeros", "sequence", "date", "alpha", "random", "id", "compose", "groupSum"}
 FORMULA_FIELDS = {
@@ -416,6 +417,28 @@ def normalize_config(config: object) -> dict:
             validate_structural_path(path)
         if len(set(paths)) != len(paths):
             raise ValueError("A marcação de cabeçalhos contém tags repetidas.")
+    models = normalized["returnModels"]
+    if not isinstance(models, list) or len(models) > 20:
+        raise ValueError("Use no máximo 20 modelos de retorno por arquivo.")
+    seen_ids, seen_names = set(), set()
+    for model in models:
+        expected = {"id", "name", "selected", "outputXml", "outputGroup", "rules", "presence", "filename", "outputNotes", "headers"}
+        if not isinstance(model, dict) or set(model) != expected:
+            raise ValueError("Modelo de retorno inválido.")
+        if not isinstance(model["id"], str) or not 1 <= len(model["id"]) <= 64 or model["id"] in seen_ids:
+            raise ValueError("Identificador de retorno inválido ou repetido.")
+        if not isinstance(model["name"], str) or not model["name"].strip() or len(model["name"]) > 120 or model["name"].strip().casefold() in seen_names:
+            raise ValueError("Nome de retorno inválido ou repetido.")
+        if not isinstance(model["selected"], bool):
+            raise ValueError("Seleção de retorno inválida.")
+        seen_ids.add(model["id"]); seen_names.add(model["name"].strip().casefold())
+        # Reuse the existing validation for XML, formulas, policies and headers.
+        normalize_config({"outputXml": model["outputXml"], "outputGroup": model["outputGroup"],
+            "rulesByMode": {"return": model["rules"]}, "presenceByMode": {"return": model["presence"]},
+            "filenameByMode": {"return": model["filename"]}, "outputNotesByMode": {"return": model["outputNotes"]},
+            "headersByMode": {"return": model["headers"]}})
+    if not isinstance(normalized["activeReturnId"], str) or (models and normalized["activeReturnId"] not in seen_ids):
+        raise ValueError("Selecione um modelo de retorno existente.")
     if len(json.dumps(normalized, ensure_ascii=False).encode("utf-8")) > 12_000_000:
         raise ValueError("A configuração excede 12 MB.")
     return normalized
@@ -735,6 +758,34 @@ def get_artifact(artifact_id: str) -> tuple[dict, Path] | None:
     artifact = dict(row)
     artifact_path = data_directory() / "Gerados" / artifact["id"] / artifact["file_name"]
     return artifact, artifact_path
+
+
+def artifact_archive(variation_id: str, artifact_ids: list[str]) -> bytes:
+    """Download selected published returns without changing their contents."""
+    import io
+    import zipfile
+    if not artifact_ids or len(artifact_ids) > 20 or len(set(artifact_ids)) != len(artifact_ids):
+        raise ValueError("Selecione entre 1 e 20 artefatos distintos.")
+    members, size = [], 0
+    for artifact_id in artifact_ids:
+        result = get_artifact(artifact_id)
+        if result is None or result[0]["variation_id"] != variation_id or not result[1].is_file():
+            raise ValueError("Artefato não encontrado neste arquivo.")
+        artifact, path = result
+        size += artifact["byte_length"]
+        if size > 100_000_000:
+            raise ValueError("A exportação selecionada excede 100 MB.")
+        members.append((artifact, path))
+    output, names = io.BytesIO(), set()
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for artifact, path in members:
+            filename = artifact["file_name"]
+            base, suffix = Path(filename).stem, 2
+            while filename.casefold() in names:
+                filename = f"{base}_{suffix}.xml"; suffix += 1
+            names.add(filename.casefold())
+            archive.write(path, filename)
+    return output.getvalue()
 
 
 def artifacts_for_variation(variation_id: str) -> list[dict]:
