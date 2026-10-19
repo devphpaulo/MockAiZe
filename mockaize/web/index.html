@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#121212">
+  <meta name="application-name" content="MockAíZé">
+  <meta name="csrf-token" content="__CSRF_TOKEN__">
+  <link rel="icon" type="image/png" sizes="any" href="/assets/mockaize-favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/assets/mockaize-favicon.png">
+  <title>MockAíZé</title>
+  <link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/library.css">
+</head>
+<body>
+<svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+</defs></svg>
+<div class="shell">
+  <aside class="side">
+    <a class="brand" href="#workspaceHome" aria-label="MockAíZé, início"><img src="/assets/mockaize-favicon.png" alt=""><span>MockAíZé<small>Seu estúdio de mocks</small></span></a>
+    <a class="home-link" href="#workspaceHome"><svg class="icon"><use href="#i-home"/></svg>Visão geral<span class="nav-dot"></span></a>
+    <button class="home-link" id="organizeLibrary" type="button"><svg class="icon"><use href="#i-folder"/></svg>Organizar diretórios</button><section class="library"><div class="library-heading"><svg class="icon"><use href="#i-folder"/></svg><h2>Sua biblioteca</h2></div><nav id="tree" class="tree" aria-label="Hierarquia do projeto"></nav><div id="empty" class="empty" hidden><span class="empty-icon"><svg class="icon"><use href="#i-folder"/></svg></span><strong>Espaço para suas ideias.</strong><p>Crie um workspace para começar a organizar seus mocks.</p></div></section>
+    <div class="side-foot"><div class="export-copy"><svg class="icon"><use href="#i-download"/></svg><strong>Leve seus mocks com você</strong></div><p>Exporte a variação selecionada e execute com PowerShell.</p><button class="export-sidebar" id="exportPs" type="button" disabled>Exportar PS1 + BAT<svg class="icon"><use href="#i-arrow"/></svg></button><span class="storage-note">Seus arquivos em<br><strong>Documentos\MockAíZé</strong></span></div>
+  </aside>
+  <main class="main" id="workspaceHome">
+    <header class="top"><div class="page-location"><svg class="icon"><use href="#i-grid"/></svg><span>Seu estúdio</span><span class="location-separator">/</span><h1>Visão geral</h1></div><div class="top-actions"><span class="status"><span></span>Armazenamento local</span><button id="themeButton" type="button" aria-label="Alternar tema">Tema</button></div></header>
+    <section class="hero" aria-labelledby="welcomeTitle"><div class="hero-copy"><p class="eyebrow">DA IDEIA AO ARQUIVO DE TESTE</p><h2 id="welcomeTitle">Menos trabalho manual.<br><span>Mais XML pronto.</span></h2><p class="hero-description">Organize seus modelos, configure as regras e dê vida aos dados que seus testes precisam.</p><div class="hero-workflow" aria-label="Fluxo de trabalho"><span><b>01</b>Organize</span><i></i><span><b>02</b>Configure</span><i></i><span><b>03</b>Gere</span></div></div><div class="hero-art" aria-hidden="true"><img class="banner" src="/assets/mockaize-banner-v3.png" alt=""><div class="hero-mascot"><img src="/assets/mockaize-favicon.png" alt=""></div><span class="art-caption">MockAíZé<span>XML · POWERSHELL</span></span></div></section>
+    <section class="overview" aria-labelledby="overviewTitle"><div class="section-heading"><h2 id="overviewTitle">Tudo no seu lugar.</h2><p>Sua estrutura, do workspace à variação.</p></div><div class="count" id="counts" aria-label="Resumo da biblioteca"></div></section>
+    <section class="panel create-panel" aria-labelledby="createTitle"><div class="create-heading"><span class="section-icon"><svg class="icon"><use href="#i-plus"/></svg></span><div><h3 id="createTitle">O próximo mock começa aqui.</h3><p class="sub">Adicione um item à sua estrutura e continue de onde quiser.</p></div><span class="section-kicker">ORGANIZE SUA BIBLIOTECA</span></div><form class="create" id="createForm"><div class="create-field"><label for="kind">Tipo de item</label><select id="kind"><option value="workspace">Workspace</option><option value="folder">Pasta</option><option value="variation">Arquivo / variação</option></select></div><div class="create-field"><label for="name">Nome do item</label><input id="name" maxlength="128" placeholder="Ex.: Integração de pagamentos" required autocomplete="off"></div><button class="primary create-submit" type="submit"><svg class="icon"><use href="#i-plus"/></svg>Criar item</button></form><div class="selection-line"><span class="selection-dot"></span><div class="selection" id="selection">Workspace não precisa de item pai.</div><span class="create-note">Você pode adicionar os próximos níveis depois.</span></div></section>
+    <div class="structure-guide"><span>Sem níveis obrigatórios.</span><ol><li>Workspace</li><li>Pastas e subpastas</li><li>Arquivos / variações</li></ol></div>
+
+    <section class="lib-manager" id="libraryManager" hidden aria-label="Organizar diretórios"></section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="/engine.js" defer></script><script src="/library.js" defer></script><script src="/app.js" defer></script>
+</body>
+</html>

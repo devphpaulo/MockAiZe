@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.test-runtime/
+.build-deps/
+.build-tmp/
+.build-work/
+.pyinstaller-config/
