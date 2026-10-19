@@ -4,7 +4,7 @@ import sys
 import tomllib
 from importlib.metadata import distribution
 
-app_root = Path(SPECPATH).parent.parent
+app_root = Path(SPECPATH).parent
 root = app_root.parent
 version = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
 code = app_root
