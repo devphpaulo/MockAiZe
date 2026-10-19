@@ -37,17 +37,17 @@ Se já existir conteúdo nessa pasta sem um manifesto válido, o aplicativo inte
 
 Requisitos: Windows 10/11 e Python 3.11 ou mais recente.
 
-Execute os comandos abaixo dentro da pasta `code`, que contém todo o projeto Python, ferramentas, testes, ambiente virtual, recursos e builds. Na pasta superior ficam apenas `code`, `plans`, `base` e `docs`.
+Execute os comandos abaixo dentro da pasta `app`, que contém todo o projeto Python, ferramentas, testes, recursos e builds. Na raiz do repositório ficam apenas esta documentação e os avisos de licença.
 
 ```powershell
 py run.py
 ```
 
-O código-fonte da aplicação fica em `mockaize`, dentro de `code`. O servidor escuta apenas em `127.0.0.1` numa porta local escolhida pelo sistema. Não há serviço remoto nem dependência de rede para gerar XML. Feche o processo pelo menu do ícone do MockAíZé na área de notificação.
+O código-fonte da aplicação fica em `app/mockaize`. O servidor escuta apenas em `127.0.0.1` numa porta local escolhida pelo sistema. Não há serviço remoto nem dependência de rede para gerar XML. Feche o processo pelo menu do ícone do MockAíZé na área de notificação.
 
 ## Empacotar no Windows
 
-O build é feito no próprio Windows e mantém ambiente virtual, intermediários e saída dentro deste checkout. A primeira instalação do PyInstaller precisa de acesso ao índice configurado do Python Package Index.
+O build é feito no próprio Windows e mantém ambiente virtual, intermediários e saída dentro de `app`. A primeira instalação do PyInstaller precisa de acesso ao índice configurado do Python Package Index.
 
 ```powershell
 tools\build.cmd
@@ -60,13 +60,22 @@ O runner PowerShell aceita `-InputFile`, `-OutputDirectory`, `-Count`, `-BaseDat
 ## Verificações locais
 
 ```powershell
-py -m unittest discover -s tests -v
-node --check mockaize/web/app.js
-node --check mockaize/web/engine.js
+py -m unittest discover -s app\\tests -v
+node --check app\\mockaize\\web\\app.js
+node --check app\\mockaize\\web\\engine.js
 ```
 
 Os testes automatizados cobrem persistência, isolamento da raiz, concorrência por revisão, validação XML, importação, snapshots, bundle PowerShell e sintaxe do runner. Testes unitários não substituem uma validação visual em navegador, execução completa do PowerShell 5.1 ou smoke test do executável em uma máquina limpa.
 
+
+## Estrutura do repositório
+
+- pp/ — código-fonte, assets, testes, ferramentas e empacotamento do aplicativo.
+- README.md — documentação principal.
+- LICENSE — licença do projeto.
+- THIRD_PARTY_NOTICES.md — avisos de dependências.
+
 ## Código e licença
 
 O código do projeto é distribuído sob MIT. Veja [LICENSE](LICENSE). O núcleo de runtime usa módulos da biblioteca padrão do Python e APIs Win32 chamadas via `ctypes`; o empacotamento opcional usa PyInstaller. Revise e distribua os avisos das ferramentas de build junto com qualquer release.
+
