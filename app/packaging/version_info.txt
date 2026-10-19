@@ -19,7 +19,7 @@ VSVersionInfo(
           StringStruct('FileVersion', '0.1.13'),
           StringStruct('InternalName', 'MockAíZé'),
           StringStruct('LegalCopyright', 'Copyright © 2026 MockAíZé'),
-          StringStruct('OriginalFilename', 'MockAíZé.exe'),
+          StringStruct('OriginalFilename', 'MockAiZe.exe'),
           StringStruct('ProductName', 'MockAíZé'),
           StringStruct('ProductVersion', '0.1.13')
         ]

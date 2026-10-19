@@ -35,20 +35,20 @@ try {
   }
   $version = & $python -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"
   if ($LASTEXITCODE -ne 0) { throw 'Falha ao ler a versao do projeto.' }
-  $release = Join-Path $dist ("MockAíZé-{0}.exe" -f $version.Trim())
+  $release = Join-Path $dist ("MockAiZe-{0}.exe" -f $version.Trim())
   & (Join-Path $PSScriptRoot 'create-app-icon.ps1')
   & $python -m PyInstaller --noconfirm --clean --distpath $dist --workpath $build 'packaging\mockaize.spec'
   if ($LASTEXITCODE -ne 0) { throw "PyInstaller encerrou com código $LASTEXITCODE." }
   if (-not (Test-Path -LiteralPath $release -PathType Leaf)) { throw "Executável de release ausente: $release" }
 
-  $legacyRelease = Join-Path $dist 'MockAíZé.exe'
+  $legacyRelease = Join-Path $dist 'MockAiZe.exe'
   if (Test-Path -LiteralPath $legacyRelease -PathType Leaf) {
     Remove-Item -LiteralPath $legacyRelease -Force
   }
-  Remove-GeneratedDirectory (Join-Path $dist 'MockAíZé')
+  Remove-GeneratedDirectory (Join-Path $dist 'MockAiZe')
   Remove-GeneratedDirectory $build
   Remove-GeneratedDirectory $temp
-  foreach ($previousRelease in Get-ChildItem -LiteralPath $dist -Filter 'MockAíZé-*.exe' -File) {
+  foreach ($previousRelease in Get-ChildItem -LiteralPath $dist -Filter 'MockAiZe-*.exe' -File) {
     if ($previousRelease.FullName -eq $release) { continue }
     try { Remove-Item -LiteralPath $previousRelease.FullName -Force -ErrorAction Stop }
     catch { Write-Warning "Versão anterior em uso foi mantida: $($previousRelease.Name). Feche-a pela bandeja para usar a atualização." }

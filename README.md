@@ -60,7 +60,7 @@ cd app
 .\\tools\\build.ps1
 ```
 
-O resultado fica em `app\\dist\\MockAíZé-<versão>.exe`. A pasta `dist` não recebe `.pkg` ou DLLs ao lado do executável.
+O resultado fica sempre em `app\\dist\\MockAiZe-<versão>.exe`. A pasta `dist` não recebe `.pkg` ou DLLs ao lado do executável.
 
 ## Verificações locais
 

@@ -33,6 +33,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mockaize-windows-portable
-          path: app/dist/MockAíZé-*.exe
+          path: app/dist/MockAiZe-*.exe
           if-no-files-found: error
           retention-days: 14
