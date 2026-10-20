@@ -21,6 +21,7 @@ globalThis.StudioApi = (() => {
       filenameByMode: { new: { type: 'literal', value: 'mock' }, return: { type: 'literal', value: 'mock' } },
       inputNotes: {}, outputNotesByMode: { new: {}, return: {} }, headersByMode: { new: [], return: [] }, ...record.config };
     config.manual={templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:'',...config.manual};
+    config.manual.filename??={type:'literal',value:config.manual.fileName||record.name+'_manual.xml'};
     const filterName=f=>({...f,filename:f.filename||{type:'literal',value:f.fileName||'filtrado.xml'}});
     config.filter=filterName(config.filter||{group:'',action:'keep',match:'all',conditions:[],fileName:''});
     config.filterPresets=(config.filterPresets||[]).map(p=>({...p,filter:filterName(p.filter)}));

@@ -205,3 +205,10 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .filter-preset-header .filter-preset-actions>button{width:24px;height:24px;min-height:24px;padding:4px;border-radius:4px}
 .filter-preset-actions svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 @container(max-width:520px){.filter-mode .pane-head{height:auto;min-height:112px}.filter-mode .pane-subtitle{flex-wrap:wrap}.filter-preset-header{flex-basis:100%;max-width:100%}}
+
+.filter-preset-header .filter-preset-actions{order:-1}
+.manual-mode .manual-field{padding:4px;margin-left:-4px;margin-right:-4px;max-width:648px}
+.manual-mode .manual-field:focus-within{content-visibility:visible;contain:none}
+.manual-mode .manual-field>input{display:block;box-sizing:border-box;border-radius:8px}
+.manual-mode .manual-field>input:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.manual-name-summary{grid-column:auto}

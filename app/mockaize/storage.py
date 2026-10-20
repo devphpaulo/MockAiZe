@@ -373,11 +373,12 @@ def normalize_config(config: object) -> dict:
     if active_preset and active_preset not in preset_ids:
         raise ValueError("Preset de filtro selecionado não encontrado.")
     manual = normalized["manual"]
-    if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
+    if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup", "filename"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
         or not isinstance(manual["templateXml"], str) or not isinstance(manual["values"], dict)
         or not isinstance(manual["confirmed"], bool) or not isinstance(manual["fileName"], str)
         or len(manual["fileName"]) > 180):
         raise ValueError("Preenchimento manual inválido.")
+    if "filename" in manual: validate_formula(manual["filename"])
     manual.setdefault("recordCount", 1)
     manual.setdefault("recordGroup", "")
     if isinstance(manual["recordCount"], bool) or not isinstance(manual["recordCount"], int) or not 1 <= manual["recordCount"] <= 500:
