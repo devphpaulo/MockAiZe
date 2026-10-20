@@ -10,13 +10,13 @@ globalThis.ReturnSelection = (() => {
     trigger.id = 'returnSelectionTrigger'; trigger.setAttribute('aria-haspopup', 'menu'); trigger.setAttribute('aria-expanded', 'false'); trigger.setAttribute('aria-controls', 'returnSelectionMenu');
     trigger.innerHTML = `${svg('M8 3h11v14M5 7h10v14H5z')}<span>Retornos</span><span class="return-menu-count"></span>${svg('m6 9 6 6 6-6')}`;
     const content = document.createElement('div'); content.id = 'returnSelectionMenu'; content.className = 'return-menu-content';
-    content.setAttribute('popover', 'auto'); content.dataset.dropdown = ''; content.setAttribute('role', 'menu'); content.setAttribute('aria-labelledby', 'returnSelectionHeading'); content.setAttribute('aria-describedby', 'returnSelectionHint');
+    content.setAttribute('popover', 'auto'); content.dataset.dropdown = '';trigger.setAttribute('popovertarget',content.id);trigger.setAttribute('popovertargetaction','toggle'); content.setAttribute('role', 'menu'); content.setAttribute('aria-labelledby', 'returnSelectionHeading'); content.setAttribute('aria-describedby', 'returnSelectionHint');
     const heading = document.createElement('div'); heading.id = 'returnSelectionHeading'; heading.className = 'return-menu-heading'; heading.textContent = 'Gerar e exportar';
     const list = document.createElement('div'); list.className = 'return-menu-items'; list.setAttribute('role', 'group'); list.setAttribute('aria-label', 'Modelos de retorno');
     const separator = document.createElement('div'); separator.className = 'return-menu-separator'; separator.setAttribute('role', 'separator');
     const hint = document.createElement('p'); hint.id = 'returnSelectionHint'; hint.className = 'return-menu-hint'; hint.textContent = 'Cada retorno mantém seu XML e suas regras.';
     content.append(heading, list, separator, hint); host.replaceChildren(trigger, content);
-    let items = [], onChange, textBuffer = '', lastTyping = 0;
+    let items = [], onChange, textBuffer = '', lastTyping = 0, focusLast = false;
     const options = () => [...list.querySelectorAll('[role="menuitemcheckbox"]')];
     function close(restore = true) {
       if (content.matches(':popover-open')) content.hidePopover();
@@ -41,8 +41,8 @@ globalThis.ReturnSelection = (() => {
     }
     function open(last = false) {
       if (host.hidden || !items.length) return;
-      content.showPopover(); position(); trigger.setAttribute('aria-expanded', 'true'); textBuffer = '';
-      focusItem(last ? items.length - 1 : 0);
+      focusLast = last;
+      if(!content.matches(':popover-open'))trigger.click();else focusItem(last ? items.length - 1 : 0);
     }
     function update(next) {
       items = next.items; onChange = next.onChange;
@@ -73,7 +73,6 @@ globalThis.ReturnSelection = (() => {
       if (!same && focused) { const index = items.findIndex(item => item.id === focused); focusItem(Math.max(0, index)); }
       if (host.hidden) close(false); else position();
     }
-    trigger.addEventListener('click', () => content.matches(':popover-open') ? close() : open());
     trigger.addEventListener('keydown', event => { if (['ArrowDown', 'ArrowUp'].includes(event.key)) { event.preventDefault(); open(event.key === 'ArrowUp'); } });
     content.addEventListener('keydown', event => {
       if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return; }
@@ -88,7 +87,7 @@ globalThis.ReturnSelection = (() => {
       const fallback = items.findIndex(item => normalize(item.name).startsWith(query));
       if (match >= 0 || fallback >= 0) focusItem(match >= 0 ? match : fallback);
     });
-    content.addEventListener('toggle', event => { trigger.setAttribute('aria-expanded', String(event.newState === 'open')); });
+    content.addEventListener('toggle', event => {const expanded=event.newState==='open';trigger.setAttribute('aria-expanded',String(expanded));if(expanded){textBuffer='';position();focusItem(focusLast?items.length-1:0);focusLast=false;}});
     content.addEventListener('focusout', event => { const next = event.relatedTarget; if (next && !content.contains(next) && next !== trigger) close(false); });
     window.addEventListener('resize', position);
     document.addEventListener('scroll', event => { if (!content.contains(event.target)) position(); }, true);

@@ -6,7 +6,7 @@ globalThis.ReturnCombobox = (() => {
     trigger.setAttribute('role','combobox');trigger.setAttribute('aria-label','Modelo de retorno em edição');trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-controls','returnModelList');
     const label=document.createElement('span');label.textContent=items.find(item=>item.id===value)?.name||'Selecione um retorno';trigger.append(label);
     const arrow=document.createElement('span');arrow.className='combobox-chevron';arrow.setAttribute('aria-hidden','true');trigger.append(arrow);
-    const content=document.createElement('div');content.id='returnModelPopup';content.className='return-combobox-content';content.setAttribute('popover','auto');content.dataset.dropdown='';
+    const content=document.createElement('div');content.id='returnModelPopup';content.className='return-combobox-content';content.setAttribute('popover','auto');content.dataset.dropdown='';trigger.setAttribute('popovertarget',content.id);trigger.setAttribute('popovertargetaction','toggle');
     const input=document.createElement('input');input.type='search';input.className='return-combobox-search';input.placeholder='Pesquisar retornos…';input.setAttribute('aria-label','Pesquisar retornos');input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');input.setAttribute('aria-controls','returnModelList');
     const list=document.createElement('div');list.id='returnModelList';list.className='return-combobox-list';list.setAttribute('role','listbox');list.setAttribute('aria-label','Modelos de retorno');
     const empty=document.createElement('p');empty.className='return-combobox-empty';empty.textContent='Nenhum retorno encontrado.';empty.setAttribute('role','status');
@@ -41,8 +41,9 @@ globalThis.ReturnCombobox = (() => {
       content.style.width=width+'px';content.style.maxHeight=Math.min(360,space)+'px';
       content.style.left=Math.max(16,Math.min(rect.left,innerWidth-width-16))+'px';content.style.top=above?'auto':rect.bottom+gap+'px';content.style.bottom=above?innerHeight-rect.top+gap+'px':'auto';content.dataset.side=above?'top':'bottom';
     }
-    function open(){if(content.matches(':popover-open'))return;input.value='';filtered=items;activeIndex=Math.max(0,items.findIndex(item=>item.id===value));render();position();content.showPopover();input.focus({preventScroll:true});}
-    trigger.onclick=()=>content.matches(':popover-open')?close():open();
+    function prepare(){input.value='';filtered=items;activeIndex=Math.max(0,items.findIndex(item=>item.id===value));render();position();}
+    function open(){if(!content.matches(':popover-open'))trigger.click();else input.focus({preventScroll:true});}
+    trigger.onclick=()=>{if(!content.matches(':popover-open'))prepare();};
     trigger.onkeydown=event=>{if(['ArrowDown','ArrowUp'].includes(event.key)){event.preventDefault();open();}};
     input.oninput=()=>{activeIndex=0;render();};
     input.onkeydown=event=>{
@@ -55,7 +56,7 @@ globalThis.ReturnCombobox = (() => {
     };
     add.onclick=()=>{close(false);onAdd();};
     content.addEventListener('focusout',event=>{const next=event.relatedTarget;if(next&&!content.contains(next)&&next!==trigger)close(false);});
-    content.addEventListener('toggle',event=>{const expanded=event.newState==='open';trigger.setAttribute('aria-expanded',String(expanded));input.setAttribute('aria-expanded',String(expanded));});
+    content.addEventListener('toggle',event=>{const expanded=event.newState==='open';trigger.setAttribute('aria-expanded',String(expanded));input.setAttribute('aria-expanded',String(expanded));if(expanded){position();input.focus({preventScroll:true});}});
     content.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();}});
   }
   return {mount};

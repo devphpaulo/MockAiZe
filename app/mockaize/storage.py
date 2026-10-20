@@ -385,7 +385,7 @@ def normalize_config(config: object) -> dict:
             raise ValueError("A configuração por operação tem formato inválido.")
         for path, rule in normalized["rulesByMode"][mode].items():
             validate_structural_path(path)
-            if not isinstance(rule, dict) or set(rule) - {"generator", "sourcePath", "fixed", "exactLength", "comment", "formulaComment", "lineComment"}:
+            if not isinstance(rule, dict) or set(rule) - {"generator", "sourcePath", "fixed", "exactLength", "lengthTarget", "comment", "formulaComment", "lineComment"}:
                 raise ValueError("Regra de campo inválida.")
             if rule.get("generator") is not None: validate_formula(rule["generator"])
             if rule.get("sourcePath") is not None: validate_structural_path(rule["sourcePath"])
@@ -393,6 +393,8 @@ def normalize_config(config: object) -> dict:
             exact = rule.get("exactLength")
             if exact is not None and (isinstance(exact, bool) or not isinstance(exact, int) or not 1 <= exact <= 4096):
                 raise ValueError("Comprimento exato deve estar entre 1 e 4096.")
+            if not isinstance(rule.get("lengthTarget", "validate"), str) or rule.get("lengthTarget", "validate") not in {"validate", "input", "output"}:
+                raise ValueError("Destino do limite de caracteres inválido.")
             for comment in (rule.get("comment", ""), rule.get("formulaComment", ""), rule.get("lineComment", "")):
                 if not isinstance(comment, str) or len(comment) > 2000: raise ValueError("Comentário de regra inválido.")
         for path, policy in normalized["presenceByMode"][mode].items():
