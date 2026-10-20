@@ -23,10 +23,6 @@
 [data-dropdown][popover]:popover-open { opacity:1; translate:0 0; scale:1; }
 [data-dropdown][data-side="top"] { transform-origin:bottom center; }
 @starting-style { [data-dropdown][popover]:popover-open { opacity:0; translate:0 -8px; scale:.96; } }
-.return-selection::details-content { transition:content-visibility 160ms allow-discrete; }
-.return-selection .return-selection-menu { opacity:0; translate:0 -8px; scale:.96; transform-origin:top right; transition:opacity 160ms ease-out,translate 200ms var(--dropdown-ease),scale 200ms var(--dropdown-ease); }
-.return-selection[open] .return-selection-menu { opacity:1; translate:0 0; scale:1; }
-@starting-style { .return-selection[open] .return-selection-menu { opacity:0; translate:0 -8px; scale:.96; } }
 #toast {
   position:fixed;
   right:24px;
@@ -136,8 +132,8 @@
 .return-combobox-empty { padding:16px 8px; color:var(--muted); font-size:12px; }
 @media (max-width:640px) { #toast { right:16px; bottom:16px; } }
 @media (prefers-reduced-motion:reduce) {
-  :root select:not([multiple]):not([size])::picker(select),[data-dropdown][popover],.return-selection::details-content,.return-selection .return-selection-menu,.operation-switch > button,.combobox-chevron { transition:none; }
-  :root select:not([multiple]):not([size])::picker(select),[data-dropdown][popover],.return-selection .return-selection-menu { translate:none; scale:1; }
+  :root select:not([multiple]):not([size])::picker(select),[data-dropdown][popover],.operation-switch > button,.combobox-chevron { transition:none; }
+  :root select:not([multiple]):not([size])::picker(select),[data-dropdown][popover] { translate:none; scale:1; }
 }
 :root[data-theme="light"] .operation-switch > button.active { color:#fff; }
 .app ~ #toast { bottom:80px; }

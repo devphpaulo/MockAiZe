@@ -401,13 +401,6 @@ dialog.wide { width:min(960px,calc(100vw - 32px)); }
 .return-model-row select { flex:1; width:0; height:32px; padding:0 8px; }
 .return-model-row button { flex:none; }
 .multiple-returns .pane-head,.multiple-returns .connection-tools { height:144px; }
-.return-selection { position:relative; font-size:12px; }
-.return-selection summary { display:flex; align-items:center; gap:8px; height:32px; padding:0 16px; border:1px solid var(--control-border); border-radius:16px; background:var(--control); cursor:pointer; list-style:none; }
-.return-selection summary::-webkit-details-marker { display:none; }
-.return-selection summary:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
-.return-selection-menu { position:absolute; top:40px; right:0; z-index:45; width:288px; max-width:80vw; max-height:320px; overflow:auto; padding:16px; display:grid; gap:8px; background:var(--elevated); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow); }
-.return-selection-menu label { display:flex; align-items:center; gap:8px; margin:0; min-height:32px; cursor:pointer; }
-.return-selection-menu label span { overflow-wrap:anywhere; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 @media (max-width:1040px) and (min-width:851px) { .mode-row { grid-template-columns:240px minmax(80px,1fr) 112px auto; gap:8px; } .multiple-returns .pane-head,.multiple-returns .connection-tools { height:176px; } .return-model-row .danger span { display:none; } }
 @media (max-width:850px) {
@@ -419,5 +412,4 @@ dialog.wide { width:min(960px,calc(100vw - 32px)); }
  .multiple-returns .topbar { height:auto; min-height:56px; flex-wrap:wrap; padding-block:8px; }
  .multiple-returns .top-actions { flex-wrap:wrap; justify-content:flex-end; }
  .multiple-returns .pane-head,.multiple-returns .connection-tools { height:144px; }
- .return-selection-menu { position:fixed; top:56px; right:16px; }
 }

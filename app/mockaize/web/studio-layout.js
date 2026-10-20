@@ -51,6 +51,14 @@ globalThis.StudioLayout = (() => {
       handle.addEventListener('dblclick', () => resize(which, which === 'sidebar' ? 224 : 320));
     }
     function controls() {
+      const inspectorToggle = document.querySelector('[data-action="inspector"]');
+      if (inspectorToggle) {
+        inspectorToggle.disabled = !presented;
+        inspectorToggle.setAttribute('aria-expanded', String(presented));
+        inspectorToggle.setAttribute('aria-controls', 'inspector');
+        inspectorToggle.setAttribute('aria-label', 'Ocultar editor de fórmulas');
+        inspectorToggle.title = presented ? 'Ocultar editor de fórmulas' : 'Clique em um campo do XML de saída para abrir as fórmulas';
+      }
       const toggle = $('editorModalMode'); if (toggle) toggle.checked = prefs.editorMode === 'modal';
       const sync = $('syncScroll');
       sync.setAttribute('aria-pressed', String(prefs.syncScroll));
@@ -101,13 +109,17 @@ globalThis.StudioLayout = (() => {
       presented = Boolean(open); const modal = prefs.editorMode === 'modal';
       const dialog = $('inspectorDialog'), pane = $('inspector'), dock = $('inspectorDock'), area = $('workArea');
       const next = open ? (modal ? 'modal' : 'panel') : 'closed';
-      const toggle = document.querySelector('[data-action="inspector"]');
-      toggle?.setAttribute('aria-expanded', String(open)); toggle?.setAttribute('aria-controls', 'inspector');
       if (next !== presentation) {
         const previous = presentation, version = ++sheetVersion;
         sheetAnimation?.cancel(); sheetAnimation = null; presentation = next;
-        if (!open && pane.contains(document.activeElement)) toggle?.focus({preventScroll: true});
+        const restoreFocus = !open && pane.contains(document.activeElement);
         if ((!modal || !open) && dialog.open) dialog.close();
+        if (restoreFocus) {
+          const anchor = pane.dataset.editorKey?.startsWith('filename:')
+            ? document.querySelector('[data-action="filename"]')
+            : $('outputPanel').querySelector('.xml-row.selected .field-content') || $('outputPanel').querySelector('.field-content,[data-group]');
+          anchor?.focus({preventScroll: true});
+        }
         const finishClose = () => {
           if (version !== sheetVersion) return;
           pane.hidden = true; dock.hidden = true; area.classList.add('inspector-closed'); scheduleDraw();
