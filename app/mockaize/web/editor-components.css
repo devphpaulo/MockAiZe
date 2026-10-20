@@ -212,3 +212,17 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .manual-mode .manual-field>input{display:block;box-sizing:border-box;border-radius:8px}
 .manual-mode .manual-field>input:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .manual-name-summary{grid-column:auto}
+
+.manual-value-row{display:flex;align-items:center;gap:8px;min-width:0}
+.manual-value-row>input{width:100%;min-width:0;flex:1;height:40px}
+.manual-value-row>input::placeholder{color:var(--muted);opacity:.5}
+.manual-formula-trigger{flex:none;min-width:32px;min-height:32px;padding:4px 8px;border:0;box-shadow:none;background:transparent;color:var(--green);font-size:12px}
+.manual-formula-trigger.configured{font-style:italic}
+.manual-field.has-formula .manual-value-row>input[readonly]{background:transparent;border:0;border-bottom:1px solid var(--green);border-radius:0;box-shadow:none;color:var(--green)}
+.manual-field-editor{margin-top:16px;padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--elevated);content-visibility:visible}
+.manual-mode .manual-field:has(.manual-field-editor){content-visibility:visible;contain:none}
+.manual-field-editor .inspector-footer{position:static;bottom:auto;background:transparent}
+.manual-mode .pane-subtitle{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.manual-entry-modes{display:flex;align-items:center;gap:4px}
+.manual-entry-modes>button{min-height:24px;padding:4px 8px}
+.manual-mode .manual-field .manual-value-row>input:focus-visible{outline:2px solid var(--green);outline-offset:2px}

@@ -35,7 +35,7 @@ globalThis.XmlFilter=(()=>{
   return{xml:X.serialize(doc),count:nodes.length-removedPaths.length,originalCount:nodes.length,matched,removed:removedPaths.length,removedPaths,group:config.group,name:'filtrado.xml'};
  }
 
- function values(doc,formula){const base=parts(formula.group),path=parts(formula.path);if(!prefix(base,path)||path.length<=base.length)throw Error('Selecione um campo dentro do grupo a somar.');return occurrences(doc,formula.group).flatMap(node=>select(node,path.slice(base.length))).map(node=>node.nodeType===2?node.value:node.textContent);}
+ function values(doc,formula,readNode=node=>node.nodeType===2?node.value:node.textContent){const base=parts(formula.group),path=parts(formula.path);if(!prefix(base,path)||path.length<=base.length)throw Error('Selecione um campo dentro do grupo a somar.');return occurrences(doc,formula.group).flatMap(node=>select(node,path.slice(base.length))).map(readNode);}
  return{groups,fields,run,occurrences,operators,values,connector,expression};
 })();
 globalThis.FilterStudio=(()=>{

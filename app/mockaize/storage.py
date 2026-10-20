@@ -373,11 +373,24 @@ def normalize_config(config: object) -> dict:
     if active_preset and active_preset not in preset_ids:
         raise ValueError("Preset de filtro selecionado não encontrado.")
     manual = normalized["manual"]
-    if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup", "filename"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
+    if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup", "filename", "formulas", "generated", "entryMode"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
         or not isinstance(manual["templateXml"], str) or not isinstance(manual["values"], dict)
         or not isinstance(manual["confirmed"], bool) or not isinstance(manual["fileName"], str)
         or len(manual["fileName"]) > 180):
         raise ValueError("Preenchimento manual inválido.")
+    if manual.get("entryMode", "manual") not in ("manual", "formula"):
+        raise ValueError("Modo de preenchimento manual inválido.")
+    if not isinstance(manual.get("formulas", {}), dict) or not isinstance(manual.get("generated", {}), dict):
+        raise ValueError("Fórmulas de preenchimento inválidas.")
+    for path, formula in manual.get("formulas", {}).items():
+        validate_structural_path(path)
+        validate_formula(formula)
+    for path, entry in manual.get("generated", {}).items():
+        validate_structural_path(path)
+        if not isinstance(entry, dict) or set(entry) != {"signature", "value"} or not all(isinstance(entry[key], str) for key in entry):
+            raise ValueError("Valor calculado manual inválido.")
+    if len(json.dumps({key: manual.get(key, {}) for key in ("formulas", "generated")}, ensure_ascii=False).encode("utf-8")) > 8_000_000:
+        raise ValueError("As fórmulas e valores calculados excedem 8 MB.")
     if "filename" in manual: validate_formula(manual["filename"])
     manual.setdefault("recordCount", 1)
     manual.setdefault("recordGroup", "")

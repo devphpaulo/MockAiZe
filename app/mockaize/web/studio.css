@@ -377,7 +377,7 @@ dialog.wide { width:min(960px,calc(100vw - 32px)); }
 .manual-group-title:first-child{margin-top:0}
 .manual-field{margin-bottom:16px;max-width:640px}
 .manual-field label{display:block;margin-bottom:8px;font-weight:600}
-.manual-field input{width:100%;height:40px}
+.manual-field>.manual-value-row>input{width:100%;height:40px}
 .manual-field .hint{margin:8px 0 0;line-height:1.5;overflow-wrap:anywhere}
 .manual-error{color:#ef8585;margin:8px 0 0;font-size:12px}
 .manual-field input[aria-invalid=true]{border-color:#ef8585}
