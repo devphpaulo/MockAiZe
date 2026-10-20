@@ -184,3 +184,30 @@ option { background: var(--surface-2); color: var(--text); }
  .generated-head { align-items: start; flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *,*::before,*::after { animation-duration: .01ms!important; transition-duration: .01ms!important; } }
+
+/* Keep the home workspace tree visually aligned with the studio sidebar. */
+.shell{grid-template-columns:224px minmax(0,1fr);gap:0;padding:0}
+.shell>.side{position:sticky;top:0;height:100dvh;min-height:0;gap:24px;padding:16px;background:#121212;color:var(--text);box-shadow:inset -1px 0 0 var(--line)}
+.shell>.side .brand{gap:8px;min-height:40px;padding:0 8px;color:var(--text);font-size:20px;line-height:24px;font-weight:750;letter-spacing:-.5px}
+.shell>.side .brandmark{width:32px;height:32px;object-fit:contain}
+.shell>.side .brand>span{font-size:20px}
+.shell>.side .section-caption{margin:0 8px 8px;color:var(--muted);font-size:10px;line-height:16px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700}
+.sidebar-workspace{min-width:0}
+.workspace-frame{position:relative;display:flex;align-items:center;min-width:0}
+.workspace-frame>.lib-icon{position:absolute;left:13px;width:16px;height:16px;color:var(--muted);pointer-events:none}
+.workspace-frame>select{width:100%;height:40px;min-height:40px;padding:8px 34px 8px 38px;border:0;box-shadow:inset 0 0 0 1px var(--line);border-radius:8px;background-color:var(--surface-2);font-size:12px}
+.shell>.side nav{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+.shell>.side #tree{max-height:none;flex:1;min-height:0;overflow:auto;font-size:12px}
+.shell>.side .organize-link{justify-content:flex-start;gap:8px;min-height:36px;margin-top:8px;padding:8px 12px;border:0;background:transparent;color:var(--accent);font-size:11px;font-weight:600}
+.shell>.side .organize-link:hover{background:var(--surface-raised);color:var(--text)}
+.shell>.side .sidebar-bottom{display:grid;gap:8px;margin-top:auto;padding:16px 0 0;border-top:1px solid var(--line)}
+.shell>.side .current-home{display:flex;align-items:center;gap:10px;min-height:36px;padding:8px 12px;border:0;border-radius:6px;background:transparent;color:var(--text);font-size:12px;font-weight:600;text-decoration:none}
+.shell>.side .current-home:hover{background:var(--surface-raised)}
+.shell>.side .export-sidebar{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;min-height:36px;padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--text);font-size:12px;font-weight:500}
+.shell>.side .export-sidebar:disabled{opacity:.48}
+.shell>.side .storage-note{display:block;margin-top:8px;padding:8px;color:var(--muted);font-size:10px;line-height:16px}
+.shell>.side .storage-note strong{color:var(--muted);font-weight:400}
+.shell>.side .lib-hint{padding:8px;color:var(--muted)}
+@media(max-width:900px){.shell{grid-template-columns:208px minmax(0,1fr)}.shell>.side{padding:16px 12px}}
+@media(max-width:700px){.shell{grid-template-columns:1fr;padding:0}.shell>.side{display:flex;position:static;inset:auto;width:auto;height:auto;min-height:0;padding:18px;z-index:auto;box-shadow:none;transform:none;transition:none}.shell>.side #tree{max-height:200px;flex:0 1 auto}.shell>.side .sidebar-bottom{padding-top:12px}}
+@media(prefers-reduced-motion:reduce){.shell>.side{transition:none}}

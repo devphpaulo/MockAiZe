@@ -73,7 +73,51 @@ def command(payload):
     action=payload.get('action');now=datetime.now(timezone.utc).isoformat()
     with storage.connect() as db:
         db.execute('BEGIN IMMEDIATE')
-        if action=='create':
+        if action in {'move_many','copy_many','delete_many'}:
+            requested=payload.get('ids')
+            if not isinstance(requested,list) or not requested or len(requested)>500 or any(not isinstance(item,str) for item in requested):
+                raise ValueError('Selecione entre 1 e 500 itens.')
+            if len(set(requested))!=len(requested): raise ValueError('A seleção contém itens repetidos.')
+            selected=[_node(db,item) for item in requested]
+            selected_ids={item['id'] for item in selected}
+            roots=[]
+            for item in selected:
+                parent_id=item['parent_id'];nested=False
+                while parent_id:
+                    if parent_id in selected_ids:nested=True;break
+                    parent_id=_node(db,parent_id)['parent_id']
+                if not nested:roots.append(item)
+            if action in {'move_many','copy_many'}:
+                if any(item['kind']=='workspace' for item in roots): raise ValueError('Workspaces não podem ser movidos ou copiados.')
+                parent_id=payload.get('parentId');workspace_id,depth=_destination(db,parent_id)
+                branches=[_subtree(db,item['id']) for item in roots]
+                branch_ids=[{entry['id'] for entry in branch} for branch in branches]
+                if any(parent_id in ids for ids in branch_ids): raise ValueError('Uma pasta não pode ser colocada dentro dela mesma ou de uma subpasta.')
+                if any(depth+max(entry['depth'] for entry in branch)+1>128 for branch in branches): raise ValueError('O limite é de 128 níveis de pastas.')
+                if action=='move_many':
+                    for item in roots:
+                        if item['parent_id']!=parent_id:db.execute('UPDATE library_nodes SET parent_id=? WHERE id=?',(parent_id,item['id']))
+                    node_id=roots[0]['id']
+                else:
+                    copied_roots=[]
+                    for root,branch in zip(roots,branches):
+                        mapping={item['id']:str(uuid.uuid4()) for item in branch};fid=_backing_file(db,workspace_id,now)
+                        for item in branch:
+                            new_id=mapping[item['id']];new_parent=parent_id if item['id']==root['id'] else mapping[item['parent_id']]
+                            name=item['name']+' (cópia)' if item['id']==root['id'] and root['parent_id']==parent_id else item['name']
+                            name=name[:128]
+                            if item['kind']=='variation':
+                                source=db.execute('SELECT config_json,file_index FROM variations WHERE id=?',(item['id'],)).fetchone()
+                                db.execute('INSERT INTO variations(id,specific_file_id,name,config_json,file_index,revision,created_at) VALUES(?,?,?,?,?,1,?)',(new_id,fid,name,source['config_json'],source['file_index'],now))
+                            db.execute('INSERT INTO library_nodes(id,parent_id,kind,name,created_at) VALUES(?,?,?,?,?)',(new_id,new_parent,item['kind'],name,now))
+                        copied_roots.append(mapping[root['id']])
+                    node_id=copied_roots[0]
+            else:
+                if payload.get('confirm') is not True: raise ValueError('Confirme a exclusão dos itens selecionados e de todo o seu conteúdo.')
+                remove_ids={entry['id'] for root in roots for entry in _subtree(db,root['id'])}
+                for item_id in remove_ids:db.execute('UPDATE library_nodes SET deleted_at=? WHERE id=?',(now,item_id))
+                node_id=payload.get('parentId')
+        elif action=='create':
             kind=payload.get('kind');name=_name(payload.get('name'));parent_id=payload.get('parentId')
             if kind not in {'workspace','folder','variation'}: raise ValueError('Tipo inválido.')
             if kind=='workspace':
