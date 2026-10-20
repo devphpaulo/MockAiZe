@@ -1,4 +1,5 @@
 :root, :root[data-theme="dark"] {
+  --button-radius:6px;
   color-scheme: dark;
   font-family: "Segoe UI Variable", "Segoe UI", Arial, sans-serif;
   font-synthesis: none;
@@ -34,7 +35,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .brand img { width: 40px; height: 40px; object-fit: contain; }
 .brand > span { font-size: 23px; font-weight: 750; letter-spacing: -.9px; }
 .brand small { display: block; margin-top: 3px; font-size: 11px; font-weight: 400; letter-spacing: .35px; color: #909090; }
-.home-link { display: flex; align-items: center; gap: 13px; min-height: 46px; padding: 0 15px; border-radius: 10px; color: #fff; background: #232323; font-weight: 600; text-decoration: none; }
+.home-link { display: flex; align-items: center; gap: 13px; min-height: 46px; padding: 0 15px; border-radius: var(--button-radius,6px); color: #fff; background: #232323; font-weight: 600; text-decoration: none; }
 .home-link .icon { width: 18px; height: 18px; }
 .nav-dot { width: 5px; height: 5px; margin-left: auto; background: #1ed760; border-radius: 50%; }
 .library { min-height: 0; flex: 1; display: flex; flex-direction: column; }
@@ -42,7 +43,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .library-heading h2 { margin: 0; font-size: 12px; font-weight: 600; }
 .library-heading .icon { width: 17px; height: 17px; }
 .tree { display: grid; align-content: start; gap: 4px; overflow: auto; scrollbar-width: thin; scrollbar-color: #414141 transparent; }
-.tree button { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 36px; padding: 9px 13px; border: 0; border-radius: 7px; background: transparent; color: #9d9d9d; text-align: left; font-size: 12px; }
+.tree button { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 36px; padding: 9px 13px; border: 0; border-radius: var(--button-radius,6px); background: transparent; color: #9d9d9d; text-align: left; font-size: 12px; }
 .tree button:hover { background: #1b1b1b; color: #fff; }
 .tree button.selected { color: #fff; background: #252525; }
 .tree-marker { width: 6px; height: 6px; flex: none; border: 1px solid #727272; border-radius: 2px; }
@@ -59,7 +60,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .export-copy .icon { width: 16px; height: 16px; }
 .export-copy strong { font-size: 11px; font-weight: 600; }
 .side-foot p { color: #858585; font-size: 11px; line-height: 1.6; margin: 10px 0 14px; }
-.export-sidebar { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 40px; padding: 0 13px; border: 1px solid #4b4b4b; border-radius: 999px; background: transparent; color: #eee; font-size: 11px; font-weight: 650; }
+.export-sidebar { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 40px; padding: 0 13px; border: 1px solid #4b4b4b; border-radius: var(--button-radius,6px); background: transparent; color: #eee; font-size: 11px; font-weight: 650; }
 .export-sidebar .icon { width: 15px; height: 15px; }
 .export-sidebar:not(:disabled):hover { background: #292929; border-color: #aaa; }
 .storage-note { display: block; color: #707070; font-size: 10px; line-height: 1.7; margin-top: 18px; }
@@ -74,7 +75,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .top-actions { display: flex; align-items: center; gap: 18px; }
 .status { display: flex; align-items: center; gap: 7px; font-size: 10px; color: var(--muted); white-space: nowrap; }
 .status > span { width: 5px; height: 5px; background: #1ed760; border-radius: 50%; box-shadow: 0 0 0 4px rgb(30 215 96 / 8%); }
-.top button { min-height: 31px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--muted); font-size: 10px; }
+.top button { min-height: 31px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--button-radius,6px); background: transparent; color: var(--muted); font-size: 10px; }
 .hero { position: relative; min-height: 306px; overflow: hidden; isolation: isolate; border: 1px solid #363936; border-radius: 16px; background: #202320; color: #fff; }
 .hero-copy { position: relative; z-index: 2; padding: 38px 36px 31px; width: 71%; }
 .eyebrow { margin: 0 0 17px; font-size: 9px; font-weight: 650; letter-spacing: 2px; color: #b7beb6; }
@@ -119,7 +120,7 @@ input, select { min-width: 0; min-height: 43px; padding: 10px 12px; }
 select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, #9b9b9b 50%), linear-gradient(135deg, #9b9b9b 50%, transparent 50%); background-position: calc(100% - 18px) center, calc(100% - 13px) center; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 35px; cursor: pointer; }
 option { background: var(--surface-2); color: var(--text); }
 .create select, .create input { height: 50px; width: 100%; padding-left: 16px; border-radius: 9px; font-size: 12px; }
-.primary, .secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 0 17px; border-radius: 999px; font-size: 11px; font-weight: 650; letter-spacing: .1px; transition: background .15s, transform .15s, border-color .15s; }
+.primary, .secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 0 17px; border-radius: var(--button-radius,6px); font-size: 11px; font-weight: 650; letter-spacing: .1px; transition: background .15s, transform .15s, border-color .15s; }
 .primary { background: var(--accent); color: var(--accent-ink); border: 1px solid transparent; }
 .primary:not(:disabled):hover { background: #36e575; transform: translateY(-1px); }
 .secondary { border: 1px solid var(--line); background: var(--surface-raised); color: var(--text); }

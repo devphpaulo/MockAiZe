@@ -1,7 +1,7 @@
 /* Scoped adaptations of shadcn/studio Date Picker 03, Pagination 03, Sheet 03 and Form 10. */
 .date-picker{position:relative;min-width:0;width:100%}
 .date-picker .date-native{position:absolute;width:1px!important;height:1px!important;padding:0!important;margin:0!important;opacity:0;pointer-events:none;clip-path:inset(50%)}
-.date-picker-trigger{display:flex;justify-content:space-between;gap:8px;width:100%;height:40px;min-height:40px;border-radius:8px;padding:8px 12px;border:1px solid var(--control-border,var(--line,#444));background:var(--control,var(--surface-2,#242424));color:var(--ink,var(--text,#fafafa));font-size:12px;font-weight:400;box-shadow:0 1px 2px #0001}
+.date-picker-trigger{display:flex;justify-content:space-between;gap:8px;width:100%;height:40px;min-height:40px;border-radius:var(--button-radius,6px);padding:8px 12px;border:1px solid var(--control-border,var(--line,#444));background:var(--control,var(--surface-2,#242424));color:var(--ink,var(--text,#fafafa));font-size:12px;font-weight:400;box-shadow:0 1px 2px #0001}
 .date-picker-trigger>span{display:flex;align-items:center;gap:8px;min-width:0}.date-picker-value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .date-picker svg,.date-picker-popup svg,.record-pagination svg{height:16px;width:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .date-picker-trigger>svg{color:var(--muted,#aaa)}
@@ -43,7 +43,7 @@
 @media(prefers-reduced-motion:reduce){:is(#inspector,.filter-name-editor) .inspector-body input,:is(#inspector,.filter-name-editor) .inspector-body textarea{transition:none}}
 
 /* shadcn/ui dropdown-menu checkbox pattern, scoped to generation/export returns. */
-.return-menu-trigger{display:inline-flex;align-items:center;gap:8px;height:32px;min-height:32px;max-width:100%;padding:0 12px;border:1px solid var(--control-border);border-radius:8px;background:var(--control);color:var(--ink);box-shadow:0 1px 2px #0001;font-size:12px;font-weight:500}
+.return-menu-trigger{display:inline-flex;align-items:center;gap:8px;height:32px;min-height:32px;max-width:100%;padding:0 12px;border:1px solid var(--control-border);border-radius:var(--button-radius,6px);background:var(--control);color:var(--ink);box-shadow:0 1px 2px #0001;font-size:12px;font-weight:500}
 .return-menu-trigger>svg,.return-menu-item svg{flex:none;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .return-menu-trigger>svg{color:var(--muted)}.return-menu-trigger>svg:last-child{width:12px;height:12px;transition:rotate 160ms}
 .return-menu-trigger[aria-expanded=true]>svg:last-child{rotate:180deg}
@@ -78,7 +78,7 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .presence-intro{flex:none;line-height:20px}
 .presence-editor{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;gap:16px}
 .presence-view-toolbar{display:flex;align-items:center;justify-content:space-between;flex:none;gap:16px}
-.presence-view-toolbar button{border-radius:8px;font-weight:500}
+.presence-view-toolbar button{border-radius:var(--button-radius,6px);font-weight:500}
 .presence-view-toolbar button[aria-pressed=true]{background:var(--green-soft);color:var(--green);border-color:var(--green)}
 .presence-table-scroll{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:8px;scrollbar-width:thin;overscroll-behavior:contain}
 .presence-table{min-width:800px;--presence-columns:minmax(320px,1fr) 144px 176px 96px;background:var(--surface)}
@@ -216,7 +216,7 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .manual-value-row{display:flex;align-items:center;gap:8px;min-width:0}
 .manual-value-row>input{width:100%;min-width:0;flex:1;height:40px}
 .manual-value-row>input::placeholder{color:var(--muted);opacity:.5}
-.manual-formula-trigger{flex:none;min-width:80px;height:32px;min-height:32px;padding:4px 12px;border:1px solid transparent;border-radius:6px;box-shadow:none;background:var(--green);color:#08160d;font-size:12px;font-weight:600;line-height:20px}
+.manual-formula-trigger{flex:none;min-width:80px;height:32px;min-height:32px;padding:4px 12px;border:1px solid transparent;border-radius:var(--button-radius,6px);box-shadow:none;background:var(--green);color:#08160d;font-size:12px;font-weight:600;line-height:20px}
 :root[data-theme="light"] .manual-formula-trigger{color:#fff}
 .manual-formula-trigger:hover{background:var(--green);filter:brightness(1.05)}
 .manual-field.has-formula .manual-value-row>input[readonly]{background:var(--control);border:1px solid var(--control-border);border-radius:8px;color:var(--green)}

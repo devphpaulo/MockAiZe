@@ -43,14 +43,14 @@
 }
 .operation-switch { position:relative; isolation:isolate; padding:4px; border-radius:8px; background:var(--elevated); }
 .operation-switch > .operation-indicator { position:absolute; inset-block:4px; left:0; border-radius:6px; background:var(--green); box-shadow:none; pointer-events:none; z-index:0; }
-.operation-switch > button { position:relative; z-index:1; height:32px; min-height:32px; border-radius:6px; padding:4px 8px; transition:color 120ms; }
+.operation-switch > button { position:relative; z-index:1; height:32px; min-height:32px; border-radius:var(--button-radius,6px); padding:4px 8px; transition:color 120ms; }
 .operation-switch > button.active { background:transparent; color:#08160d; box-shadow:none; }
 /* Button 14 treatment applies only to the XML download control. */
 #bottomBar button:is([data-action="export-xml"],[data-action="manual-export"]) {
   min-height:40px;
   padding:8px 16px;
   border:1px dashed var(--green,#1ed760);
-  border-radius:8px;
+  border-radius:var(--button-radius,6px);
   background:transparent;
   color:var(--ink,#fafafa);
   box-shadow:none;
@@ -69,7 +69,7 @@
   min-height:32px;
   padding:0 12px;
   border:1px solid var(--control-border);
-  border-radius:8px;
+  border-radius:var(--button-radius,6px);
   background:var(--control);
   color:var(--ink);
   font-size:12px;
