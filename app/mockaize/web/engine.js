@@ -123,7 +123,20 @@ globalThis.MockXml=(()=>{
  function resolve(root,path){let parts;try{parts=typeof path==='string'?JSON.parse(path):path;}catch{return null;}let current=root.nodeType===9?root:root.ownerDocument;for(const part of parts){if(part.attribute)return Array.from(current.attributes||[]).find(n=>(n.namespaceURI||'')===part.ns&&n.localName===part.name)||null;const matches=Array.from(current.children||[]).filter(n=>(n.namespaceURI||'')===part.ns&&n.localName===part.name);current=matches[(part.index||1)-1];if(!current)return null;}return current;}
  function fields(doc){const out=[];function walk(node){for(const attr of Array.from(node.attributes||[])){if(attr.namespaceURI==='http://www.w3.org/2000/xmlns/'||attr.name==='xmlns')continue;out.push({key:key(attr),display:display(key(attr)),name:attr.localName,ns:attr.namespaceURI||'',value:attr.value,node:attr});}if(!node.children.length)out.push({key:key(node),display:display(key(node)),name:node.localName,ns:node.namespaceURI||'',value:node.textContent,node});for(const child of node.children)walk(child);}walk(doc.documentElement);return out;}
  function nodes(doc){const out=[];function walk(node){const path=key(node);out.push({key:path,display:display(path),name:node.localName,ns:node.namespaceURI||'',value:node.textContent,isGroup:!!node.children.length,node});for(const attr of Array.from(node.attributes||[])){if(attr.namespaceURI==='http://www.w3.org/2000/xmlns/'||attr.name==='xmlns')continue;const path=key(attr);out.push({key:path,display:display(path),name:attr.localName,ns:attr.namespaceURI||'',value:attr.value,isGroup:false,node:attr});}for(const child of node.children)walk(child);}walk(doc.documentElement);return out;}
- function groups(doc){const out=[];function walk(node){if(siblings(node)[0]===node){out.push({key:key(node),name:node.localName,display:display(key(node)),count:siblings(node).length,depth:trail(node).length});}for(const child of node.children)walk(child);}walk(doc.documentElement);return out.sort((a,b)=>(b.count>1)-(a.count>1)||a.depth-b.depth);}
+ function groups(doc){
+  const out=[],identity=node=>JSON.stringify([node.namespaceURI||'',node.localName]);
+  function walk(parent,trail){
+   const counts=new Map(),seen=new Map();
+   for(const child of parent.children){const id=identity(child);counts.set(id,(counts.get(id)||0)+1);}
+   for(const child of parent.children){
+    const id=identity(child),index=(seen.get(id)||0)+1;seen.set(id,index);
+    const path=[...trail,{ns:child.namespaceURI||'',name:child.localName,index}];
+    if(index===1){const key=JSON.stringify(path);out.push({key,name:child.localName,display:display(key),count:counts.get(id),depth:path.length});}
+    walk(child,path);
+   }
+  }
+  walk(doc,[]);return out.sort((a,b)=>(b.count>1)-(a.count>1)||a.depth-b.depth);
+ }
  function recordGroups(doc,headers=[]){
   const paths=headers.map(path=>JSON.parse(path));
   return groups(doc).filter(group=>{
@@ -132,7 +145,20 @@ globalThis.MockXml=(()=>{
   });
  }
  function records(doc,path){const node=resolve(doc,path);return node?siblings(node):[];}
- function project(doc,path,index=0){const copy=doc.cloneNode(true);const items=records(copy,path);if(items.length>1){const keep=items[Math.min(index,items.length-1)];for(const item of items)if(item!==keep)item.remove();}return copy;}
+ function project(doc,path,index=0){
+  const items=records(doc,path);
+  if(items.length<2)return doc.cloneNode(true);
+  const keep=items[Math.min(index,items.length-1)],excluded=new Set(items.filter(item=>item!==keep)),ancestors=new Set();
+  for(let node=items[0].parentNode;node;node=node.parentNode)ancestors.add(node);
+  // Clone only retained branches; never copy every record just to discard it.
+  function copy(node){
+   if(!ancestors.has(node))return node.cloneNode(true);
+   const result=node.cloneNode(false);
+   for(const child of node.childNodes)if(!excluded.has(child))result.appendChild(copy(child));
+   return result;
+  }
+  return copy(doc);
+ }
  function setValue(node,value){
   const text=String(value);if(node.nodeType===2){node.value=text;return;}
   const characterNodes=Array.from(node.childNodes).filter(child=>child.nodeType===3||child.nodeType===4);

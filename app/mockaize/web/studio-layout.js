@@ -6,7 +6,7 @@ globalThis.StudioLayout = (() => {
   function create({ preferences = {}, save, redraw, closeInspector, notify }) {
     const prefs = { sidebarWidth: 224, inspectorWidth: 320, editorMode: 'panel', syncScroll: false, ...preferences };
     let saveTimer, frame, dragging = null, presented = false, presentation = 'closed', sheetAnimation = null, sheetVersion = 0;
-    const expectedScroll = new WeakMap();
+    const expectedScroll = new WeakMap(), boundScroll = new WeakSet();
     const scheduleDraw = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(redraw); };
     const persist = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => save({ ...prefs }).catch(error => notify(error.message)), 250); };
     function widths() {
@@ -92,7 +92,8 @@ globalThis.StudioLayout = (() => {
     }
     function bindScroll() {
       for (const [id, other] of [['inputCode', 'outputCode'], ['outputCode', 'inputCode']]) {
-        const element = $(id); if (!element) continue;
+        const element = $(id); if (!element || boundScroll.has(element)) continue;
+        boundScroll.add(element);
         element.addEventListener('scroll', () => {
           const expected = expectedScroll.get(element); expectedScroll.delete(element);
           if (prefs.syncScroll && (expected === undefined || Math.abs(expected - element.scrollTop) > 1)) alignTo(element, $(other));

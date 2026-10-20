@@ -50,15 +50,25 @@ class Handler(BaseHTTPRequestHandler):
     def _send(self, status: int, body: bytes, content_type: str, extra_headers: dict | None = None):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
+        if status != 304:
+            self.send_header("Content-Length", str(len(body)))
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
-        self.send_header("Cache-Control", "no-store")
+        self.send_header("Cache-Control", (extra_headers or {}).get("Cache-Control", "no-store"))
         for name, value in (extra_headers or {}).items():
-            self.send_header(name, value)
+            if name != "Cache-Control":
+                self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_asset(self, body: bytes, content_type: str):
+        # Revalidate static resources across pages; API responses remain no-store.
+        etag = '"' + hashlib.sha256(body).hexdigest() + '"'
+        headers = {"Cache-Control": "private, no-cache", "ETag": etag}
+        if self.headers.get("If-None-Match") == etag:
+            return self._send(304, b"", content_type, headers)
+        return self._send(200, body, content_type, headers)
 
     def _is_local_request(self) -> bool:
         expected_host = f"127.0.0.1:{self.server.server_port}"
@@ -174,26 +184,26 @@ class Handler(BaseHTTPRequestHandler):
             if filename not in {"mockaize-banner-v3.png", "mockaize-favicon.png"}:
                 return self._send(404, b"Not found", "text/plain; charset=utf-8")
             asset = files("mockaize").joinpath("web/assets", filename).read_bytes()
-            return self._send(200, asset, "image/png")
+            return self._send_asset(asset, "image/png")
         if route in {"/studio.js", "/studio-api.js", "/return-models.js", "/studio-layout.js", "/manual-studio.js", "/library.js", "/library.css", "/studio.css", "/select.css", "/select.js", "/ui-motion.css", "/ui-motion.js", "/date-picker.js", "/record-pagination.js", "/editor-components.css", "/return-combobox.js", "/return-selection.js", "/presence-editor.js", "/filter-studio.js"}:
             asset = files("mockaize").joinpath("web", route.removeprefix("/")).read_bytes()
             content_type = "text/css; charset=utf-8" if route.endswith(".css") else "text/javascript; charset=utf-8"
-            return self._send(200, asset, content_type)
+            return self._send_asset(asset, content_type)
         if route == "/engine.js":
             engine = files("mockaize").joinpath("web", "engine.js").read_bytes()
-            return self._send(200, engine, "text/javascript; charset=utf-8")
+            return self._send_asset(engine, "text/javascript; charset=utf-8")
         if route == "/app.js":
             app = files("mockaize").joinpath("web", "app.js").read_bytes()
-            return self._send(200, app, "text/javascript; charset=utf-8")
+            return self._send_asset(app, "text/javascript; charset=utf-8")
         if route == "/style.css":
             style = files("mockaize").joinpath("web", "style.css").read_bytes()
-            return self._send(200, style, "text/css; charset=utf-8")
+            return self._send_asset(style, "text/css; charset=utf-8")
         if route == "/favicon.ico":
             icon_path = files("mockaize").joinpath("assets", "mockaize.ico")
             if icon_path.is_file():
-                return self._send(200, icon_path.read_bytes(), "image/vnd.microsoft.icon")
+                return self._send_asset(icon_path.read_bytes(), "image/vnd.microsoft.icon")
             asset = files("mockaize").joinpath("web/assets", "mockaize-favicon.png").read_bytes()
-            return self._send(200, asset, "image/png")
+            return self._send_asset(asset, "image/png")
         if route not in ("/", "/index.html", "/studio"):
             return self._send(404, b"Not found", "text/plain; charset=utf-8")
         page_name = "studio.html" if route == "/studio" else "index.html"
