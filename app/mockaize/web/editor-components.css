@@ -167,3 +167,21 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 
 .filter-line-removed{background:color-mix(in srgb,var(--red) 12%,var(--code-background))}
 .filter-line-removed .filter-line-number{background:color-mix(in srgb,var(--red) 12%,var(--code-background))}
+
+/* Generation controls share the export footer baseline in Retorno and Novos registros. */
+.mode-row{grid-template-columns:344px minmax(160px,560px)}
+.generation-actions{align-items:flex-end;justify-content:flex-end;gap:16px}
+.generation-controls{display:flex;align-items:flex-end;gap:16px;flex:none}
+.generation-count{display:grid;gap:8px;width:144px;min-width:0}
+.generation-count>label{font-size:11px;line-height:16px;margin:0;white-space:nowrap}
+.generation-count>input{height:40px;min-height:40px;width:100%;margin:0}
+.generation-controls>#generateButton{height:40px;min-height:40px;padding:8px 24px;white-space:nowrap}
+.generation-actions>.filename-summary{max-width:224px;align-self:flex-end;margin-bottom:12px}
+.generation-actions>[data-action="export-xml"]{flex:none;height:40px}
+.generation-signal{display:inline-block;width:16px;height:16px;border-radius:50%;flex:0 0 16px;margin-bottom:12px;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 12%,transparent)}
+.generation-signal.red{color:#ee626e;background:#ee626e}
+.generation-signal.orange{color:#f5a524;background:#f5a524}
+.generation-signal.green{color:#1ed760;background:#1ed760}
+@media(max-width:1200px){.bottom-bar:has(.generation-actions){flex-wrap:wrap}.generation-actions{flex-wrap:wrap;margin-left:auto}.generation-actions>.filename-summary{max-width:192px}.mode-row{grid-template-columns:344px minmax(160px,560px)}}
+@media(max-width:850px){.mode-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.generation-actions{width:100%;gap:16px}.generation-count{width:128px}.generation-controls>#generateButton{padding-inline:16px}.generation-actions>.filename-summary{max-width:none;margin-bottom:0;flex-basis:100%;text-align:right}.bottom-bar:has(.generation-actions){min-height:112px}}
+@media(max-width:600px){.mode-row{grid-template-columns:minmax(0,1fr)}.generation-actions{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}.generation-actions>.filename-summary{grid-column:1/-1;text-align:left}.generation-controls{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.generation-count{width:auto}.generation-controls>#generateButton{width:100%}.generation-signal{grid-column:2}.generation-actions>[data-action="export-xml"]{grid-column:3}}
