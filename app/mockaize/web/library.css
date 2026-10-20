@@ -39,3 +39,36 @@
 #configList>.lib-branch+.lib-branch,#tree>.lib-branch+.lib-branch{margin-top:8px}
 .lib-tree-row:focus-within{background:var(--hover,var(--soft,#203728))}
 @media(prefers-reduced-motion:reduce){.lib-children,.lib-disclosure .lib-icon{transition:none}}
+/* Shared action menu lives in the top layer, outside the collapsible tree. */
+.lib-context-menu{position:fixed;inset:auto;margin:0;width:216px;max-width:calc(100vw - 16px);padding:4px;border:1px solid var(--control-border,var(--line,#484848));border-radius:8px;background:var(--control,var(--surface-2,#242424));color:var(--ink,var(--text,#fafafa));box-shadow:0 12px 32px #0006}
+.lib-context-menu::backdrop{background:transparent}
+.lib-context-menu>button{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;min-height:32px;padding:8px;border:0;border-radius:4px;background:transparent;color:inherit;font:500 12px/16px 'Segoe UI',sans-serif;text-align:left;cursor:pointer}
+.lib-context-menu>button:hover,.lib-context-menu>button:focus-visible{background:var(--selection,var(--soft,#203728));outline:0}
+.lib-menu-separator{height:1px;margin:4px;background:var(--line,#444)}
+.lib-context-menu>button.lib-danger{color:var(--red,#ee747f)}
+.lib-context-menu>button.lib-danger:hover,.lib-context-menu>button.lib-danger:focus-visible{background:color-mix(in srgb,#ee747f 14%,transparent)}
+.lib-tree-row .lib-more{display:grid;place-items:center}
+.lib-tree-row:has(.lib-more[aria-expanded=true]){background:var(--hover,var(--soft,#203728))}
+.lib-tree-row .lib-more[aria-expanded=true]{opacity:1}
+.lib-action-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:36px;padding:8px 12px;border:1px solid var(--control-border,var(--line,#444));border-radius:6px;background:var(--control,var(--surface-2,#242424));color:inherit;font:500 12px/16px 'Segoe UI',sans-serif;cursor:pointer}
+.lib-action-button:hover:not(:disabled){background:var(--hover,var(--surface-raised,#2a2a2a));border-color:var(--green,var(--accent,#1ed760))}
+.lib-action-button:disabled{opacity:.45;cursor:not-allowed}
+.lib-bulk-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.lib-bulk-actions>span{flex:1;min-width:160px;color:var(--muted);font-size:12px}
+.lib-bulk-actions .lib-danger{background:color-mix(in srgb,#ee747f 13%,var(--control,var(--surface-2,#242424)));border-color:color-mix(in srgb,#ee747f 35%,var(--line,#444));color:var(--red,#ee747f)}
+.lib-bulk-actions .lib-danger:hover:not(:disabled){background:color-mix(in srgb,#ee747f 22%,var(--control,var(--surface-2,#242424)));border-color:#ee747f}
+.lib-table .lib-table-head,.lib-table .lib-table-row{grid-template-columns:24px minmax(0,1fr) 144px;gap:12px;min-height:48px;padding:8px 12px}
+.lib-table .lib-table-head{min-height:40px}
+.lib-table input[type=checkbox]{display:block;width:16px;height:16px;min-height:16px;padding:0;margin:0;accent-color:var(--green,var(--accent,#1ed760));cursor:pointer}
+.lib-table .lib-name-cell{min-width:0;font-size:12px;color:inherit}
+.lib-table .lib-name-cell>button{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-width:0;width:100%;min-height:32px;padding:4px;border:0;border-radius:4px;background:transparent;text-align:left;color:inherit;font-size:12px}
+.lib-name-cell>button>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lib-table .lib-checked{background:var(--selection,var(--soft,#203728))}
+.lib-breadcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.lib-breadcrumb button{border:0;border-radius:4px;background:transparent;color:inherit;padding:4px;font:inherit;cursor:pointer}
+.lib-search input{border-radius:6px}
+[data-lib-drag]{cursor:grab}
+.lib-dragging{opacity:.45}
+.lib-drop-active{background:var(--selection,var(--soft,#203728))!important;outline:2px solid var(--green,var(--accent,#1ed760));outline-offset:-2px;border-radius:6px}
+:root[data-theme=light] .lib-bulk-actions .lib-danger,:root[data-theme=light] .lib-context-menu>button.lib-danger{color:#a72c39}
+@media(max-width:640px){.lib-table .lib-table-head,.lib-table .lib-table-row{grid-template-columns:24px minmax(0,1fr);gap:8px}.lib-table .lib-table-head>span:nth-child(2){display:block}.lib-table .lib-table-head>span:last-child,.lib-table .lib-type-cell{display:none}.lib-table .lib-name-cell{display:block}.lib-bulk-actions>span{flex-basis:100%}.lib-bulk-actions>.lib-action-button{flex:1}.lib-toolbar>.lib-action-button{flex:1}.lib-search{flex-basis:100%}}

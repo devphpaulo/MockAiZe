@@ -68,51 +68,74 @@ def _backing_file(db, workspace_id, now):
     return fid
 
 
+def _apply_command(db, payload, now):
+    action = payload.get('action')
+    if action=='create':
+        kind=payload.get('kind');name=_name(payload.get('name'));parent_id=payload.get('parentId')
+        if kind not in {'workspace','folder','variation'}: raise ValueError('Tipo inválido.')
+        if kind=='workspace':
+            parent_id=None
+        else: workspace_id,_=_destination(db,parent_id)
+        node_id=str(uuid.uuid4())
+        if kind=='workspace': db.execute('INSERT INTO workspaces VALUES(?,?,?)',(node_id,name,now))
+        if kind=='variation':
+            fid=_backing_file(db,workspace_id,now)
+            db.execute('INSERT INTO variations(id,specific_file_id,name,created_at) VALUES(?,?,?,?)',(node_id,fid,name,now))
+        db.execute('INSERT INTO library_nodes(id,parent_id,kind,name,created_at) VALUES(?,?,?,?,?)',(node_id,parent_id,kind,name,now))
+    else:
+        node_id=payload.get('id');node=_node(db,node_id)
+        if action=='rename':
+            name=_name(payload.get('name'));db.execute('UPDATE library_nodes SET name=? WHERE id=?',(name,node_id))
+            table={'workspace':'workspaces','variation':'variations'}.get(node['kind'])
+            if table: db.execute(f'UPDATE {table} SET name=?'+(',revision=revision+1' if table=='variations' else '')+' WHERE id=?',(name,node_id))
+        elif action in {'move','copy'}:
+            parent_id=payload.get('parentId');workspace_id,depth=_destination(db,parent_id)
+            if node['kind']=='workspace': raise ValueError('Workspaces não podem ficar dentro de outros itens.')
+            branch=_subtree(db,node_id);ids={item['id'] for item in branch}
+            if parent_id in ids: raise ValueError('Uma pasta não pode ser colocada dentro dela mesma ou de uma subpasta.')
+            if depth+max(item['depth'] for item in branch)+1>128: raise ValueError('O limite é de 128 níveis de pastas.')
+            if action=='move': db.execute('UPDATE library_nodes SET parent_id=? WHERE id=?',(parent_id,node_id))
+            else:
+                mapping={item['id']:str(uuid.uuid4()) for item in branch}
+                fid=_backing_file(db,workspace_id,now)
+                for item in branch:
+                    new_id=mapping[item['id']];new_parent=parent_id if item['id']==node_id else mapping[item['parent_id']]
+                    name=item['name']+' (cópia)' if item['id']==node_id and node['parent_id']==parent_id else item['name']
+                    name=name[:128]
+                    if item['kind']=='variation':
+                        source=db.execute('SELECT config_json,file_index FROM variations WHERE id=?',(item['id'],)).fetchone()
+                        db.execute('INSERT INTO variations(id,specific_file_id,name,config_json,file_index,revision,created_at) VALUES(?,?,?,?,?,1,?)',
+                                   (new_id,fid,name,source['config_json'],source['file_index'],now))
+                    db.execute('INSERT INTO library_nodes(id,parent_id,kind,name,created_at) VALUES(?,?,?,?,?)',(new_id,new_parent,item['kind'],name,now))
+                node_id=mapping[node_id]
+        elif action=='delete':
+            if payload.get('confirm') is not True: raise ValueError('Confirme a exclusão do item e de todo o seu conteúdo.')
+            for item in _subtree(db,node_id): db.execute('UPDATE library_nodes SET deleted_at=? WHERE id=?',(now,item['id']))
+        else: raise ValueError('Operação desconhecida.')
+    return node_id
+
+
 def command(payload):
-    if not isinstance(payload,dict): raise ValueError('Operação inválida.')
-    action=payload.get('action');now=datetime.now(timezone.utc).isoformat()
+    if not isinstance(payload, dict):
+        raise ValueError('Operação inválida.')
+    action = payload.get('action')
+    now = datetime.now(timezone.utc).isoformat()
     with storage.connect() as db:
         db.execute('BEGIN IMMEDIATE')
-        if action=='create':
-            kind=payload.get('kind');name=_name(payload.get('name'));parent_id=payload.get('parentId')
-            if kind not in {'workspace','folder','variation'}: raise ValueError('Tipo inválido.')
-            if kind=='workspace':
-                parent_id=None
-            else: workspace_id,_=_destination(db,parent_id)
-            node_id=str(uuid.uuid4())
-            if kind=='workspace': db.execute('INSERT INTO workspaces VALUES(?,?,?)',(node_id,name,now))
-            if kind=='variation':
-                fid=_backing_file(db,workspace_id,now)
-                db.execute('INSERT INTO variations(id,specific_file_id,name,created_at) VALUES(?,?,?,?)',(node_id,fid,name,now))
-            db.execute('INSERT INTO library_nodes(id,parent_id,kind,name,created_at) VALUES(?,?,?,?,?)',(node_id,parent_id,kind,name,now))
+        if action in {'move_many', 'copy_many', 'delete_many'}:
+            ids = payload.get('ids')
+            if not isinstance(ids, list) or not ids or len(ids) > 500 or any(not isinstance(value, str) for value in ids):
+                raise ValueError('Selecione entre 1 e 500 itens.')
+            ids = list(dict.fromkeys(ids))
+            selected = set(ids)
+            roots = []
+            for node_id in ids:
+                cursor = _node(db, node_id)
+                while cursor['parent_id'] and cursor['parent_id'] not in selected:
+                    cursor = _node(db, cursor['parent_id'])
+                if cursor['parent_id'] not in selected:
+                    roots.append(node_id)
+            result_ids = [_apply_command(db, {**payload, 'action': action.removesuffix('_many'), 'id': node_id}, now) for node_id in roots]
         else:
-            node_id=payload.get('id');node=_node(db,node_id)
-            if action=='rename':
-                name=_name(payload.get('name'));db.execute('UPDATE library_nodes SET name=? WHERE id=?',(name,node_id))
-                table={'workspace':'workspaces','variation':'variations'}.get(node['kind'])
-                if table: db.execute(f'UPDATE {table} SET name=?'+(',revision=revision+1' if table=='variations' else '')+' WHERE id=?',(name,node_id))
-            elif action in {'move','copy'}:
-                parent_id=payload.get('parentId');workspace_id,depth=_destination(db,parent_id)
-                if node['kind']=='workspace': raise ValueError('Workspaces não podem ficar dentro de outros itens.')
-                branch=_subtree(db,node_id);ids={item['id'] for item in branch}
-                if parent_id in ids: raise ValueError('Uma pasta não pode ser colocada dentro dela mesma ou de uma subpasta.')
-                if depth+max(item['depth'] for item in branch)+1>128: raise ValueError('O limite é de 128 níveis de pastas.')
-                if action=='move': db.execute('UPDATE library_nodes SET parent_id=? WHERE id=?',(parent_id,node_id))
-                else:
-                    mapping={item['id']:str(uuid.uuid4()) for item in branch}
-                    fid=_backing_file(db,workspace_id,now)
-                    for item in branch:
-                        new_id=mapping[item['id']];new_parent=parent_id if item['id']==node_id else mapping[item['parent_id']]
-                        name=item['name']+' (cópia)' if item['id']==node_id and node['parent_id']==parent_id else item['name']
-                        name=name[:128]
-                        if item['kind']=='variation':
-                            source=db.execute('SELECT config_json,file_index FROM variations WHERE id=?',(item['id'],)).fetchone()
-                            db.execute('INSERT INTO variations(id,specific_file_id,name,config_json,file_index,revision,created_at) VALUES(?,?,?,?,?,1,?)',
-                                       (new_id,fid,name,source['config_json'],source['file_index'],now))
-                        db.execute('INSERT INTO library_nodes(id,parent_id,kind,name,created_at) VALUES(?,?,?,?,?)',(new_id,new_parent,item['kind'],name,now))
-                    node_id=mapping[node_id]
-            elif action=='delete':
-                if payload.get('confirm') is not True: raise ValueError('Confirme a exclusão do item e de todo o seu conteúdo.')
-                for item in _subtree(db,node_id): db.execute('UPDATE library_nodes SET deleted_at=? WHERE id=?',(now,item['id']))
-            else: raise ValueError('Operação desconhecida.')
-    return {'id':node_id,'library':snapshot()}
+            result_ids = [_apply_command(db, payload, now)]
+    return {'id': result_ids[0], 'ids': result_ids, 'library': snapshot()}
