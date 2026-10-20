@@ -48,6 +48,7 @@ a = Analysis(
         (str(web / "return-combobox.js"), "mockaize/web"),
         (str(web / "return-selection.js"), "mockaize/web"),
         (str(web / "presence-editor.js"), "mockaize/web"),
+        (str(web / "filter-studio.js"), "mockaize/web"),
         (str(web / "studio-api.js"), "mockaize/web"),
         (str(web / "return-models.js"), "mockaize/web"),
         (str(web / "studio-layout.js"), "mockaize/web"),

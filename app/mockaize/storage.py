@@ -219,6 +219,7 @@ def get_variation(variation_id: str) -> dict | None:
 
 
 CONFIG_DEFAULTS = {
+    "filter": {"group": "", "action": "keep", "match": "all", "conditions": [], "fileName": ""},
     "manual": {"templateXml": "", "values": {}, "confirmed": False, "fileName": "", "recordCount": 1, "recordGroup": ""},
     "inputByMode": {}, "inputXml": "", "outputXml": "", "recordCount": 1, "fileName": "mock",
     "mode": "return", "inputGroup": "", "outputGroup": "", "returnSource": "first",
@@ -328,6 +329,24 @@ def normalize_config(config: object) -> dict:
                 ET.fromstring(normalized[key])
             except ET.ParseError as exc:
                 raise ValueError(f"Modelo XML inválido: {exc}") from exc
+    filters = normalized["filter"]
+    if not isinstance(filters, dict) or set(filters) != {"group", "action", "match", "conditions", "fileName"}:
+        raise ValueError("Configuração de filtro inválida.")
+    if filters["action"] not in ("keep", "remove") or filters["match"] not in ("all", "any"):
+        raise ValueError("Ação ou combinação de filtros inválida.")
+    if not isinstance(filters["group"], str) or not isinstance(filters["fileName"], str) or len(filters["fileName"]) > 180:
+        raise ValueError("Grupo ou nome de filtro inválido.")
+    if filters["group"]: validate_structural_path(filters["group"])
+    if not isinstance(filters["conditions"], list) or len(filters["conditions"]) > 100:
+        raise ValueError("Informe até 100 condições de filtro.")
+    for condition in filters["conditions"]:
+        if not isinstance(condition, dict) or set(condition) != {"path", "operator", "value"}:
+            raise ValueError("Condição de filtro inválida.")
+        if not isinstance(condition["path"], str) or not isinstance(condition["value"], str) or len(condition["value"]) > 2000:
+            raise ValueError("Campo ou valor de filtro inválido.")
+        if condition["path"]: validate_structural_path(condition["path"])
+        if condition["operator"] not in ("exists", "missing", "equals", "notEquals", "contains", "notContains", "empty", "notEmpty"):
+            raise ValueError("Operador de filtro inválido.")
     manual = normalized["manual"]
     if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
         or not isinstance(manual["templateXml"], str) or not isinstance(manual["values"], dict)
@@ -352,7 +371,7 @@ def normalize_config(config: object) -> dict:
     if len(json.dumps(manual["values"], ensure_ascii=False).encode("utf-8")) > 4_000_000:
         raise ValueError("Os valores manuais excedem 4 MB.")
     inputs = normalized["inputByMode"]
-    if not isinstance(inputs, dict) or set(inputs) - {"new", "return"}:
+    if not isinstance(inputs, dict) or set(inputs) - {"new", "return", "filter"}:
         raise ValueError("Documentos por operação inválidos.")
     for document in inputs.values():
         if not isinstance(document, dict) or set(document) != {"xml", "group"} or not isinstance(document["xml"], str) or not isinstance(document["group"], str):
@@ -366,7 +385,7 @@ def normalize_config(config: object) -> dict:
         raise ValueError("A quantidade deve ser um inteiro entre 1 e 500.")
     if not isinstance(normalized["fileName"], str) or not normalized["fileName"].strip() or len(normalized["fileName"]) > 120:
         raise ValueError("Informe um nome de arquivo entre 1 e 120 caracteres.")
-    if (not isinstance(normalized["mode"], str) or normalized["mode"] not in {"new", "return", "manual"}
+    if (not isinstance(normalized["mode"], str) or normalized["mode"] not in {"new", "return", "manual", "filter"}
         or not isinstance(normalized["returnSource"], str) or normalized["returnSource"] not in {"first", "all"}):
         raise ValueError("Modo de geração inválido.")
     if not isinstance(normalized["inputGroup"], str) or not isinstance(normalized["outputGroup"], str):

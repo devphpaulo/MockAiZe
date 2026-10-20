@@ -292,8 +292,8 @@ def create_bundle(variation_id: str, expected_revision: int) -> dict:
     if isinstance(expected_revision, bool) or item["revision"] != expected_revision:
         raise RuntimeError("A variação mudou. Salve e tente exportar novamente.")
     config = storage.normalize_config(item["config"])
-    if config["mode"] == "manual":
-        raise ValueError("No modo Manual, exporte o XML de entrada preenchido.")
+    if config["mode"] in {"manual", "filter"}:
+        raise ValueError("Nos modos Manual e Filtro, use a exportação de XML no estúdio.")
     serialized = json.dumps({**config, "name": item["name"], "fileIndex": item["file_index"]}, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     ps1 = PS_ENGINE.replace("__CONFIG_B64__", base64.b64encode(serialized).decode("ascii")).encode("utf-8")
     bat = BAT.encode("ascii")

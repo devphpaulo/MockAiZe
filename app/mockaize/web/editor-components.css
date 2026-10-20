@@ -114,3 +114,32 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .length-settings>.length-field>input,.length-settings>.length-field>select{display:block;height:40px;width:100%;min-width:0;margin:0}
 .length-hint{margin:8px 0 16px}
 @media(max-width:360px){.length-settings{grid-template-columns:minmax(0,1fr)}#inspector .length-settings>.length-field>label{min-height:16px}}
+
+/* Four operations share a baseline; group selection stops expanding across the page. */
+.mode-row{grid-template-columns:344px minmax(160px,560px) 144px max-content;justify-content:start}
+.mode-row>div,.filter-head>div{min-width:0}
+.mode-row .segmented,.filter-head .segmented,.manual-head-controls .segmented{width:100%}
+.manual-head-controls{grid-template-columns:344px minmax(0,1fr) auto}
+.filter-head{display:grid;grid-template-columns:344px minmax(160px,560px) minmax(200px,280px) max-content;gap:16px;align-items:end;margin-top:24px}
+.filter-control{display:grid;gap:8px;min-width:0}
+.filter-control>label{margin:0;line-height:16px}
+.filter-control>input,.filter-control>select,.filter-head>.primary{height:40px;min-height:40px;width:100%;margin:0}
+.filter-mode #editorToolbar{display:block;max-height:280px;overflow:auto}
+.filter-builder{display:grid;gap:16px;width:100%}
+.filter-builder-head{display:grid;grid-template-columns:minmax(160px,280px) minmax(160px,320px) auto;gap:16px;align-items:end;justify-content:start}
+.filter-conditions{display:grid;gap:16px}
+.filter-condition{display:grid;grid-template-columns:minmax(160px,2fr) minmax(160px,1fr) minmax(120px,1fr) 40px;gap:16px;align-items:end}
+.filter-condition>button{height:40px}
+.filter-mode .connection-gap,.filter-mode .connections{display:none}
+.filter-mode .code-pair{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.filter-mode .output-panel{border-left:1px solid var(--border)}
+.filter-xml{font:12px/24px Consolas,monospace;white-space:pre;margin:16px;color:var(--code-value);tab-size:2}
+.filter-xml .xml-tag{color:var(--code-tag)}
+@media(max-width:1200px){.mode-row{grid-template-columns:344px minmax(160px,1fr) 144px}.mode-row>#generateButton{grid-column:3}.filter-head{grid-template-columns:344px minmax(160px,1fr)}.manual-head-controls{grid-template-columns:minmax(0,1fr) auto}}
+@media(max-width:800px){.mode-row,.filter-head{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.mode-row>.operation-field,.filter-head>.operation-field{grid-column:1/-1}.mode-row>#generateButton{grid-column:auto}.filter-condition{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.filter-condition>.filter-control:first-child{grid-column:1/-1}.filter-builder-head{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media(max-width:600px){.filter-mode .code-pair{grid-template-columns:minmax(0,1fr)}.filter-head,.filter-builder-head,.mode-row{grid-template-columns:minmax(0,1fr)}.filter-head>*,.mode-row>*{grid-column:1/-1}.filter-mode #editorToolbar{max-height:360px}.manual-head-controls{grid-template-columns:minmax(0,1fr)}}
+
+@media(max-width:850px){.mode-row>.group-field{grid-row:2}.mode-row>.count-field{grid-row:3;grid-column:1}.mode-row>.primary{grid-row:3;grid-column:2}}
+@media(max-width:600px){.mode-row>.primary{grid-row:4;grid-column:1}.mode-row>.count-field{grid-column:1}}
+
+@media(max-width:850px){.filter-mode .workspace{overflow-y:auto}.filter-mode .work-area{flex:none;min-height:480px}.filter-mode #editorToolbar{max-height:280px;flex-shrink:0}}

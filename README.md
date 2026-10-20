@@ -15,7 +15,7 @@ MockAíZé é um gerador local de mocks XML para Windows. Ele permite importar u
 
 - **100% local** — XMLs, configurações, SQLite, snapshots e exports ficam em `Documentos\\MockAíZé`.
 - **Estúdio visual** — XML de entrada e saída lado a lado, vínculos por arrasto, linhas de conexão e inspetor de campos.
-- **Operações completas** — Retorno, Novos registros e preenchimento Manual com paginação de registros.
+- **Operações completas** — Retorno, Novos registros, preenchimento Manual e Filtro, com paginação de registros.
 - **Fórmulas reutilizáveis** — datas, valores aleatórios, sequenciais, concatenação, soma por grupos e cópia de regras entre campos.
 - **Executável portátil** — um único `.exe` para Windows, gerado pelo GitHub Actions.
 - **Privacidade total** — não usa `%AppData%`, `%LocalAppData%` nem serviços remotos para armazenar o produto.
@@ -43,11 +43,13 @@ O aplicativo abre a interface no navegador padrão e permanece disponível na ba
 
 1. Crie ou selecione um workspace.
 2. Cole ou importe o XML de entrada.
-3. Escolha **Retorno**, **Novos registros** ou **Manual**.
+3. Escolha **Retorno**, **Novos registros**, **Manual** ou **Filtro**.
 4. Mapeie os campos e configure fórmulas no painel lateral ou no modal.
 5. Gere, revise e exporte o XML.
 
 O modo Manual começa com um registro, permite adicionar outros por páginas e exporta somente os registros confirmados.
+
+Em **Filtro**, selecione o grupo do XML de entrada e combine condições de presença, ausência ou valor de campos. Escolha **Todas (E)** ou **Qualquer (OU)** e mantenha ou exclua os grupos correspondentes. **Aplicar filtro** salva as condições e mostra a prévia paginada, preservando os cabeçalhos marcados e a estrutura externa ao grupo. **Exportar XML** baixa o documento filtrado completo, inclusive quando nenhum grupo permanece. As condições e o XML de entrada ficam salvos separadamente das demais operações. A exportação PS1 + BAT continua disponível para Retorno e Novos registros.
 
 Em **Retorno**, use **+ Adicionar retorno** para criar outros modelos XML, cada um com seus vínculos, fórmulas, cabeçalhos e nome de arquivo. O seletor abaixo do XML de saída permite alternar o modelo em edição, renomear e excluir com confirmação. Em **Retornos**, no topo, marque os modelos desejados antes de gerar: um modelo é exportado como XML; vários são baixados juntos em um ZIP. A quantidade fica ao lado de **Gerar** e, no retorno, corresponde aos registros da entrada.
 
