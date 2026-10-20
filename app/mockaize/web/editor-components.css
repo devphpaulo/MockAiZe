@@ -109,7 +109,8 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 #inspector .formula-sample-card button{justify-self:start;margin-top:0;min-height:32px;height:32px;background:#1ed760;border-color:#1ed760;color:#08160d}
 #inspector .inspector-footer button{flex:1 1 0;width:0;min-width:0;height:40px;min-height:40px;padding:8px 12px;line-height:16px;font-size:12px}
 .length-settings{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;gap:8px}
-#inspector .length-settings .form-field{margin-bottom:0;min-width:0}.length-settings label{min-height:32px;display:flex;align-items:end}
-.length-settings input,.length-settings select{height:40px;width:100%;min-width:0}
+.length-settings>.length-field{display:flex;flex-direction:column;gap:8px;min-width:0;margin:0}
+#inspector .length-settings>.length-field>label{display:flex;align-items:end;min-height:32px;margin:0;font-size:12px;line-height:16px;font-weight:500}
+.length-settings>.length-field>input,.length-settings>.length-field>select{display:block;height:40px;width:100%;min-width:0;margin:0}
 .length-hint{margin:8px 0 16px}
-@media(max-width:360px){.length-settings{grid-template-columns:minmax(0,1fr)}.length-settings label{min-height:16px}}
+@media(max-width:360px){.length-settings{grid-template-columns:minmax(0,1fr)}#inspector .length-settings>.length-field>label{min-height:16px}}
