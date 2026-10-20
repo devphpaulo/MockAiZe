@@ -193,3 +193,15 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .filter-expression>strong{font-size:12px;line-height:16px}
 .filter-expression>code{font:12px/20px Consolas,monospace;color:var(--green);overflow-wrap:anywhere}
 .filter-expression>.hint{margin:0}
+
+/* Presets live beside the realtime badge, above the scrolling filter fields. */
+.filter-mode .pane-head{height:112px;min-height:112px}
+.filter-mode .pane-subtitle{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.filter-mode .pane-subtitle>.inline-badge{font-size:12px;line-height:16px;min-height:24px}
+.filter-preset-header{display:flex;align-items:center;gap:8px;padding:0;border:0;margin-left:auto;min-width:0;flex:0 1 304px}
+.filter-preset-header>.return-combobox{min-width:128px;flex:1}
+.filter-preset-header .return-combobox-trigger{height:32px;min-height:32px;font-size:12px;padding:4px 8px}
+.filter-preset-header .filter-preset-actions{flex:none;flex-wrap:nowrap;gap:4px}
+.filter-preset-header .filter-preset-actions>button{width:24px;height:24px;min-height:24px;padding:4px;border-radius:4px}
+.filter-preset-actions svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+@container(max-width:520px){.filter-mode .pane-head{height:auto;min-height:112px}.filter-mode .pane-subtitle{flex-wrap:wrap}.filter-preset-header{flex-basis:100%;max-width:100%}}
