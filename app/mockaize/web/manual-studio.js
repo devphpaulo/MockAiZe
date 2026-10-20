@@ -2,13 +2,12 @@
 globalThis.ManualStudio=(()=>{
  'use strict';
  function create(o){
-  const {state,X,E,h}=o,$=id=>document.getElementById(id);let cachedTemplate=null,cachedGroup=null,cachedCount=0,cached=null,owner=null,activeRecord=0,previewFields=new Map(),formFields=new Map(),filledCount=0;
+  const {state,X,E,h}=o,$=id=>document.getElementById(id);let cachedTemplate=null,cachedGroup=null,cachedCount=0,cachedHeaders=null,cached=null,owner=null,activeRecord=0,previewFields=new Map(),formFields=new Map(),filledCount=0;
   const data=()=>state.draft.manual;
+  function manualGroups(doc){return X.recordGroups(doc,state.draft.headersByMode?.new||[]).filter(group=>X.resolve(doc,group.key)!==doc.documentElement);}
   function chooseGroup(doc,preferred=''){
-   const node=preferred&&X.resolve(doc,preferred);
-   if(node?.nodeType===1&&node!==doc.documentElement&&node.children.length)return X.key(X.records(doc,preferred)[0]);
-   const groups=X.groups(doc).filter(g=>{const n=X.resolve(doc,g.key);return n!==doc.documentElement&&n.children.length;});
-   return groups.find(g=>g.count>1)?.key||groups.find(g=>!/cabecalho|header|^bcarq$/i.test(g.name)&&Array.from(X.resolve(doc,g.key).children).some(child=>!child.children.length))?.key||groups[0]?.key||'';
+   const groups=manualGroups(doc),existing=groups.find(group=>group.key===preferred);
+   return existing?.key||groups.find(group=>group.count>1)?.key||groups.find(group=>!/cabecalho|header|^bcarq$/i.test(group.name)&&Array.from(X.resolve(doc,group.key).children).some(child=>!child.children.length))?.key||groups[0]?.key||'';
   }
   function ensure(xml){
    state.draft.manual??={templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:''};
@@ -18,13 +17,13 @@ globalThis.ManualStudio=(()=>{
    if(owner!==manual){owner=manual;activeRecord=0;}
   }
   function model(){
-   const {templateXml,recordGroup,recordCount}=data();
-   if(templateXml!==cachedTemplate||recordGroup!==cachedGroup||recordCount!==cachedCount){
+   const {templateXml,recordGroup,recordCount}=data(),headers=JSON.stringify(state.draft.headersByMode?.new||[]);
+   if(templateXml!==cachedTemplate||recordGroup!==cachedGroup||recordCount!==cachedCount||headers!==cachedHeaders){
     const source=X.parse(templateXml),doc=X.project(source,recordGroup),record=recordGroup&&X.resolve(doc,recordGroup);
     if(record){let last=record;for(let i=1;i<recordCount;i++){const copy=record.cloneNode(true);last.after(copy);last=copy;}}
     const fields=X.fields(doc);
-    cached={doc,fields,groups:X.groups(source).filter(g=>{const n=X.resolve(source,g.key);return n!==source.documentElement&&n.children.length;}),byKey:new Map(fields.map(f=>[f.key,f])),byNode:new WeakMap(fields.map(f=>[f.node,f]))};
-    cachedTemplate=templateXml;cachedGroup=recordGroup;cachedCount=recordCount;
+    cached={doc,fields,groups:manualGroups(source),byKey:new Map(fields.map(f=>[f.key,f])),byNode:new WeakMap(fields.map(f=>[f.node,f]))};
+    cachedTemplate=templateXml;cachedGroup=recordGroup;cachedCount=recordCount;cachedHeaders=headers;
    }
    activeRecord=Math.max(0,Math.min(activeRecord,recordCount-1));return cached;
   }
@@ -78,7 +77,7 @@ globalThis.ManualStudio=(()=>{
   function dateValid(value,mask){const tokens=[],escape=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');const regex=mask.replace(/'([^']*)'|yyyy|fff|zzz|yy|MM|dd|HH|mm|ss|./g,(token,literal)=>{if(literal!==undefined)return escape(literal);if(['yyyy','yy','MM','dd','HH','mm','ss','fff','zzz'].includes(token)){tokens.push(token);return token==='zzz'?'([+-]\\d{2}:\\d{2})':'(\\d{'+(token==='yyyy'?4:token==='fff'?3:2)+'})';}return escape(token);});const match=value.match(new RegExp('^'+regex+'$'));if(!match)return false;const parts=Object.fromEntries(tokens.map((t,i)=>[t,match[i+1]]));for(const [key,min,max] of [['MM',1,12],['dd',1,31],['HH',0,23],['mm',0,59],['ss',0,59]])if(parts[key]!==undefined&&(Number(parts[key])<min||Number(parts[key])>max))return false;if(parts.MM&&parts.dd&&(parts.yyyy||parts.yy)){const year=Number(parts.yyyy||'20'+parts.yy),date=new Date(Date.UTC(year,Number(parts.MM)-1,Number(parts.dd)));if(date.getUTCMonth()!==Number(parts.MM)-1||date.getUTCDate()!==Number(parts.dd))return false;}return true;}
   function errorFor(f){const value=data().values[f.key]??'',g=guide(f);if(!value)return g.required?'Preencha este campo obrigatório.':'';if(g.length&&Array.from(value).length!==Number(g.length))return 'Informe exatamente '+g.length+' caracteres.';if(g.kind==='cpf'&&!E.validCPF(value))return 'CPF inválido: confira os dígitos verificadores.';if(g.kind==='cnpj'&&!E.validCNPJ(value))return 'CNPJ inválido: confira os caracteres e dígitos verificadores.';if(g.kind==='date'&&!dateValid(value,g.mask))return 'Use uma data/hora válida no formato '+g.mask+'.';if(g.kind==='monthyear'&&(!/^\d{6}$/.test(value)||Number(value.slice(0,2))<1||Number(value.slice(0,2))>12))return 'Use MMaaaa com um mês de 01 a 12.';if(g.kind==='uf'&&!Object.hasOwn(E.locations,value))return 'Informe uma UF válida, em maiúsculas.';if(g.kind==='integer'&&!/^\d+$/.test(value))return 'Use somente dígitos.';if(g.kind==='decimal'&&!/^[+-]?\d+(?:\.\d+)?$/.test(value))return 'Use um número decimal com ponto.';return '';}
   function controls(){return `<div class="segmented"><button data-mode="return">Retorno</button><button data-mode="new">Novos registros</button><button data-mode="manual" class="active">Manual</button></div>`;}
-  function head(){const count=data().templateXml?model().fields.length:0;$('pageHead').innerHTML=`<div class="heading-row"><div><h1>${h(state.draft.name)}</h1><p class="subline">Preenchimento manual · cabeçalho e registros · prévia em tempo real</p></div></div><div class="manual-head-controls"><div><label>Operação</label>${controls()}</div><label class="manual-filename">Nome do XML<input id="manualFilename" value="${h(data().fileName||state.draft.name+'_manual.xml')}" aria-label="Nome do XML manual"></label><button data-action="manual-confirm" class="primary">Confirmar preenchimento</button></div>`;$('editorToolbar').innerHTML=`<button class="small" data-action="manual-model">Colar / editar modelo</button><button class="small" data-action="manual-import">Importar XML</button>${data().templateXml?`<label class="manual-record-group" for="manualRecordGroup">Grupo do registro<select id="manualRecordGroup">${model().groups.map(g=>`<option value="${h(g.key)}" ${g.key===data().recordGroup?'selected':''}>${h(g.display)}</option>`).join('')}</select></label>`:''}<span class="hint">${data().recordCount} registro(s) · ${count} campo(s) no arquivo</span>`;}
+  function head(){const count=data().templateXml?model().fields.length:0;$('pageHead').innerHTML=`<div class="heading-row"><div><h1>${h(state.draft.name)}</h1><p class="subline">Preenchimento manual · cabeçalho e registros · prévia em tempo real</p></div></div><div class="manual-head-controls"><div><label>Operação</label>${controls()}</div><div class="manual-filename"><label for="manualFilename">Nome do XML</label><input id="manualFilename" value="${h(data().fileName||state.draft.name+'_manual.xml')}" aria-label="Nome do XML manual"></div><button data-action="manual-confirm" class="primary">Confirmar preenchimento</button></div>`;$('editorToolbar').innerHTML=`<button class="small" data-action="manual-model">Colar / editar modelo</button><button class="small" data-action="manual-import">Importar XML</button>${data().templateXml?`<label class="manual-record-group" for="manualRecordGroup">Grupo do registro<select id="manualRecordGroup">${model().groups.map(g=>`<option value="${h(g.key)}" ${g.key===data().recordGroup?'selected':''}>${h(g.display)}</option>`).join('')}</select></label>`:''}<span class="hint">${data().recordCount} registro(s) · ${count} campo(s) no arquivo</span>`;}
   // The full preview is built once; typing changes only its existing value span.
   function preview(){
    previewFields.clear();if(!data().templateXml)return;

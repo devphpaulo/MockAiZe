@@ -111,6 +111,13 @@ globalThis.MockXml=(()=>{
  function fields(doc){const out=[];function walk(node){for(const attr of Array.from(node.attributes||[])){if(attr.namespaceURI==='http://www.w3.org/2000/xmlns/'||attr.name==='xmlns')continue;out.push({key:key(attr),display:display(key(attr)),name:attr.localName,ns:attr.namespaceURI||'',value:attr.value,node:attr});}if(!node.children.length)out.push({key:key(node),display:display(key(node)),name:node.localName,ns:node.namespaceURI||'',value:node.textContent,node});for(const child of node.children)walk(child);}walk(doc.documentElement);return out;}
  function nodes(doc){const out=[];function walk(node){const path=key(node);out.push({key:path,display:display(path),name:node.localName,ns:node.namespaceURI||'',value:node.textContent,isGroup:!!node.children.length,node});for(const attr of Array.from(node.attributes||[])){if(attr.namespaceURI==='http://www.w3.org/2000/xmlns/'||attr.name==='xmlns')continue;const path=key(attr);out.push({key:path,display:display(path),name:attr.localName,ns:attr.namespaceURI||'',value:attr.value,isGroup:false,node:attr});}for(const child of node.children)walk(child);}walk(doc.documentElement);return out;}
  function groups(doc){const out=[];function walk(node){if(siblings(node)[0]===node){out.push({key:key(node),name:node.localName,display:display(key(node)),count:siblings(node).length,depth:trail(node).length});}for(const child of node.children)walk(child);}walk(doc.documentElement);return out.sort((a,b)=>(b.count>1)-(a.count>1)||a.depth-b.depth);}
+ function recordGroups(doc,headers=[]){
+  const paths=headers.map(path=>JSON.parse(path));
+  return groups(doc).filter(group=>{
+   const node=resolve(doc,group.key);
+   return !!node?.children.length&&!paths.some(header=>hasPrefix(JSON.parse(group.key),header));
+  });
+ }
  function records(doc,path){const node=resolve(doc,path);return node?siblings(node):[];}
  function project(doc,path,index=0){const copy=doc.cloneNode(true);const items=records(copy,path);if(items.length>1){const keep=items[Math.min(index,items.length-1)];for(const item of items)if(item!==keep)item.remove();}return copy;}
  function setValue(node,value){
@@ -285,5 +292,5 @@ globalThis.MockXml=(()=>{
   if(!node)throw Error('O campo não foi encontrado na saída da prévia.');
   return node.nodeType===2?node.value:node.textContent;
  }
- return{parse,fields,nodes,groups,groupValues,resolve,records,project,display,key,serialize,automap,outputPath,templatePath,generate,generateAsync,testFormula};
+ return{parse,fields,nodes,groups,recordGroups,groupValues,resolve,records,project,display,key,serialize,automap,outputPath,templatePath,generate,generateAsync,testFormula};
 })();
