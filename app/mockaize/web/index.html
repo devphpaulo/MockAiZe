@@ -24,11 +24,11 @@
   <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
 </defs></svg>
 <div class="shell">
-  <aside class="sidebar side" aria-label="Workspaces e configurações">
-    <div class="brand"><img class="brandmark" src="/assets/mockaize-favicon.png" alt=""><span>MockAíZé</span></div>
-    <div class="sidebar-workspace"><p class="section-caption">WORKSPACE</p><label class="workspace-frame"><svg class="lib-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><select id="homeWorkspaceSelect" aria-label="Filtrar por workspace"><option value="">Todos os workspaces</option></select></label></div>
-    <nav><p class="section-caption">PASTAS E ARQUIVOS</p><div id="tree" class="config-list" aria-label="Hierarquia do projeto"></div><button class="ghost organize-link" id="organizeLibrary" type="button"><svg class="lib-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-7-7h14"/></svg>Organizar biblioteca</button></nav>
-    <div class="sidebar-bottom"><a class="home-link current-home" href="#workspaceHome"><svg class="icon"><use href="#i-home"/></svg><span>Visão geral</span></a><button class="export-sidebar" id="exportPs" type="button" disabled><svg class="icon"><use href="#i-download"/></svg><span>Exportar PS1 + BAT</span></button><span class="storage-note">Armazenamento local<br><strong>Documentos\MockAíZé</strong></span></div>
+  <aside class="side">
+    <a class="brand" href="#workspaceHome" aria-label="MockAíZé, início"><img src="/assets/mockaize-favicon.png" alt=""><span>MockAíZé<small>Seu estúdio de mocks</small></span></a>
+    <a class="home-link" href="#workspaceHome"><svg class="icon"><use href="#i-home"/></svg>Visão geral<span class="nav-dot"></span></a>
+    <button class="home-link" id="organizeLibrary" type="button"><svg class="icon"><use href="#i-folder"/></svg>Organizar diretórios</button><section class="library"><div class="library-heading"><svg class="icon"><use href="#i-folder"/></svg><h2>Sua biblioteca</h2></div><nav id="tree" class="tree" aria-label="Hierarquia do projeto"></nav><div id="empty" class="empty" hidden><span class="empty-icon"><svg class="icon"><use href="#i-folder"/></svg></span><strong>Espaço para suas ideias.</strong><p>Crie um workspace para começar a organizar seus mocks.</p></div></section>
+    <div class="side-foot"><div class="export-copy"><svg class="icon"><use href="#i-download"/></svg><strong>Leve seus mocks com você</strong></div><p>Exporte a variação selecionada e execute com PowerShell.</p><button class="export-sidebar" id="exportPs" type="button" disabled>Exportar PS1 + BAT<svg class="icon"><use href="#i-arrow"/></svg></button><span class="storage-note">Seus arquivos em<br><strong>Documentos\MockAíZé</strong></span></div>
   </aside>
   <main class="main" id="workspaceHome">
     <header class="top"><div class="page-location"><svg class="icon"><use href="#i-grid"/></svg><span>Seu estúdio</span><span class="location-separator">/</span><h1>Visão geral</h1></div><div class="top-actions"><span class="status"><span></span>Armazenamento local</span><button id="themeButton" class="theme-toggle" type="button" aria-label="Alternar tema" title="Alternar tema"></button></div></header>

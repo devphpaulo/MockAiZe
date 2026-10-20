@@ -5,14 +5,12 @@
  function notify(message){UiMotion.toast($('toast'),message);}
  async function api(url,method='GET',body){const response=await fetch(url,{method,credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},...(body?{body:JSON.stringify(body)}:{})});const result=await response.json();if(!response.ok)throw Error(result.error||'Não foi possível concluir a operação.');return result;}
  function showLibrary(open){document.querySelectorAll('.hero,.overview,.create-panel,.structure-guide').forEach(el=>el.hidden=open);$('libraryManager').hidden=!open;document.querySelector('.page-location h1').textContent=open?'Organizar diretórios':'Visão geral';const url=new URL(location);url.searchParams.set('view',open?'library':'home');history.replaceState(null,'',url);}
- const libraryNodes=boot.library.nodes,libraryById=new Map(libraryNodes.map(item=>[item.id,item]));let initialWorkspace=libraryById.get(requestedId);while(initialWorkspace&&initialWorkspace.kind!=='workspace')initialWorkspace=libraryById.get(initialWorkspace.parent_id);
- const library=LibraryUI.create({nodes:libraryNodes,selected:requestedId,workspaceId:initialWorkspace?.id,notify,onOpen:id=>{location.href='/studio?id='+encodeURIComponent(id);},onSelect:()=>showLibrary(true),onRender:state=>{
-  const selector=$('homeWorkspaceSelect'),workspaceOptions=state.nodes.filter(node=>node.kind==='workspace').sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));selector.replaceChildren(new Option('Todos os workspaces',''),...workspaceOptions.map(item=>new Option(item.name,item.id)));selector.value=library.state.treeWorkspace||'';
-  $('exportPs').disabled=library?.node(state.selected)?.kind!=='variation';
+ const library=LibraryUI.create({notify,onOpen:id=>{location.href='/studio?id='+encodeURIComponent(id);},onSelect:()=>showLibrary(true),onRender:state=>{
+  $('empty').hidden=state.nodes.length>0;$('exportPs').disabled=library?.node(state.selected)?.kind!=='variation';
   $('counts').innerHTML=[['workspace','Workspace','Workspaces'],['folder','Pasta','Pastas'],['variation','Arquivo / variação','Arquivos / variações']].map(([kind,single,plural])=>{const count=state.nodes.filter(n=>n.kind===kind).length;return `<div class="metric"><strong>${String(count).padStart(2,'0')}</strong><span>${count===1?single:plural}</span></div>`;}).join('');
   const parent=library?.node(state.selected);$('selection').textContent=$('kind').value==='workspace'?'Workspace é a pasta principal.':parent?`Criar dentro de “${parent.kind==='variation'?library.path(parent.parent_id):library.path(parent.id)}”.`:'Selecione um workspace ou uma pasta na lateral.';
  }});
- library.mountTree($('tree'));library.mountManager($('libraryManager'));$('homeWorkspaceSelect').onchange=event=>library.setTreeWorkspace(event.target.value);
+ library.mountTree($('tree'));library.mountManager($('libraryManager'));
  document.querySelectorAll('.home-link,.brand').forEach(el=>el.addEventListener('click',()=>showLibrary(false)));
  $('organizeLibrary').onclick=()=>showLibrary(true);
  $('kind').onchange=()=>library.render();
