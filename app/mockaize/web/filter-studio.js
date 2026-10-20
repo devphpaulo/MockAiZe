@@ -20,10 +20,14 @@ globalThis.FilterStudio=(()=>{
   let timer=null,cachedXml=null,cachedDoc=null,owner=null,previous=false,previewError='',exporting=false;
   const folds={current:{xml:null,closed:new Set()},previous:{xml:null,closed:new Set()}};
   const data=()=>state.draft.filter;
+  const presets=()=>state.draft.filterPresets;
+  const activePreset=()=>presets().find(p=>p.id===state.draft.activeFilterPresetId);
+  let savingPreset=false;
   function headers(){return [...new Set([...(state.draft.headersByMode?.new||[]),...(state.draft.headersByMode?.return||[])])];}
   function source(){const xml=o.inputText();if(xml!==cachedXml){cachedXml=xml;cachedDoc=null;try{cachedDoc=X.parse(xml);}catch{}}return cachedDoc;}
   function ensure(){
    state.draft.filter??={group:'',action:'keep',match:'all',conditions:[],fileName:''};
+   state.draft.filterPresets??=[];state.draft.activeFilterPresetId??='';
    if(owner!==state.draft.id+'\n'+o.inputText()){owner=state.draft.id+'\n'+o.inputText();previous=false;}
    const f=data(),doc=source();
    if(doc&&!f.group){const groups=F.groups(doc,headers());f.group=groups.find(g=>g.key===state.draft.inputGroup)?.key||groups.find(g=>g.count>1)?.key||groups[0]?.key||'';}
@@ -36,7 +40,49 @@ globalThis.FilterStudio=(()=>{
   }
   function builder(){
    const f=data(),doc=source(),groups=doc?F.groups(doc,headers()):[],fields=doc&&f.group?F.fields(doc,f.group):[];
-   return `<div class="filter-builder">${select('filterGroup','Grupo a filtrar',[['','Selecione um grupo'],...groups.map(g=>[g.key,g.display+' · '+g.count+' ocorrência(s)'])],f.group,'data-filter="group"')}${select('filterAction','Ação',[['keep','Manter grupos correspondentes'],['remove','Excluir grupos correspondentes']],f.action,'data-filter="action"')}${select('filterMatch','Combinar condições',[['all','Todas as condições (E)'],['any','Qualquer condição (OU)']],f.match,'data-filter="match"')}<div class="filter-conditions">${f.conditions.map((c,i)=>`<fieldset class="filter-condition"><legend>Condição ${i+1}</legend>${select('filterField'+i,'Campo ou grupo',[['','Selecione um campo'],...fields.map(n=>[n.key,n.display])],c.path,`data-filter-condition="path" data-index="${i}"`)}${select('filterOperator'+i,'Condição',Object.entries(F.operators),c.operator,`data-filter-condition="operator" data-index="${i}"`)}<div class="filter-control"><label for="filterValue${i}">Valor</label><input id="filterValue${i}" data-filter-condition="value" data-index="${i}" maxlength="2000" value="${h(c.value)}" ${['exists','missing','empty','notEmpty'].includes(c.operator)?'disabled placeholder="Não se aplica"':''}></div><button class="ghost small" data-filter-action="remove" data-index="${i}" aria-label="Remover condição ${i+1}">Remover condição</button></fieldset>`).join('')||'<p class="hint">Sem condições, o documento completo é mantido.</p>'}</div><button class="small soft" data-filter-action="add" ${!fields.length||f.conditions.length>=100?'disabled':''}>＋ Adicionar condição</button><p class="hint">Cada ocorrência do grupo é avaliada separadamente. A prévia atualiza enquanto você edita. Os valores diferenciam maiúsculas de minúsculas.</p><p id="filterError" class="callout error" role="status" ${previewError?'':'hidden'}>${h(previewError)}</p></div>`;
+   const selected=activePreset(),modified=selected&&JSON.stringify(selected.filter)!==JSON.stringify(data());
+   return `<div class="filter-builder"><div class="filter-preset-block"><label for="filterPresetTrigger">Preset do filtro${modified?' · alterações locais':''}</label><div id="filterPresetCombobox" class="return-combobox"></div><div class="filter-preset-actions"><button class="small soft" data-filter-action="save-preset" ${selected&&!modified?'disabled':''}>${selected?'Salvar preset':'Salvar como preset'}</button><button class="ghost small" data-filter-action="rename-preset" ${selected?'':'disabled'}>Renomear</button><button class="ghost small danger" data-filter-action="delete-preset" ${selected?'':'disabled'}>Excluir</button></div></div>${select('filterGroup','Grupo a filtrar',[['','Selecione um grupo'],...groups.map(g=>[g.key,g.display+' · '+g.count+' ocorrência(s)'])],f.group,'data-filter="group"')}${select('filterAction','Ação',[['keep','Manter grupos correspondentes'],['remove','Excluir grupos correspondentes']],f.action,'data-filter="action"')}${select('filterMatch','Combinar condições',[['all','Todas as condições (E)'],['any','Qualquer condição (OU)']],f.match,'data-filter="match"')}<div class="filter-conditions">${f.conditions.map((c,i)=>`<fieldset class="filter-condition"><legend>Condição ${i+1}</legend>${select('filterField'+i,'Campo ou grupo',[['','Selecione um campo'],...fields.map(n=>[n.key,n.display])],c.path,`data-filter-condition="path" data-index="${i}"`)}${select('filterOperator'+i,'Condição',Object.entries(F.operators),c.operator,`data-filter-condition="operator" data-index="${i}"`)}<div class="filter-control"><label for="filterValue${i}">Valor</label><input id="filterValue${i}" data-filter-condition="value" data-index="${i}" maxlength="2000" value="${h(c.value)}" ${['exists','missing','empty','notEmpty'].includes(c.operator)?'disabled placeholder="Não se aplica"':''}></div><button class="ghost small" data-filter-action="remove" data-index="${i}" aria-label="Remover condição ${i+1}">Remover condição</button></fieldset>`).join('')||'<p class="hint">Sem condições, o documento completo é mantido.</p>'}</div><button class="small soft" data-filter-action="add" ${!fields.length||f.conditions.length>=100?'disabled':''}>＋ Adicionar condição</button><p class="hint">Cada ocorrência do grupo é avaliada separadamente. A prévia atualiza enquanto você edita. Os valores diferenciam maiúsculas de minúsculas.</p><p id="filterError" class="callout error" role="status" ${previewError?'':'hidden'}>${h(previewError)}</p></div>`;
+  }
+  function mountPresets(){
+   const host=$('filterPresetCombobox');if(!host)return;
+   ReturnCombobox.mount(host,{idPrefix:'filterPreset',items:[{id:'',name:'Personalizado (sem preset)'},...presets()],value:state.draft.activeFilterPresetId,
+    text:{label:'Preset do filtro',placeholder:'Selecione um preset',search:'Pesquisar presets…',searchLabel:'Pesquisar presets',list:'Presets de filtros',empty:'Nenhum preset encontrado.',add:'Adicionar preset'},
+    onChange:id=>{if(savingPreset)return;o.remember();state.draft.activeFilterPresetId=id;const selected=activePreset();if(selected)state.draft.filter=structuredClone(selected.filter);o.changed();o.render();},onAdd:()=>presetNameDialog()});
+  }
+  function validPresetName(value,exceptId=''){
+   const name=value.trim();if(!name||name.length>120)throw Error('Informe um nome de preset com até 120 caracteres.');
+   if(presets().some(p=>p.id!==exceptId&&p.name.toLocaleLowerCase()===name.toLocaleLowerCase()))throw Error('Já existe um preset com esse nome.');
+   return name;
+  }
+  function checkPreset(){
+   if(data().conditions.some(c=>!c.path))throw Error('Selecione o campo de cada condição antes de salvar o preset.');
+   MockEngine.filename(data().fileName||'filtrado.xml');
+  }
+  async function persistPreset(change){
+   if(savingPreset)return false;
+   savingPreset=true;const before={presets:structuredClone(presets()),active:state.draft.activeFilterPresetId};
+   try{o.remember();change();o.changed();o.render();if(!await o.save()){state.draft.filterPresets=before.presets;state.draft.activeFilterPresetId=before.active;o.changed(false);o.render();return false;}return true;}
+   finally{savingPreset=false;}
+  }
+  function presetNameDialog(rename=false){
+   if(savingPreset)return;
+   const selected=rename?activePreset():null;if(rename&&!selected)return;
+   if(!rename&&presets().length>=50)return o.notify('Cada arquivo aceita até 50 presets.');
+   o.openModal(rename?'Renomear preset':'Salvar preset de filtro','O preset guarda o grupo, as condições, a ação e o nome do XML.',`<div class="form-field"><label for="filterPresetName">Nome do preset</label><input id="filterPresetName" maxlength="120" value="${h(selected?.name||'')}" placeholder="Ex.: Correspondentes de Recife"></div>`,[
+    {text:'Cancelar',run:o.closeModal},{text:rename?'Renomear':'Salvar preset',primary:true,run:async()=>{
+     const name=validPresetName($('filterPresetName').value,selected?.id);if(!rename)checkPreset();
+     const ok=await persistPreset(()=>{if(rename)selected.name=name;else{const preset={id:crypto.randomUUID(),name,filter:structuredClone(data())};presets().push(preset);state.draft.activeFilterPresetId=preset.id;}});
+     if(ok){o.closeModal();o.notify(rename?'Preset renomeado.':'Preset salvo.');}
+    }}]);
+  }
+  async function savePreset(){
+   const selected=activePreset();if(!selected)return presetNameDialog();
+   try{checkPreset();if(await persistPreset(()=>{selected.filter=structuredClone(data());}))o.notify('Preset atualizado.');}catch(error){o.notify(error.message);}
+  }
+  function deletePreset(){
+   const selected=activePreset();if(!selected)return;
+   o.openModal('Excluir preset?',selected.name,'<p>O preset será excluído. Os filtros atuais continuam disponíveis para edição.</p>',[
+    {text:'Cancelar',run:o.closeModal},{text:'Excluir preset',danger:true,run:async()=>{if(await persistPreset(()=>{state.draft.filterPresets=presets().filter(p=>p.id!==selected.id);state.draft.activeFilterPresetId='';})){o.closeModal();o.notify('Preset excluído.');}}}]);
   }
   function compute(){
    if(timer){clearTimeout(timer);timer=null;}
@@ -77,7 +123,7 @@ globalThis.FilterStudio=(()=>{
   function render(){
    ensure();compute();
    $('inputPanel').innerHTML='<div class="pane-head"><div class="pane-title-row"><span class="pane-title">Filtros</span><div class="pane-actions"><button data-action="edit-input">Colar / editar XML</button><button data-action="upload-input">Importar</button></div></div><div class="pane-subtitle"><span class="inline-badge">Atualização em tempo real</span></div></div><div class="code-scroll filter-form" id="inputCode">'+builder()+'</div>';
-   $('inputPanel').classList.remove('mobile-hidden');$('outputPanel').classList.remove('mobile-hidden');output();
+   $('inputPanel').classList.remove('mobile-hidden');$('outputPanel').classList.remove('mobile-hidden');mountPresets();output();
   }
   function footer(){const snap=state.snapshot,ready=snap&&!state.stale;$('bottomBar').innerHTML=`<div class="bottom-summary" role="status">${snap?snap.count+' de '+snap.originalCount+' grupo(s) mantido(s)':previewError||'Configure as condições no painel esquerdo.'}</div><div class="export-actions"><span class="filename-summary">${h(snap?.name||'filtrado.xml')}</span><button data-filter-action="export" data-action="export-xml" ${ready&&!exporting?'':'disabled'}>↓ Exportar XML filtrado</button></div>`;}
   function refresh(){if(state.draft?.mode!=='filter')return;compute();output();footer();}
@@ -95,6 +141,7 @@ globalThis.FilterStudio=(()=>{
    if(key){data()[key]=target.value;if(key==='group')data().conditions=[];}
    else data().conditions[Number(target.dataset.index)][prop]=target.value;
    o.changed();
+   const selected=activePreset(),save=$('inputPanel').querySelector('[data-filter-action="save-preset"]');if(save)save.disabled=!!selected&&JSON.stringify(selected.filter)===JSON.stringify(data());
    if(target.tagName==='SELECT')o.render();
    else{if(timer)clearTimeout(timer);timer=setTimeout(refresh,150);}
    return true;
@@ -103,6 +150,9 @@ globalThis.FilterStudio=(()=>{
    const button=event.target.closest('[data-filter-action]');if(!button||state.draft?.mode!=='filter')return;
    event.preventDefault();event.stopImmediatePropagation();const action=button.dataset.filterAction;
    if(action==='export'){exportXml();return;}
+   if(action==='save-preset'){savePreset();return;}
+   if(action==='rename-preset'){presetNameDialog(true);return;}
+   if(action==='delete-preset'){deletePreset();return;}
    if(action==='previous'){previous=!previous;output();return;}
    if(action==='fold'){
     const fold=previous?folds.previous:folds.current,line=Number(button.dataset.line),scroll=$('outputCode'),top=scroll.scrollTop;

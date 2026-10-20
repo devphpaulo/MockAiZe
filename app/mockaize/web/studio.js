@@ -24,7 +24,7 @@
   beforeChange:async()=>state.dirty||state.formulaDirty?await saveConfig({silent:true}):true,
   onChange:async()=>{const next=await StudioApi.bootstrap();state.book.workspaces=next.book.workspaces;const ws=state.book.workspaces.find(w=>w.configs.some(c=>c.id===state.configId));if(!ws){location.href='/?view=library';return;}state.workspaceId=ws.id;await loadConfig(state.configId);}});
  const manual=ManualStudio.create({state,X,E,h,inputText,renderXml:(doc,keyFor)=>codeMarkup(doc,'manual',keyFor),notify:toast,changed,edited:manualEdited,remember,render,save:()=>saveConfig({silent:true}),publish:snapshot=>StudioApi.publish(state.draft,snapshot),openModal,closeModal});
- const filter=FilterStudio.create({state,X,h,inputText,remember,changed,render,notify:toast,save:()=>saveConfig({silent:true}),publish:snapshot=>StudioApi.publish(state.draft,snapshot)});
+ const filter=FilterStudio.create({state,X,h,inputText,remember,changed,render,openModal,closeModal,notify:toast,save:()=>saveConfig({silent:true}),publish:snapshot=>StudioApi.publish(state.draft,snapshot)});
  function workspace(){return state.book.workspaces.find(w=>w.id===state.workspaceId)||state.book.workspaces[0];}
  function rules(){return state.draft?.rulesByMode[state.draft.mode]||{};}
  function bindingSource(rule){return rule?.sourcePath||(rule?.generator?.type==='copy'?rule.generator.path:null);}

@@ -39,7 +39,7 @@ globalThis.StudioApi = (() => {
         year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) });
   }
   function configForSave(draft) {
-    return { filter:draft.filter||{group:'',action:'keep',match:'all',conditions:[],fileName:''}, returnModels: ReturnModels.forSave(draft), activeReturnId: draft.activeReturnId, manual: draft.manual || {templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:''}, inputByMode: draft.inputByMode || {}, inputXml: draft.sourceTemplate, outputXml: draft.outputTemplate,
+    return { filterPresets:draft.filterPresets||[], activeFilterPresetId:draft.activeFilterPresetId||'', filter:draft.filter||{group:'',action:'keep',match:'all',conditions:[],fileName:''}, returnModels: ReturnModels.forSave(draft), activeReturnId: draft.activeReturnId, manual: draft.manual || {templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:''}, inputByMode: draft.inputByMode || {}, inputXml: draft.sourceTemplate, outputXml: draft.outputTemplate,
       recordCount: draft.count, fileName: draft.fileName || 'mock', mode: draft.mode,
       inputGroup: draft.inputGroup, outputGroup: draft.outputGroup, returnSource: draft.returnSource,
       baseDate: draft.baseDate, rulesByMode: draft.rulesByMode,

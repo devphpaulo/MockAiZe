@@ -219,6 +219,7 @@ def get_variation(variation_id: str) -> dict | None:
 
 
 CONFIG_DEFAULTS = {
+    "filterPresets": [], "activeFilterPresetId": "",
     "filter": {"group": "", "action": "keep", "match": "all", "conditions": [], "fileName": ""},
     "manual": {"templateXml": "", "values": {}, "confirmed": False, "fileName": "", "recordCount": 1, "recordGroup": ""},
     "inputByMode": {}, "inputXml": "", "outputXml": "", "recordCount": 1, "fileName": "mock",
@@ -304,6 +305,26 @@ def validate_formula(formula: object, depth: int = 0) -> None:
         for child in parts: validate_formula(child, depth + 1)
 
 
+def validate_filter(filters: object) -> None:
+    if not isinstance(filters, dict) or set(filters) != {"group", "action", "match", "conditions", "fileName"}:
+        raise ValueError("Configuração de filtro inválida.")
+    if filters["action"] not in ("keep", "remove") or filters["match"] not in ("all", "any"):
+        raise ValueError("Ação ou combinação de filtros inválida.")
+    if not isinstance(filters["group"], str) or not isinstance(filters["fileName"], str) or len(filters["fileName"]) > 180:
+        raise ValueError("Grupo ou nome de filtro inválido.")
+    if filters["group"]: validate_structural_path(filters["group"])
+    if not isinstance(filters["conditions"], list) or len(filters["conditions"]) > 100:
+        raise ValueError("Informe até 100 condições de filtro.")
+    for condition in filters["conditions"]:
+        if not isinstance(condition, dict) or set(condition) != {"path", "operator", "value"}:
+            raise ValueError("Condição de filtro inválida.")
+        if not isinstance(condition["path"], str) or not isinstance(condition["value"], str) or len(condition["value"]) > 2000:
+            raise ValueError("Campo ou valor de filtro inválido.")
+        if condition["path"]: validate_structural_path(condition["path"])
+        if condition["operator"] not in ("exists", "missing", "equals", "notEquals", "contains", "notContains", "empty", "notEmpty"):
+            raise ValueError("Operador de filtro inválido.")
+
+
 def normalize_config(config: object) -> dict:
     legacy = {"rules", "presence", "filename"}
     if not isinstance(config, dict) or set(config) - (set(CONFIG_DEFAULTS) | legacy):
@@ -329,24 +350,24 @@ def normalize_config(config: object) -> dict:
                 ET.fromstring(normalized[key])
             except ET.ParseError as exc:
                 raise ValueError(f"Modelo XML inválido: {exc}") from exc
-    filters = normalized["filter"]
-    if not isinstance(filters, dict) or set(filters) != {"group", "action", "match", "conditions", "fileName"}:
-        raise ValueError("Configuração de filtro inválida.")
-    if filters["action"] not in ("keep", "remove") or filters["match"] not in ("all", "any"):
-        raise ValueError("Ação ou combinação de filtros inválida.")
-    if not isinstance(filters["group"], str) or not isinstance(filters["fileName"], str) or len(filters["fileName"]) > 180:
-        raise ValueError("Grupo ou nome de filtro inválido.")
-    if filters["group"]: validate_structural_path(filters["group"])
-    if not isinstance(filters["conditions"], list) or len(filters["conditions"]) > 100:
-        raise ValueError("Informe até 100 condições de filtro.")
-    for condition in filters["conditions"]:
-        if not isinstance(condition, dict) or set(condition) != {"path", "operator", "value"}:
-            raise ValueError("Condição de filtro inválida.")
-        if not isinstance(condition["path"], str) or not isinstance(condition["value"], str) or len(condition["value"]) > 2000:
-            raise ValueError("Campo ou valor de filtro inválido.")
-        if condition["path"]: validate_structural_path(condition["path"])
-        if condition["operator"] not in ("exists", "missing", "equals", "notEquals", "contains", "notContains", "empty", "notEmpty"):
-            raise ValueError("Operador de filtro inválido.")
+    validate_filter(normalized["filter"])
+    presets = normalized["filterPresets"]
+    active_preset = normalized["activeFilterPresetId"]
+    if not isinstance(presets, list) or len(presets) > 50 or not isinstance(active_preset, str):
+        raise ValueError("Lista de presets de filtros inválida. O limite é 50 presets por arquivo.")
+    preset_ids, preset_names = set(), set()
+    for preset in presets:
+        if not isinstance(preset, dict) or set(preset) != {"id", "name", "filter"}:
+            raise ValueError("Preset de filtro inválido.")
+        identifier, name = preset["id"], preset["name"]
+        if not isinstance(identifier, str) or not 1 <= len(identifier) <= 80 or identifier in preset_ids:
+            raise ValueError("Identificador de preset inválido ou duplicado.")
+        if not isinstance(name, str) or not 1 <= len(name.strip()) <= 120 or name.strip().casefold() in preset_names:
+            raise ValueError("Nome de preset inválido ou duplicado.")
+        preset_ids.add(identifier); preset_names.add(name.strip().casefold())
+        validate_filter(preset["filter"])
+    if active_preset and active_preset not in preset_ids:
+        raise ValueError("Preset de filtro selecionado não encontrado.")
     manual = normalized["manual"]
     if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
         or not isinstance(manual["templateXml"], str) or not isinstance(manual["values"], dict)

@@ -153,3 +153,8 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 
 @media(max-width:850px){.filter-mode .workspace{overflow-y:auto}.filter-mode .work-area{flex:none;min-height:0}.filter-mode .code-pair{display:flex;flex-direction:column;overflow:visible}.filter-mode .code-workspace{overflow:visible}.filter-mode .xml-panel{flex:none;height:60vh;min-height:360px}.filter-mode .output-panel{border-left:0;border-top:1px solid var(--border)}.filter-form{padding:16px}}
 @media(max-width:600px){.filter-head{grid-template-columns:minmax(0,1fr)}}
+
+.filter-preset-block{display:grid;gap:8px;padding-bottom:24px;border-bottom:1px solid var(--border);min-width:0}
+.filter-preset-block>label{margin:0;line-height:16px}
+.filter-preset-block .return-combobox-trigger{height:40px;width:100%}
+.filter-preset-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
