@@ -73,7 +73,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .location-separator { color: #505050; }
 .top h1 { margin: 0; color: var(--text); font-size: 12px; font-weight: 600; }
 .top-actions { display: flex; align-items: center; gap: 18px; }
-.theme-toggle { display:grid; place-items:center; width:36px; min-width:36px; height:36px; min-height:36px; padding:0; border-radius:6px; background:var(--surface); }
+.top .theme-toggle { display:grid; place-items:center; flex:0 0 36px; width:36px; min-width:36px; height:36px; min-height:36px; padding:0; border-radius:6px; background:var(--surface); }
 .theme-icon { display:block; width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 :root[data-theme="light"] .moon-icon { fill:#30343b; stroke:#30343b; }
 :root[data-theme="dark"] .sun-icon { color:#facc15; stroke:#facc15; }
