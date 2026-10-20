@@ -19,3 +19,23 @@
 @media(max-width:640px){.lib-manager{padding:16px}.lib-manager-heading{align-items:flex-start;flex-direction:column}.lib-table-head,.lib-table-row{grid-template-columns:minmax(0,1fr) 40px;gap:8px;padding:8px}.lib-table-head>span:nth-child(2),.lib-table-row>span{display:none}.lib-search{width:100%;margin:0}.lib-search input{width:100%}.lib-more{opacity:1!important}}
 
 :root[data-theme=light] .side-foot p,:root[data-theme=light] .storage-note strong{color:#50584e}:root[data-theme=light] .export-sidebar{color:#183820;background:#dceade;border-color:#b9cdbd}:root[data-theme=light] .export-sidebar:disabled{color:#50584e;opacity:.7}
+
+/* Collapsible 02: indented file tree with a rotating chevron and open folder icon. */
+.lib-branch{display:flex;flex-direction:column;gap:0;min-width:0}
+.lib-tree-row{min-height:32px;padding:0;border-radius:6px;gap:4px;color:var(--ink,var(--text,#fafafa))}
+.lib-tree-row .lib-disclosure{flex:0 0 24px;width:24px;padding:4px!important}
+.lib-disclosure .lib-icon{transition:transform 200ms ease-in-out}
+.lib-branch[data-state=open]>.lib-tree-row .lib-disclosure .lib-icon{transform:rotate(90deg)}
+.lib-tree-row .lib-node{gap:8px;font-weight:400}
+.lib-tree-row[data-kind=file] .lib-node{color:var(--muted,#aaa)!important}
+.lib-tree-row.active .lib-node{color:var(--green,var(--accent,#1ed760))!important;font-weight:600}
+.lib-tree-row .lib-node .folder-open{display:none}
+.lib-branch[data-state=open]>.lib-tree-row .folder-open{display:block}
+.lib-branch[data-state=open]>.lib-tree-row .folder-closed{display:none}
+.lib-children{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows 200ms ease-in-out,opacity 200ms ease-in-out}
+.lib-branch[data-state=closed]>.lib-children{grid-template-rows:0fr;opacity:0}
+.lib-children-inner{min-height:0;overflow:hidden;padding-inline-start:24px}
+.lib-folder-empty{margin:0;padding:8px 4px;font-size:11px;color:var(--muted,#aaa)}
+#configList>.lib-branch+.lib-branch,#tree>.lib-branch+.lib-branch{margin-top:8px}
+.lib-tree-row:focus-within{background:var(--hover,var(--soft,#203728))}
+@media(prefers-reduced-motion:reduce){.lib-children,.lib-disclosure .lib-icon{transition:none}}

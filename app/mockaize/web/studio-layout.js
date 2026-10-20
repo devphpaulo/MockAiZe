@@ -5,7 +5,7 @@ globalThis.StudioLayout = (() => {
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   function create({ preferences = {}, save, redraw, closeInspector, notify }) {
     const prefs = { sidebarWidth: 224, inspectorWidth: 320, editorMode: 'panel', syncScroll: false, ...preferences };
-    let saveTimer, frame, dragging = null, presented = false;
+    let saveTimer, frame, dragging = null, presented = false, presentation = 'closed', sheetAnimation = null, sheetVersion = 0;
     const expectedScroll = new WeakMap();
     const scheduleDraw = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(redraw); };
     const persist = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => save({ ...prefs }).catch(error => notify(error.message)), 250); };
@@ -98,14 +98,39 @@ globalThis.StudioLayout = (() => {
       controls(); persist(); scheduleDraw();
     });
     function present(open) {
-      presented = open; const modal = prefs.editorMode === 'modal';
-      const dialog = $('inspectorDialog'), pane = $('inspector'), dock = $('inspectorDock');
-      const host = modal ? $('inspectorModalHost') : dock;
-      if (pane.parentElement !== host) host.append(pane);
-      dock.hidden = !open || modal; pane.hidden = !open;
-      $('workArea').classList.toggle('inspector-closed', !open || modal);
-      if (modal && open && !dialog.open) dialog.showModal();
-      if ((!modal || !open) && dialog.open) dialog.close();
+      presented = Boolean(open); const modal = prefs.editorMode === 'modal';
+      const dialog = $('inspectorDialog'), pane = $('inspector'), dock = $('inspectorDock'), area = $('workArea');
+      const next = open ? (modal ? 'modal' : 'panel') : 'closed';
+      const toggle = document.querySelector('[data-action="inspector"]');
+      toggle?.setAttribute('aria-expanded', String(open)); toggle?.setAttribute('aria-controls', 'inspector');
+      if (next !== presentation) {
+        const previous = presentation, version = ++sheetVersion;
+        sheetAnimation?.cancel(); sheetAnimation = null; presentation = next;
+        if (!open && pane.contains(document.activeElement)) toggle?.focus({preventScroll: true});
+        if ((!modal || !open) && dialog.open) dialog.close();
+        const finishClose = () => {
+          if (version !== sheetVersion) return;
+          pane.hidden = true; dock.hidden = true; area.classList.add('inspector-closed'); scheduleDraw();
+        };
+        const slide = closing => {
+          if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (closing) finishClose(); return; }
+          sheetAnimation = pane.animate(closing
+            ? [{opacity: 1, translate: '0 0'}, {opacity: 0, translate: '40px 0'}]
+            : [{opacity: 0, translate: '40px 0'}, {opacity: 1, translate: '0 0'}],
+            {duration: 200, easing: 'ease-in-out', fill: closing ? 'forwards' : 'none'});
+          sheetAnimation.finished.then(() => { if (closing) finishClose(); }, () => {});
+        };
+        if (next === 'closed') {
+          dock.inert = true;
+          if (previous === 'panel' && !dock.hidden) slide(true); else finishClose();
+        } else {
+          const host = modal ? $('inspectorModalHost') : dock;
+          if (pane.parentElement !== host) host.append(pane);
+          pane.hidden = false; dock.hidden = modal; dock.inert = false;
+          area.classList.toggle('inspector-closed', modal);
+          if (modal && !dialog.open) dialog.showModal(); else if (!modal) slide(false);
+        }
+      }
       const title = pane.querySelector('.inspector-title');
       if (title && !title.querySelector('[data-action="editor-presentation"]')) {
         const button = document.createElement('button'); button.type = 'button';

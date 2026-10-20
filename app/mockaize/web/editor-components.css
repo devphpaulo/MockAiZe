@@ -1,0 +1,41 @@
+/* Scoped adaptations of shadcn/studio Date Picker 03, Pagination 03, Sheet 03 and Form 10. */
+.date-picker{position:relative;min-width:0;width:100%}
+.date-picker .date-native{position:absolute;width:1px!important;height:1px!important;padding:0!important;margin:0!important;opacity:0;pointer-events:none;clip-path:inset(50%)}
+.date-picker-trigger{display:flex;justify-content:space-between;gap:8px;width:100%;height:40px;min-height:40px;border-radius:8px;padding:8px 12px;border:1px solid var(--control-border,var(--line,#444));background:var(--control,var(--surface-2,#242424));color:var(--ink,var(--text,#fafafa));font-size:12px;font-weight:400;box-shadow:0 1px 2px #0001}
+.date-picker-trigger>span{display:flex;align-items:center;gap:8px;min-width:0}.date-picker-value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.date-picker svg,.date-picker-popup svg,.record-pagination svg{height:16px;width:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.date-picker-trigger>svg{color:var(--muted,#aaa)}
+.date-picker-popup{position:fixed;inset:auto;margin:0;padding:8px;width:288px;max-width:calc(100vw - 32px);overflow:auto;background:var(--surface,#191919);color:var(--ink,var(--text,#fafafa));border:1px solid var(--line,#444);border-radius:8px;box-shadow:0 8px 24px #0003;font:12px/20px 'Segoe UI',sans-serif;box-sizing:border-box}
+.calendar-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-weight:600;text-transform:capitalize}
+.date-picker-popup button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;min-height:32px;margin:0;padding:0;border-radius:6px;border:1px solid transparent;box-shadow:none;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.calendar-heading button{border-color:var(--line,#444)}
+.calendar-weekdays,.calendar-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0}.calendar-weekdays span{text-align:center;font-size:11px;color:var(--muted,#aaa);line-height:32px}.calendar-week>div{display:flex;justify-content:center}
+.calendar-week button.outside-month{color:var(--muted,#aaa);opacity:.55}.calendar-week button[aria-current=date]{border-color:var(--green,#1ed760)}
+.date-picker-popup button:hover:not(:disabled){background:var(--selection,var(--soft,#203728))}.calendar-week [aria-selected=true] button{background:var(--green,#1ed760)!important;color:#08160d!important;opacity:1;font-weight:600}
+:root[data-theme=light] .calendar-week [aria-selected=true] button{color:#fff!important}
+.date-picker-popup button:disabled{opacity:.3;cursor:not-allowed}.date-picker-popup button:focus-visible,.date-picker-trigger:focus-visible{outline:2px solid var(--green,#1ed760);outline-offset:2px}
+/* Numbered pagination fits each XML pane without adding horizontal scroll. */
+.xml-panel{container-type:inline-size}.pane-subtitle{flex-wrap:wrap;row-gap:8px}
+.record-pagination{display:flex;align-items:center;gap:8px;min-width:0;margin-left:auto;font-size:11px;font-variant-numeric:tabular-nums}
+.record-pagination ul{display:flex;align-items:center;gap:4px;list-style:none;margin:0;padding:0}.record-pagination li{display:flex}
+.record-pagination button{display:inline-flex;align-items:center;justify-content:center;gap:4px;width:32px;height:32px;min-height:32px;padding:0;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--ink);box-shadow:none;font-size:12px;font-weight:400}
+.record-pagination button:has(svg){width:auto;padding:0 8px}.record-pagination button:hover:not(:disabled){background:var(--hover)}
+.record-pagination button[aria-current=page]{background:var(--green);color:#08160d;border-color:transparent;font-weight:600}
+:root[data-theme=light] .record-pagination button[aria-current=page]{color:#fff}
+.record-pagination .pagination-total{color:var(--muted);white-space:nowrap;font-size:10px}
+@container(max-width:560px){.record-pagination button:has(svg) span{display:none}.record-pagination button:has(svg){width:32px;padding:0}}
+@container(max-width:360px){.record-pagination{gap:4px}.record-pagination ul{gap:0}.record-pagination .pagination-total{font-size:10px}}
+/* Sheet 03 is nonmodal: XML remains interactive during the 200ms slide/fade. */
+.inspector-dock{background:var(--surface);box-shadow:-8px 0 24px #0001}
+/* Form 10: visible labels, subtle outlined controls and a primary focus ring.
+   Selects, calendar widgets, toggles and buttons retain their own component styles. */
+#inspector .form-field:has(>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden])),
+#inspector .form-field:has(>textarea),#inspector .form-field:has(>label>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden])){margin-bottom:24px}
+#inspector .form-field:has(>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden]))>label,#inspector .form-field:has(>textarea)>label,#inspector .form-field>label:has(>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden])){font-size:12px;line-height:16px;font-weight:500;color:var(--ink);margin-bottom:8px}
+#inspector .inspector-body input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden]),#inspector .inspector-body textarea{border:1px solid var(--control-border);border-radius:8px;background:color-mix(in srgb,var(--control) 50%,transparent);color:var(--ink);box-shadow:0 1px 2px #0001;padding:8px 12px;font-size:12px;line-height:20px;font-weight:400;transition:border-color 150ms,box-shadow 150ms;outline:none}
+#inspector .inspector-body textarea{min-height:120px;resize:vertical}
+#inspector .inspector-body input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden]):focus-visible,#inspector .inspector-body textarea:focus-visible{border-color:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 30%,transparent)}
+#inspector .inspector-body input[aria-invalid=true]:not([type=checkbox]):not([type=radio]),#inspector .inspector-body textarea[aria-invalid=true]{border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 20%,transparent)}
+#inspector .inspector-body input::placeholder,#inspector .inspector-body textarea::placeholder{color:var(--muted)}
+#inspector .inspector-body input:disabled,#inspector .inspector-body textarea:disabled{opacity:.5;cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){#inspector .inspector-body input,#inspector .inspector-body textarea{transition:none}}
