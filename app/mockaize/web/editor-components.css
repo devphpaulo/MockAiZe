@@ -216,8 +216,9 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .manual-value-row{display:flex;align-items:center;gap:8px;min-width:0}
 .manual-value-row>input{width:100%;min-width:0;flex:1;height:40px}
 .manual-value-row>input::placeholder{color:var(--muted);opacity:.5}
-.manual-formula-trigger{flex:none;min-width:32px;min-height:32px;padding:4px 8px;border:0;box-shadow:none;background:transparent;color:var(--green);font-size:12px}
-.manual-formula-trigger{font-style:italic}
+.manual-formula-trigger{flex:none;min-width:80px;height:32px;min-height:32px;padding:4px 12px;border:1px solid transparent;border-radius:6px;box-shadow:none;background:var(--green);color:#08160d;font-size:12px;font-weight:600;line-height:20px}
+:root[data-theme="light"] .manual-formula-trigger{color:#fff}
+.manual-formula-trigger:hover{background:var(--green);filter:brightness(1.05)}
 .manual-field.has-formula .manual-value-row>input[readonly]{background:var(--control);border:1px solid var(--control-border);border-radius:8px;color:var(--green)}
 .manual-field-editor{margin-top:16px;padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--elevated);content-visibility:visible}
 .manual-mode .manual-field:has(.manual-field-editor){content-visibility:visible;contain:none}
