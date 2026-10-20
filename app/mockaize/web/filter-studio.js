@@ -10,6 +10,19 @@ globalThis.XmlFilter=(()=>{
  function fields(doc,group){const parent=parts(group),seen=new Set();return X.nodes(doc).filter(n=>parts(n.key).length>parent.length&&prefix(parent,parts(n.key))).filter(n=>{const k=identity(n.key);if(seen.has(k))return false;seen.add(k);return true;});}
  const operators={exists:'Campo presente',missing:'Campo ausente',equals:'Valor igual a',notEquals:'Valor diferente de',contains:'Valor contém',notContains:'Valor não contém',empty:'Valor vazio',notEmpty:'Valor preenchido'};
  function matches(node,group,condition){const path=parts(condition.path),base=parts(group);if(!prefix(base,path)||path.length<=base.length)throw Error('Escolha um campo dentro do grupo filtrado.');const values=select(node,path.slice(base.length)).map(n=>(n.nodeType===2?n.value:n.textContent).trim()),value=condition.value.trim();switch(condition.operator){case'exists':return values.length>0;case'missing':return !values.length;case'equals':return values.some(v=>v===value);case'notEquals':return values.length>0&&values.every(v=>v!==value);case'contains':return values.some(v=>v.includes(value));case'notContains':return values.length>0&&values.every(v=>!v.includes(value));case'empty':return values.some(v=>v==='');case'notEmpty':return values.some(v=>v!=='');default:throw Error('Condição de filtro inválida.');}}
+ function connector(config,index){return config.conditions[index].connector||(config.match==='any'?'or':'and');}
+ function combine(tests,config){
+  // AND binds inside each term; OR separates the terms. No expression evaluation.
+  let matched=false,term=tests[0];
+  for(let i=1;i<tests.length;i++){if(connector(config,i)==='or'){matched=matched||term;term=tests[i];}else term=term&&tests[i];}
+  return matched||term;
+ }
+ function expression(config){
+  const terms=[];let current=[];
+  config.conditions.forEach((_,i)=>{if(i&&connector(config,i)==='or'){terms.push(current);current=[];}current.push('Condição '+(i+1));});
+  if(current.length)terms.push(current);
+  return terms.map(term=>term.length>1?'('+term.join(' E ')+')':term[0]).join(' OU ');
+ }
  function run(xml,config,headers=[]){
   const doc=X.parse(xml);
   if(!groups(doc,headers).some(g=>identity(g.key)===identity(config.group)))throw Error('Selecione um grupo válido que não seja cabeçalho nem contenha um cabeçalho.');
@@ -17,13 +30,13 @@ globalThis.XmlFilter=(()=>{
   if(config.conditions.some(c=>!c.path))throw Error('Selecione o campo de cada condição.');
   const nodes=occurrences(doc,config.group),removedPaths=[];let matched=0;
   // Capture original indexed paths before removing siblings changes their indexes.
-  const decisions=nodes.map(node=>{const tests=config.conditions.map(c=>matches(node,config.group,c)),match=config.match==='any'?tests.some(Boolean):tests.every(Boolean);return{node,match,path:X.key(node)};});
+  const decisions=nodes.map(node=>{const tests=config.conditions.map(c=>matches(node,config.group,c)),match=combine(tests,config);return{node,match,path:X.key(node)};});
   for(const {node,match,path} of decisions){if(match)matched++;if(config.action==='remove'?match:!match){removedPaths.push(path);node.remove();}}
   return{xml:X.serialize(doc),count:nodes.length-removedPaths.length,originalCount:nodes.length,matched,removed:removedPaths.length,removedPaths,group:config.group,name:'filtrado.xml'};
  }
 
  function values(doc,formula){const base=parts(formula.group),path=parts(formula.path);if(!prefix(base,path)||path.length<=base.length)throw Error('Selecione um campo dentro do grupo a somar.');return occurrences(doc,formula.group).flatMap(node=>select(node,path.slice(base.length))).map(node=>node.nodeType===2?node.value:node.textContent);}
- return{groups,fields,run,occurrences,operators,values};
+ return{groups,fields,run,occurrences,operators,values,connector,expression};
 })();
 globalThis.FilterStudio=(()=>{
  'use strict';
@@ -54,7 +67,7 @@ globalThis.FilterStudio=(()=>{
   function builder(){
    const f=data(),doc=source(),groups=doc?F.groups(doc,headers()):[],fields=doc&&f.group?F.fields(doc,f.group):[];
    const selected=activePreset(),modified=selected&&JSON.stringify(selected.filter)!==JSON.stringify(data());
-   return `<div class="filter-builder"><div class="filter-preset-block"><label for="filterPresetTrigger">Preset do filtro${modified?' · alterações locais':''}</label><div id="filterPresetCombobox" class="return-combobox"></div><div class="filter-preset-actions"><button class="small soft" data-filter-action="save-preset" ${selected&&!modified?'disabled':''}>${selected?'Salvar preset':'Salvar como preset'}</button><button class="ghost small" data-filter-action="rename-preset" ${selected?'':'disabled'}>Renomear</button><button class="ghost small danger" data-filter-action="delete-preset" ${selected?'':'disabled'}>Excluir</button></div></div>${select('filterGroup','Grupo a filtrar',[['','Selecione um grupo'],...groups.map(g=>[g.key,g.display+' · '+g.count+' ocorrência(s)'])],f.group,'data-filter="group"')}${select('filterAction','Ação',[['keep','Manter grupos correspondentes'],['remove','Excluir grupos correspondentes']],f.action,'data-filter="action"')}${select('filterMatch','Combinar condições',[['all','Todas as condições (E)'],['any','Qualquer condição (OU)']],f.match,'data-filter="match"')}<div class="filter-conditions">${f.conditions.map((c,i)=>`<fieldset class="filter-condition"><legend>Condição ${i+1}</legend>${select('filterField'+i,'Campo ou grupo',[['','Selecione um campo'],...fields.map(n=>[n.key,n.display])],c.path,`data-filter-condition="path" data-index="${i}"`)}${select('filterOperator'+i,'Condição',Object.entries(F.operators),c.operator,`data-filter-condition="operator" data-index="${i}"`)}<div class="filter-control"><label for="filterValue${i}">Valor</label><input id="filterValue${i}" data-filter-condition="value" data-index="${i}" maxlength="2000" value="${h(c.value)}" ${['exists','missing','empty','notEmpty'].includes(c.operator)?'disabled placeholder="Não se aplica"':''}></div><button class="ghost small" data-filter-action="remove" data-index="${i}" aria-label="Remover condição ${i+1}">Remover condição</button></fieldset>`).join('')||'<p class="hint">Sem condições, o documento completo é mantido.</p>'}</div><button class="small soft" data-filter-action="add" ${!fields.length||f.conditions.length>=100?'disabled':''}>＋ Adicionar condição</button><p class="hint">Cada ocorrência do grupo é avaliada separadamente. A prévia atualiza enquanto você edita. Os valores diferenciam maiúsculas de minúsculas.</p><p id="filterError" class="callout error" role="status" ${previewError?'':'hidden'}>${h(previewError)}</p></div>`;
+   return `<div class="filter-builder"><div class="filter-preset-block"><label for="filterPresetTrigger">Preset do filtro${modified?' · alterações locais':''}</label><div id="filterPresetCombobox" class="return-combobox"></div><div class="filter-preset-actions"><button class="small soft" data-filter-action="save-preset" ${selected&&!modified?'disabled':''}>${selected?'Salvar preset':'Salvar como preset'}</button><button class="ghost small" data-filter-action="rename-preset" ${selected?'':'disabled'}>Renomear</button><button class="ghost small danger" data-filter-action="delete-preset" ${selected?'':'disabled'}>Excluir</button></div></div>${select('filterGroup','Grupo a filtrar',[['','Selecione um grupo'],...groups.map(g=>[g.key,g.display+' · '+g.count+' ocorrência(s)'])],f.group,'data-filter="group"')}${select('filterAction','Ação',[['keep','Manter grupos correspondentes'],['remove','Excluir grupos correspondentes']],f.action,'data-filter="action"')}<div class="filter-conditions">${f.conditions.map((c,i)=>`${i?`<div class="filter-connector">${select('filterConnector'+i,'Combinar com a condição '+(i+1),[['and','E'],['or','OU']],F.connector(f,i),`data-filter-condition="connector" data-index="${i}"`)}</div>`:''}<fieldset class="filter-condition"><legend>Condição ${i+1}</legend>${select('filterField'+i,'Campo ou grupo',[['','Selecione um campo'],...fields.map(n=>[n.key,n.display])],c.path,`data-filter-condition="path" data-index="${i}"`)}${select('filterOperator'+i,'Condição',Object.entries(F.operators),c.operator,`data-filter-condition="operator" data-index="${i}"`)}<div class="filter-control"><label for="filterValue${i}">Valor</label><input id="filterValue${i}" data-filter-condition="value" data-index="${i}" maxlength="2000" value="${h(c.value)}" ${['exists','missing','empty','notEmpty'].includes(c.operator)?'disabled placeholder="Não se aplica"':''}></div><button class="ghost small" data-filter-action="remove" data-index="${i}" aria-label="Remover condição ${i+1}">Remover condição</button></fieldset>`).join('')||'<p class="hint">Sem condições, o documento completo é mantido.</p>'}</div>${f.conditions.length>1?`<div class="filter-expression"><strong>Combinação das condições</strong><code>${h(F.expression(f))}</code><p class="hint">E é avaliado antes de OU, conforme os parênteses acima.</p></div>`:''}<button class="small soft" data-filter-action="add" ${!fields.length||f.conditions.length>=100?'disabled':''}>＋ Adicionar condição</button><p class="hint">Cada ocorrência do grupo é avaliada separadamente. A prévia atualiza enquanto você edita. Os valores diferenciam maiúsculas de minúsculas.</p><p id="filterError" class="callout error" role="status" ${previewError?'':'hidden'}>${h(previewError)}</p></div>`;
   }
   function mountPresets(){
    const host=$('filterPresetCombobox');if(!host)return;
@@ -195,7 +208,7 @@ globalThis.FilterStudio=(()=>{
     if(fold.closed.has(line))fold.closed.delete(line);else fold.closed.add(line);
     output();$('outputCode').scrollTop=top;$('outputCode').querySelector(`[data-line="${line}"]`)?.focus({preventScroll:true});return;
    }
-   o.remember();if(action==='add')data().conditions.push({path:'',operator:'equals',value:''});else data().conditions.splice(Number(button.dataset.index),1);o.changed();o.render();
+   o.remember();if(action==='add')data().conditions.push({path:'',operator:'equals',value:'',connector:'and'});else data().conditions.splice(Number(button.dataset.index),1);o.changed();o.render();
   },true);
   return{ensure,head,render,footer,apply,edit,context,evaluateName,toggleName,nameEditorOpen:()=>nameEditor};
  }

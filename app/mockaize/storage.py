@@ -318,10 +318,12 @@ def validate_filter(filters: object) -> None:
     if not isinstance(filters["conditions"], list) or len(filters["conditions"]) > 100:
         raise ValueError("Informe até 100 condições de filtro.")
     for condition in filters["conditions"]:
-        if not isinstance(condition, dict) or set(condition) != {"path", "operator", "value"}:
+        if not isinstance(condition, dict) or set(condition) - {"path", "operator", "value", "connector"} or not {"path", "operator", "value"} <= set(condition):
             raise ValueError("Condição de filtro inválida.")
         if not isinstance(condition["path"], str) or not isinstance(condition["value"], str) or len(condition["value"]) > 2000:
             raise ValueError("Campo ou valor de filtro inválido.")
+        if condition.get("connector", "and") not in ("and", "or"):
+            raise ValueError("Conector de condição inválido. Use E ou OU.")
         if condition["path"]: validate_structural_path(condition["path"])
         if condition["operator"] not in ("exists", "missing", "equals", "notEquals", "contains", "notContains", "empty", "notEmpty"):
             raise ValueError("Operador de filtro inválido.")
