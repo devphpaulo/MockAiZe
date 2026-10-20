@@ -5,7 +5,7 @@
   function enhance(root) {
     const selects = root.matches?.('select') ? [root] : root.querySelectorAll?.('select') || [];
     for (const select of selects) {
-      if (select.multiple || select.hasAttribute('size') || select.querySelector(':scope > button')) continue;
+      if (select.hasAttribute('data-custom-combobox') || select.multiple || select.hasAttribute('size') || select.querySelector(':scope > button')) continue;
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'select-value-button';

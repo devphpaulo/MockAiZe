@@ -2,7 +2,7 @@
  'use strict';
  const $=id=>document.getElementById(id),csrf=document.querySelector('meta[name="csrf-token"]').content;
  let settings={};
- function notify(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(notify.timer);notify.timer=setTimeout(()=>$('toast').hidden=true,4200);}
+ function notify(message){UiMotion.toast($('toast'),message);}
  async function api(url,method='GET',body){const response=await fetch(url,{method,credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},...(body?{body:JSON.stringify(body)}:{})});const result=await response.json();if(!response.ok)throw Error(result.error||'Não foi possível concluir a operação.');return result;}
  function showLibrary(open){document.querySelectorAll('.hero,.overview,.create-panel,.structure-guide').forEach(el=>el.hidden=open);$('libraryManager').hidden=!open;document.querySelector('.page-location h1').textContent=open?'Organizar diretórios':'Visão geral';const url=new URL(location);url.searchParams.set('view',open?'library':'home');history.replaceState(null,'',url);}
  const library=LibraryUI.create({notify,onOpen:id=>{location.href='/studio?id='+encodeURIComponent(id);},onSelect:()=>showLibrary(true),onRender:state=>{
