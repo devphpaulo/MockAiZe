@@ -306,12 +306,14 @@ def validate_formula(formula: object, depth: int = 0) -> None:
 
 
 def validate_filter(filters: object) -> None:
-    if not isinstance(filters, dict) or set(filters) != {"group", "action", "match", "conditions", "fileName"}:
+    if not isinstance(filters, dict) or set(filters) - {"group", "action", "match", "conditions", "fileName", "filename"} or not {"group", "action", "match", "conditions", "fileName"} <= set(filters):
         raise ValueError("Configuração de filtro inválida.")
     if filters["action"] not in ("keep", "remove") or filters["match"] not in ("all", "any"):
         raise ValueError("Ação ou combinação de filtros inválida.")
     if not isinstance(filters["group"], str) or not isinstance(filters["fileName"], str) or len(filters["fileName"]) > 180:
         raise ValueError("Grupo ou nome de filtro inválido.")
+    filters.setdefault("filename", {"type": "literal", "value": filters["fileName"] or "filtrado.xml"})
+    validate_formula(filters["filename"])
     if filters["group"]: validate_structural_path(filters["group"])
     if not isinstance(filters["conditions"], list) or len(filters["conditions"]) > 100:
         raise ValueError("Informe até 100 condições de filtro.")

@@ -31,16 +31,16 @@
 .inspector-dock{background:var(--surface);box-shadow:-8px 0 24px #0001}
 /* Form 10: visible labels, subtle outlined controls and a primary focus ring.
    Selects, calendar widgets, toggles and buttons retain their own component styles. */
-#inspector .form-field:has(>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden])),
-#inspector .form-field:has(>textarea),#inspector .form-field:has(>label>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden])){margin-bottom:24px}
-#inspector .form-field:has(>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden]))>label,#inspector .form-field:has(>textarea)>label,#inspector .form-field>label:has(>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden])){font-size:12px;line-height:16px;font-weight:500;color:var(--ink);margin-bottom:8px}
-#inspector .inspector-body input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden]),#inspector .inspector-body textarea{border:1px solid var(--control-border);border-radius:8px;background:color-mix(in srgb,var(--control) 50%,transparent);color:var(--ink);box-shadow:0 1px 2px #0001;padding:8px 12px;font-size:12px;line-height:20px;font-weight:400;transition:border-color 150ms,box-shadow 150ms;outline:none}
-#inspector .inspector-body textarea{min-height:120px;resize:vertical}
-#inspector .inspector-body input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden]):focus-visible,#inspector .inspector-body textarea:focus-visible{border-color:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 30%,transparent)}
-#inspector .inspector-body input[aria-invalid=true]:not([type=checkbox]):not([type=radio]),#inspector .inspector-body textarea[aria-invalid=true]{border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 20%,transparent)}
-#inspector .inspector-body input::placeholder,#inspector .inspector-body textarea::placeholder{color:var(--muted)}
-#inspector .inspector-body input:disabled,#inspector .inspector-body textarea:disabled{opacity:.5;cursor:not-allowed}
-@media(prefers-reduced-motion:reduce){#inspector .inspector-body input,#inspector .inspector-body textarea{transition:none}}
+:is(#inspector,.filter-name-editor) .form-field:has(>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden])),
+:is(#inspector,.filter-name-editor) .form-field:has(>textarea),:is(#inspector,.filter-name-editor) .form-field:has(>label>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden])){margin-bottom:24px}
+:is(#inspector,.filter-name-editor) .form-field:has(>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden]))>label,:is(#inspector,.filter-name-editor) .form-field:has(>textarea)>label,:is(#inspector,.filter-name-editor) .form-field>label:has(>input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden])){font-size:12px;line-height:16px;font-weight:500;color:var(--ink);margin-bottom:8px}
+:is(#inspector,.filter-name-editor) .inspector-body input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden]),:is(#inspector,.filter-name-editor) .inspector-body textarea{border:1px solid var(--control-border);border-radius:8px;background:color-mix(in srgb,var(--control) 50%,transparent);color:var(--ink);box-shadow:0 1px 2px #0001;padding:8px 12px;font-size:12px;line-height:20px;font-weight:400;transition:border-color 150ms,box-shadow 150ms;outline:none}
+:is(#inspector,.filter-name-editor) .inspector-body textarea{min-height:120px;resize:vertical}
+:is(#inspector,.filter-name-editor) .inspector-body input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=hidden]):focus-visible,:is(#inspector,.filter-name-editor) .inspector-body textarea:focus-visible{border-color:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 30%,transparent)}
+:is(#inspector,.filter-name-editor) .inspector-body input[aria-invalid=true]:not([type=checkbox]):not([type=radio]),:is(#inspector,.filter-name-editor) .inspector-body textarea[aria-invalid=true]{border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 20%,transparent)}
+:is(#inspector,.filter-name-editor) .inspector-body input::placeholder,:is(#inspector,.filter-name-editor) .inspector-body textarea::placeholder{color:var(--muted)}
+:is(#inspector,.filter-name-editor) .inspector-body input:disabled,:is(#inspector,.filter-name-editor) .inspector-body textarea:disabled{opacity:.5;cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){:is(#inspector,.filter-name-editor) .inspector-body input,:is(#inspector,.filter-name-editor) .inspector-body textarea{transition:none}}
 
 /* shadcn/ui dropdown-menu checkbox pattern, scoped to generation/export returns. */
 .return-menu-trigger{display:inline-flex;align-items:center;gap:8px;height:32px;min-height:32px;max-width:100%;padding:0 12px;border:1px solid var(--control-border);border-radius:8px;background:var(--control);color:var(--ink);box-shadow:0 1px 2px #0001;font-size:12px;font-weight:500}
@@ -103,17 +103,17 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 @media(max-width:600px){.manual-record-group{flex-basis:100%;max-width:none}}
 
 /* Formula sample shares the XML preview card; both footer actions use one size. */
-#inspector .formula-sample-card{margin-top:16px;border-color:color-mix(in srgb,var(--green) 35%,transparent);background:color-mix(in srgb,var(--green) 5%,var(--surface))}
-#inspector .formula-sample-card output{color:var(--green);white-space:pre-wrap;font:600 14px/24px Consolas,monospace}
-#inspector .formula-sample-card code{white-space:pre-wrap;font:11px/16px Consolas,monospace;color:var(--muted)}
-#inspector .formula-sample-card button{justify-self:start;margin-top:0;min-height:32px;height:32px;background:#1ed760;border-color:#1ed760;color:#08160d}
-#inspector .inspector-footer button{flex:1 1 0;width:0;min-width:0;height:40px;min-height:40px;padding:8px 12px;line-height:16px;font-size:12px}
+:is(#inspector,.filter-name-editor) .formula-sample-card{margin-top:16px;border-color:color-mix(in srgb,var(--green) 35%,transparent);background:color-mix(in srgb,var(--green) 5%,var(--surface))}
+:is(#inspector,.filter-name-editor) .formula-sample-card output{color:var(--green);white-space:pre-wrap;font:600 14px/24px Consolas,monospace}
+:is(#inspector,.filter-name-editor) .formula-sample-card code{white-space:pre-wrap;font:11px/16px Consolas,monospace;color:var(--muted)}
+:is(#inspector,.filter-name-editor) .formula-sample-card button{justify-self:start;margin-top:0;min-height:32px;height:32px;background:#1ed760;border-color:#1ed760;color:#08160d}
+:is(#inspector,.filter-name-editor) .inspector-footer button{flex:1 1 0;width:0;min-width:0;height:40px;min-height:40px;padding:8px 12px;line-height:16px;font-size:12px}
 .length-settings{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;gap:8px}
 .length-settings>.length-field{display:flex;flex-direction:column;gap:8px;min-width:0;margin:0}
-#inspector .length-settings>.length-field>label{display:flex;align-items:end;min-height:32px;margin:0;font-size:12px;line-height:16px;font-weight:500}
+:is(#inspector,.filter-name-editor) .length-settings>.length-field>label{display:flex;align-items:end;min-height:32px;margin:0;font-size:12px;line-height:16px;font-weight:500}
 .length-settings>.length-field>input,.length-settings>.length-field>select{display:block;height:40px;width:100%;min-width:0;margin:0}
 .length-hint{margin:8px 0 16px}
-@media(max-width:360px){.length-settings{grid-template-columns:minmax(0,1fr)}#inspector .length-settings>.length-field>label{min-height:16px}}
+@media(max-width:360px){.length-settings{grid-template-columns:minmax(0,1fr)}:is(#inspector,.filter-name-editor) .length-settings>.length-field>label{min-height:16px}}
 
 /* Four operations share a baseline; group selection stops expanding across the page. */
 .mode-row{grid-template-columns:344px minmax(160px,560px) 144px max-content;justify-content:start}
@@ -158,3 +158,12 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .filter-preset-block>label{margin:0;line-height:16px}
 .filter-preset-block .return-combobox-trigger{height:40px;width:100%}
 .filter-preset-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+
+.filter-name-summary{display:grid;gap:8px;min-width:0;align-self:center}
+.filter-name-summary>code{font:12px/20px Consolas,monospace;color:var(--green);overflow-wrap:anywhere}
+.filter-name-editor{min-width:0}
+.filter-name-editor .inspector-body{padding:0;overflow:visible}
+.filter-name-editor .inspector-footer{padding:16px 0 0;position:sticky;bottom:-24px;background:var(--code-background)}
+
+.filter-line-removed{background:color-mix(in srgb,var(--red) 12%,var(--code-background))}
+.filter-line-removed .filter-line-number{background:color-mix(in srgb,var(--red) 12%,var(--code-background))}

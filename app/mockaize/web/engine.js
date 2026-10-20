@@ -91,7 +91,7 @@ globalThis.MockEngine = (() => {
     field:(f,c)=>(f.source==='input'?c.sourceValue:c.outputValue)(f.path),
     groupSum:(f,c)=>sumDecimals(c.groupValues(f)),
     config:(_,c)=>String(c.configName||'mock').replace(/\s+/g,''),
-    count:(_,c)=>String(c.count||1),
+    count:(_,c)=>String(c.count??1),
     cpf:f=>cpf(f.mask), cnpj,
     list:f=>{const values=listValues(f.values);return f.mode==='random'?pick(values):values[integer(f.index??0,0,values.length-1,'Posição na lista')];},
     hash:f=>chars(integer(f.length??32,1,4096,'Quantidade de caracteres'),f.format==='alphanumeric'?'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789':f.format==='HEX'?'0123456789ABCDEF':'0123456789abcdef'),
