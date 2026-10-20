@@ -177,6 +177,9 @@ globalThis.StudioLayout = (() => {
     for (const [target, rule] of Object.entries(rules)) {
       const source = sourceFor(rule), a = ports.input.get(source), b = ports.output.get(target); if (!a || !b) continue;
       const start = point(a), end = point(b);
+      const visibleA = start.y >= aBox.top && start.y <= aBox.bottom;
+      const visibleB = end.y >= bBox.top && end.y <= bBox.bottom;
+      if (!visibleA && !visibleB) continue;
       links.push({ target, source, a: start, b: end, clippedA: start.y < top || start.y > bottom, clippedB: end.y < top || end.y > bottom });
     }
     for (const side of ['a', 'b']) {
@@ -208,7 +211,7 @@ globalThis.StudioLayout = (() => {
       }
     });
     $('connectionCount').textContent = String(links.length);
-    $('connectionCount').title = `${links.length} vínculo(s). Linhas tracejadas continuam fora da área visível.`;
+    $('connectionCount').title = `${links.length} vínculo(s) visível(is). Linhas tracejadas têm uma ponta fora da área visível.`;
     if (drag?.moved) {
       const origin = ports.input.get(drag.key); if (!origin) return; const start = point(origin);
       appendPath(`M${start.x - bounds.left},${clamp(start.y, top, bottom) - bounds.top} L${drag.x - bounds.left},${drag.y - bounds.top}`, true, 'Novo vínculo');

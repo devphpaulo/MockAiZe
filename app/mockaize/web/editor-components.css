@@ -243,3 +243,31 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .return-model-actions svg{display:block;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:1040px){.multiple-returns .pane-head,.multiple-returns .connection-tools{height:128px;min-height:128px}.return-pane-subtitle{flex-wrap:wrap}.return-model-header{flex-basis:100%}}
 @container(max-width:520px){.filter-mode .pane-head{height:auto;min-height:96px}}
+/* Sortable 1 inspired condition cards, with independent disclosure and drag handles. */
+.filter-conditions{gap:12px}
+.filter-condition{display:block;gap:0;padding:0;border-radius:6px;background:var(--surface);overflow:visible;position:relative}
+.filter-condition-head,.filter-sort-overlay{display:flex;align-items:center;gap:4px;padding:8px;min-width:0}
+.filter-condition-head svg,.filter-sort-overlay svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.filter-condition-head>button,.filter-sort-overlay>button{min-height:32px;padding:4px 8px;border:0;border-radius:4px;background:transparent;box-shadow:none;color:var(--muted)}
+.filter-condition-head>button:hover{background:var(--hover);color:var(--ink)}
+.filter-condition-head>.filter-sort-handle,.filter-sort-overlay>.filter-sort-handle{flex:0 0 28px;width:28px;padding:4px;cursor:grab;touch-action:none;user-select:none}
+.filter-sort-handle:active{cursor:grabbing}
+.filter-condition-head>.filter-condition-toggle,.filter-sort-overlay>.filter-condition-toggle{flex:1;min-width:0;justify-content:space-between;gap:12px;padding:4px;text-align:left;white-space:normal}
+.filter-condition-heading{display:grid;gap:4px;min-width:0;flex:1}
+.filter-condition-heading>strong{font-size:12px;line-height:16px;color:var(--ink);font-weight:600}
+.filter-condition-summary{font-size:11px;line-height:16px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-weight:400;color:var(--muted)}
+.filter-condition-toggle>svg{transition:transform 160ms ease;transform:rotate(180deg)}
+.is-collapsed .filter-condition-toggle>svg{transform:rotate(0)}
+.filter-condition-head>.filter-condition-remove,.filter-sort-overlay>.filter-condition-remove{flex:0 0 28px;width:28px;padding:4px}
+.filter-condition-head>.filter-condition-remove:hover{color:var(--red);background:color-mix(in srgb,var(--red) 12%,transparent)}
+.filter-condition-body{display:grid;gap:16px;padding:16px;border-top:1px solid var(--border)}
+.filter-connector{align-items:center;gap:12px}
+.filter-connector::before,.filter-connector::after{margin:0}
+.filter-connector>.filter-control{min-width:80px;width:80px;gap:0}
+.filter-connector label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.filter-connector select{height:32px;min-height:32px;padding-block:4px}
+.filter-condition.is-sorting{opacity:.4}
+.filter-condition.sort-before::before,.filter-condition.sort-after::after{content:"";position:absolute;left:0;right:0;height:3px;border-radius:2px;background:var(--green);pointer-events:none}
+.filter-condition.sort-before::before{top:-8px}.filter-condition.sort-after::after{bottom:-8px}
+.filter-sort-overlay{position:fixed;top:0;left:0;margin:0;border:1px solid var(--green);border-radius:6px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);pointer-events:none;z-index:110;opacity:.96;cursor:grabbing}
+@media(prefers-reduced-motion:reduce){.filter-condition-toggle>svg{transition:none}}
