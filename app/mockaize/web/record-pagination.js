@@ -10,7 +10,7 @@ globalThis.RecordPagination = (() => {
     let items = page(current - 1, chevron(false) + '<span>Anterior</span>', 'Registro anterior', current === 0);
     for (let i = start; i < Math.min(total, start + 3); i++) items += page(i, i + 1, `Registro ${i + 1} de ${total}`);
     items += page(current + 1, '<span>Próximo</span>' + chevron(true), 'Próximo registro', current === total - 1);
-    return `<nav class="record-pagination" data-record-scope="${scope === 'manual' ? 'manual' : 'output'}" aria-label="Registros · página ${current + 1} de ${total}" data-total="${total}" data-current="${current}" title="Registro ${current + 1} de ${total}"><ul>${items}</ul><span class="pagination-total">${current + 1} de ${total}</span></nav>`;
+    return `<nav class="record-pagination" data-record-scope="${['input', 'manual', 'manual-output'].includes(scope) ? scope : 'output'}" aria-label="Registros · página ${current + 1} de ${total}" data-total="${total}" data-current="${current}" title="Registro ${current + 1} de ${total}"><ul>${items}</ul><span class="pagination-total">${current + 1} de ${total}</span></nav>`;
   }
   function bind(root, navigate) {
     for (const nav of root.querySelectorAll('.record-pagination')) {
@@ -32,5 +32,8 @@ globalThis.RecordPagination = (() => {
       });
     }
   }
-  return {markup, bind};
+  function footer(index, count, scope = 'output') {
+    return `<div class="pane-pagination">${markup(index, count, scope)}</div>`;
+  }
+  return {markup, footer, bind};
 })();

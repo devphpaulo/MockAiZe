@@ -16,6 +16,8 @@
 .date-picker-popup button:disabled{opacity:.3;cursor:not-allowed}.date-picker-popup button:focus-visible,.date-picker-trigger:focus-visible{outline:2px solid var(--green,#1ed760);outline-offset:2px}
 /* Numbered pagination fits each XML pane without adding horizontal scroll. */
 .xml-panel{container-type:inline-size}.pane-subtitle{flex-wrap:wrap;row-gap:8px}
+.pane-pagination{display:flex;align-items:center;justify-content:center;flex:none;min-height:48px;padding:8px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.pane-pagination .record-pagination{margin:0}
 .record-pagination{display:flex;align-items:center;gap:8px;min-width:0;margin-left:auto;font-size:11px;font-variant-numeric:tabular-nums}
 .record-pagination ul{display:flex;align-items:center;gap:4px;list-style:none;margin:0;padding:0}.record-pagination li{display:flex}
 .record-pagination button{display:inline-flex;align-items:center;justify-content:center;gap:4px;width:32px;height:32px;min-height:32px;padding:0;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--ink);box-shadow:none;font-size:12px;font-weight:400}
