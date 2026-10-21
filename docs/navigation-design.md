@@ -30,7 +30,3 @@ A navegação usa as APIs reais, não os dados ou a persistência isolada do pro
 - Manual e Filtragem usam cabeçalhos em uma linha, com títulos alinhados entre os dois painéis e sem as faixas auxiliares de texto abaixo.
 - Removidos Atualização em tempo real, status textual do XML filtrado, Cabeçalho compartilhado e a explicação da prévia manual. Erros e resultados continuam nos componentes próprios e no rodapé.
 - No Manual, Grupo do registro permanece compacto e alinhado à direita da barra; carregamento e contagem ficam à esquerda. Novos registros e Retorno mantêm os seletores à direita conforme o padrão aprovado.
-
-## Exclusões na prévia da Filtragem
-
-A prévia mostra por padrão o XML original com os grupos excluídos destacados em vermelho. Ver XML final alterna para o conteúdo filtrado sem marcações; Mostrar excluídos retorna à revisão. A exportação continua usando somente o XML filtrado, independentemente da visualização. Não reintroduzir faixas auxiliares nos cabeçalhos.

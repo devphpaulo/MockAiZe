@@ -42,7 +42,7 @@ globalThis.FilterStudio=(()=>{
  'use strict';
  function create(o){
   const {state,X,h}=o,$=id=>document.getElementById(id),F=XmlFilter;
-  let timer=null,cachedXml=null,cachedDoc=null,owner=null,showRemoved=true,previewError='',exporting=false;
+  let timer=null,cachedXml=null,cachedDoc=null,owner=null,previous=false,previewError='',exporting=false;
   const conditionIds=new WeakMap(),expandedConditions=new WeakSet();let sorting=null;
   const folds={current:{xml:null,closed:new Set()},previous:{xml:null,closed:new Set()}};
   const data=()=>state.draft.filter;
@@ -55,7 +55,7 @@ globalThis.FilterStudio=(()=>{
    state.draft.filter??={group:'',action:'keep',match:'all',conditions:[],fileName:''};
    state.draft.filter.filename??={type:'literal',value:state.draft.filter.fileName||'filtrado.xml'};
    state.draft.filterPresets??=[];state.draft.activeFilterPresetId??='';
-   if(owner!==state.draft.id+'\n'+o.inputText()){owner=state.draft.id+'\n'+o.inputText();showRemoved=true;nameEditor=false;nameCache.clear();}
+   if(owner!==state.draft.id+'\n'+o.inputText()){owner=state.draft.id+'\n'+o.inputText();previous=false;nameEditor=false;nameCache.clear();}
    const f=data(),doc=source();
    if(doc&&!f.group){const groups=F.groups(doc,headers());f.group=groups.find(g=>g.key===state.draft.inputGroup)?.key||groups.find(g=>g.count>1)?.key||groups[0]?.key||'';}
   }
@@ -212,9 +212,9 @@ globalThis.FilterStudio=(()=>{
   const tokenPattern=/<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<\/?[^\s/!?<>](?:"[^"]*"|'[^']*'|[^'">])*>/g;
   function syntax(line){return h(line).replace(/(&lt;\/?[\w:.-]+)([\s\S]*?)(&gt;)/g,'<span class="xml-tag">$1</span>$2<span class="xml-tag">$3</span>');}
   function markup(xml){
-   const fold=showRemoved?folds.previous:folds.current;
+   const fold=previous?folds.previous:folds.current;
    if(fold.xml!==xml){fold.xml=xml;fold.closed.clear();}
-   const stack=[],ranges=new Map(),removedLines=new Set(),removed=new Set(showRemoved?state.snapshot?.removedPaths||[]:[]),elements=showRemoved&&source()?Array.from(source().getElementsByTagName('*')):[];let line=0,last=0,elementIndex=0;
+   const stack=[],ranges=new Map(),removedLines=new Set(),removed=new Set(previous?state.snapshot?.removedPaths||[]:[]),elements=previous&&source()?Array.from(source().getElementsByTagName('*')):[];let line=0,last=0,elementIndex=0;
    for(const match of xml.matchAll(tokenPattern)){
     line+=(xml.slice(last,match.index).match(/\n/g)||[]).length;
     const token=match[0],start=line;line+=(token.match(/\n/g)||[]).length;last=match.index+token.length;
@@ -226,17 +226,17 @@ globalThis.FilterStudio=(()=>{
     }
    }
    let hiddenUntil=-1;
-   return '<div class="filter-xml" aria-label="'+(showRemoved?'Prévia do XML com exclusões destacadas em vermelho':'XML final filtrado')+'">'+xml.trimEnd().split('\n').map((text,i)=>{
+   return '<div class="filter-xml" aria-label="XML completo">'+xml.trimEnd().split('\n').map((text,i)=>{
     const hidden=i<=hiddenUntil,range=ranges.get(i),closed=range&&fold.closed.has(i);
     if(closed)hiddenUntil=Math.max(hiddenUntil,range.end);
-    return `<div class="filter-xml-line ${removedLines.has(i)?'filter-line-removed':''}"${removedLines.has(i)?' title="Excluído do XML final"':''} data-filter-line="${i}" ${hidden?'hidden':''}><span class="filter-line-number" aria-hidden="true">${i+1}</span>${range?`<button type="button" class="filter-fold" data-filter-action="fold" data-line="${i}" aria-expanded="${!closed}" aria-label="${closed?'Expandir':'Recolher'} ${h(range.name)}" title="${closed?'Expandir':'Recolher'} tag">${closed?'+':'−'}</button>`:'<span class="filter-fold-space"></span>'}<code>${syntax(text)}${closed?'<span class="filter-fold-summary"> … &lt;/'+h(range.name)+'&gt;</span>':''}</code></div>`;
+    return `<div class="filter-xml-line ${removedLines.has(i)?'filter-line-removed':''}" data-filter-line="${i}" ${hidden?'hidden':''}><span class="filter-line-number" aria-hidden="true">${i+1}</span>${range?`<button type="button" class="filter-fold" data-filter-action="fold" data-line="${i}" aria-expanded="${!closed}" aria-label="${closed?'Expandir':'Recolher'} ${h(range.name)}" title="${closed?'Expandir':'Recolher'} tag">${closed?'+':'−'}</button>`:'<span class="filter-fold-space"></span>'}<code>${syntax(text)}${closed?'<span class="filter-fold-summary"> … &lt;/'+h(range.name)+'&gt;</span>':''}</code></div>`;
    }).join('')+'</div>';
   }
   function output(){
    const scroll=$('outputCode'),position={top:scroll?.scrollTop||0,left:scroll?.scrollLeft||0},doc=source();
    const summary=$('filterNameSummary');if(summary)summary.textContent=state.snapshot?.name||'Revise a fórmula do nome';
-   const snap=state.snapshot,xml=showRemoved||!snap?(doc?X.serialize(doc):''):snap.xml;
-   $('outputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">${showRemoved?'Prévia da filtragem':'XML filtrado'}</span><div class="pane-actions"><button class="small ${showRemoved?'soft':''}" data-filter-action="previous" aria-pressed="${showRemoved}" ${doc?'':'disabled'}>${showRemoved?'Ver XML final':'Mostrar excluídos'}</button></div></div></div><div class="code-scroll" id="outputCode">${xml?markup(xml):'<div class="empty"><p>Cole ou importe um XML no painel de filtros.</p></div>'}</div>`;
+   const snap=state.snapshot,xml=previous||!snap?(doc?X.serialize(doc):''):snap.xml;
+   $('outputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">${previous?'Versão anterior · XML original':'XML filtrado'}</span><div class="pane-actions"><button class="small ${previous?'soft':''}" data-filter-action="previous" aria-pressed="${previous}" ${doc?'':'disabled'}>${previous?'Voltar ao filtrado':'Versão anterior'}</button></div></div></div><div class="code-scroll" id="outputCode">${xml?markup(xml):'<div class="empty"><p>Cole ou importe um XML no painel de filtros.</p></div>'}</div>`;
    $('outputCode').scrollTop=position.top;$('outputCode').scrollLeft=position.left;
    const error=$('filterError');if(error){AppAlerts.render(error,previewError,{type:'error'});}
   }
@@ -276,9 +276,9 @@ globalThis.FilterStudio=(()=>{
    if(action==='save-preset'){savePreset();return;}if(action==='new-preset'){presetNameDialog(false);return;}
    if(action==='rename-preset'){presetNameDialog(true);return;}
    if(action==='delete-preset'){deletePreset();return;}
-   if(action==='previous'){showRemoved=!showRemoved;output();return;}
+   if(action==='previous'){previous=!previous;output();return;}
    if(action==='fold'){
-    const fold=showRemoved?folds.previous:folds.current,line=Number(button.dataset.line),scroll=$('outputCode'),top=scroll.scrollTop;
+    const fold=previous?folds.previous:folds.current,line=Number(button.dataset.line),scroll=$('outputCode'),top=scroll.scrollTop;
     if(fold.closed.has(line))fold.closed.delete(line);else fold.closed.add(line);
     output();$('outputCode').scrollTop=top;$('outputCode').querySelector(`[data-line="${line}"]`)?.focus({preventScroll:true});return;
    }
