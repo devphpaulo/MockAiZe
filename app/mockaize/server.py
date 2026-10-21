@@ -185,7 +185,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(404, b"Not found", "text/plain; charset=utf-8")
             asset = files("mockaize").joinpath("web/assets", filename).read_bytes()
             return self._send_asset(asset, "image/png")
-        if route in {"/studio.js", "/studio-api.js", "/return-models.js", "/studio-layout.js", "/manual-studio.js", "/library.js", "/library.css", "/studio.css", "/select.css", "/select.js", "/ui-motion.css", "/ui-motion.js", "/date-picker.js", "/record-pagination.js", "/editor-components.css", "/return-combobox.js", "/return-selection.js", "/presence-editor.js", "/filter-studio.js"}:
+        if route in {"/navigation.js", "/navigation.css", "/home.css", "/studio.js", "/studio-api.js", "/return-models.js", "/studio-layout.js", "/manual-studio.js", "/library.js", "/library.css", "/studio.css", "/select.css", "/select.js", "/ui-motion.css", "/ui-motion.js", "/date-picker.js", "/record-pagination.js", "/editor-components.css", "/return-combobox.js", "/return-selection.js", "/presence-editor.js", "/filter-studio.js"}:
             asset = files("mockaize").joinpath("web", route.removeprefix("/")).read_bytes()
             content_type = "text/css; charset=utf-8" if route.endswith(".css") else "text/javascript; charset=utf-8"
             return self._send_asset(asset, content_type)

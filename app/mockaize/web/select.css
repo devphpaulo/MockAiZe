@@ -13,7 +13,7 @@
   max-width:100%;
   border:1px solid var(--select-border);
   border-radius:8px;
-  padding:8px 12px;
+  padding:8px 16px;
   background-color:var(--select-background);
   color:var(--select-foreground);
   font:inherit;
@@ -72,7 +72,7 @@
     flex:none;
     width:8px;
     height:8px;
-    margin-inline: auto 4px;
+    margin-inline:auto 8px;
     color:var(--select-muted);
     border-inline-end:1.5px solid currentColor;
     border-block-end:1.5px solid currentColor;
@@ -87,7 +87,7 @@
     max-inline-size:min(640px,calc(100vw - 32px));
     max-block-size:min(320px,calc(100dvh - 32px));
     margin:0;
-    padding:4px;
+    padding:8px;
     inset:auto;
     top:calc(anchor(bottom) + 4px);
     left:anchor(left);
@@ -110,7 +110,7 @@
     align-items:center;
     gap:8px;
     min-block-size:32px;
-    padding:6px 8px;
+    padding:8px 8px;
     border:0;
     border-radius:4px;
     background:transparent;
@@ -135,8 +135,8 @@
     text-align:center;
   }
   :root select:not([multiple]):not([size]) option:disabled { opacity:.45; cursor:not-allowed; }
-  :root select:not([multiple]):not([size]) optgroup { margin-block:4px; color:var(--select-muted); font-weight:600; }
-  :root select:not([multiple]):not([size]) optgroup+optgroup { border-top:1px solid var(--line); padding-top:4px; }
+  :root select:not([multiple]):not([size]) optgroup { margin-block:8px; color:var(--select-muted); font-weight:600; }
+  :root select:not([multiple]):not([size]) optgroup+optgroup { border-top:1px solid var(--line); padding-top:8px; }
 }
 @media (prefers-reduced-motion:reduce) {
   :root select:not([multiple]):not([size]),:root select:not([multiple]):not([size])::picker-icon { transition:none; }

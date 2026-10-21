@@ -6,7 +6,7 @@ globalThis.LibraryUI=(()=>{
  const label=kind=>({workspace:'Workspace',folder:'Pasta',variation:'Arquivo / variação'})[kind];
  async function request(payload){const response=await fetch('/api/library',payload?{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':document.querySelector('meta[name="csrf-token"]').content},body:JSON.stringify(payload)}:{credentials:'same-origin'});const data=await response.json();if(!response.ok)throw Error(data.error||'Não foi possível atualizar a biblioteca.');return data;}
  function create(options={}){
-  const state={nodes:options.nodes||[],selected:options.selected||null,current:null,filter:'',closed:new Set(),checked:new Set(),tree:null,manager:null,busy:false};
+  const state={nodes:options.nodes||[],selected:options.selected||null,current:null,filter:'',closed:new Set(),checked:new Set(),tree:null,workspaceColumns:false,manager:null,busy:false};
   let menu=null,menuTrigger=null,dragIds=[];
   const node=id=>state.nodes.find(item=>item.id===id);
   const children=id=>state.nodes.filter(item=>item.parent_id===id).sort((a,b)=>(a.kind==='variation')-(b.kind==='variation')||a.name.localeCompare(b.name,'pt-BR'));
@@ -105,11 +105,11 @@ globalThis.LibraryUI=(()=>{
    return children(parent).map(item=>{
     const expanded=!state.closed.has(item.id),folder=item.kind!=='variation',nested=children(item.id),contentId='lib-children-'+item.id;
     const folderIcons='<svg class="lib-icon folder-closed" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg><svg class="lib-icon folder-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17V7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2M5 11h17l-3 10H2z"/></svg>';
-    return `<div class="lib-branch" data-lib-branch="${h(item.id)}" data-state="${expanded?'open':'closed'}"><div class="lib-tree-row ${item.id===state.selected?'active':''}" data-lib-row="${h(item.id)}" data-kind="${folder?'folder':'file'}" ${folder?`data-lib-drop="${h(item.id)}"`:''} ${item.kind!=='workspace'?`draggable="true" data-lib-drag="${h(item.id)}"`:''}><button type="button" class="lib-disclosure" data-lib-toggle="${h(item.id)}" aria-label="${expanded?'Recolher':'Expandir'} ${h(item.name)}" ${folder?`aria-controls="${h(contentId)}" aria-expanded="${expanded}"`:'disabled tabindex="-1"'}>${folder?'<svg class="lib-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>':''}</button><button type="button" class="lib-node" data-lib-open="${h(item.id)}" ${folder?`aria-expanded="${expanded}" aria-controls="${h(contentId)}"`:''} title="${h(path(item.id))}">${folder?folderIcons:icon(item.kind)}<span>${h(item.name)}</span></button><button type="button" class="lib-more" data-lib-menu="${h(item.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="Opções de ${h(item.name)}">${actionIcon('more')}</button></div>${folder?`<div class="lib-children" id="${h(contentId)}" ${expanded?'':'inert'}><div class="lib-children-inner">${nested.length?treeMarkup(item.id):'<p class="lib-folder-empty">Pasta vazia</p>'}</div></div>`:''}</div>`;
+    return `<div class="lib-branch" data-lib-branch="${h(item.id)}" data-state="${expanded?'open':'closed'}"><div class="lib-tree-row ${item.id===state.selected?'active':''}" data-lib-row="${h(item.id)}" data-kind="${folder?'folder':'file'}" ${folder?`data-lib-drop="${h(item.id)}"`:''} ${item.kind!=='workspace'?`draggable="true" data-lib-drag="${h(item.id)}"`:''}><button type="button" class="lib-disclosure" data-lib-toggle="${h(item.id)}" aria-label="${expanded?'Recolher':'Expandir'} ${h(item.name)}" ${folder?`aria-controls="${h(contentId)}" aria-expanded="${expanded}"`:'disabled tabindex="-1"'}>${folder?'<svg class="lib-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>':''}</button><button type="button" class="lib-node" data-lib-open="${h(item.id)}" ${folder?`aria-expanded="${expanded}" aria-controls="${h(contentId)}"`:''} title="${h(path(item.id))}">${folder?folderIcons:icon(item.kind)}<span>${h(item.name)}${state.workspaceColumns&&!folder?`<small>Arquivo · ${h(({new:'Novos Registros',return:'Retorno',filter:'Filtragem',manual:'Manual'})[item.mode]||'Estúdio')}</small>`:''}</span></button><button type="button" class="lib-more" data-lib-menu="${h(item.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="Opções de ${h(item.name)}">${actionIcon('more')}</button></div>${folder?`<div class="lib-children" id="${h(contentId)}" ${expanded?'':'inert'}><div class="lib-children-inner">${nested.length?treeMarkup(item.id):'<p class="lib-folder-empty">Pasta vazia</p>'}</div></div>`:''}</div>`;
    }).join('');
   }
   function updateTreeWidth(){
-   if(!state.tree)return;let depth=0;
+   if(!state.tree||state.workspaceColumns)return;let depth=0;
    function visit(parent,level){for(const item of children(parent)){depth=Math.max(depth,level);if(item.kind!=='variation'&&!state.closed.has(item.id))visit(item.id,level+1);}}
    visit(null,0);state.tree.style.setProperty('--library-tree-min-width',(120+depth*24)+'px');
   }
@@ -172,11 +172,11 @@ globalThis.LibraryUI=(()=>{
   }
   function render(preserveTree=false){
    hideMenu();
-   if(state.tree&&!preserveTree){state.tree.innerHTML=treeMarkup()||'<p class="lib-hint">Crie seu primeiro workspace.</p>';bind(state.tree);updateTreeWidth();}
+   if(state.tree&&!preserveTree){state.tree.innerHTML=(state.workspaceColumns?children(null).map(ws=>`<section><p class="nav-caption">WORKSPACE · ${h(ws.name.toLocaleUpperCase('pt-BR'))}</p>${treeMarkup(ws.id)||'<p class="lib-hint">Pasta vazia</p>'}</section>`).join(''):treeMarkup())||'<p class="lib-hint">Crie seu primeiro workspace.</p>';bind(state.tree);updateTreeWidth();}
    if(state.manager)renderManager();
    options.onRender?.(state);
   }
-  return {state,node,path,act,createItem,render,mountTree:root=>{state.tree=root;render();},mountManager:root=>{state.manager=root;render();},setNodes:nodes=>{state.nodes=nodes;render();},select:id=>{state.selected=id;render();},load:async()=>{state.nodes=(await request()).nodes;render();return state.nodes;}};
+  return {state,node,path,act,createItem,render,mountTree:(root,{workspaceColumns=false}={})=>{state.tree=root;state.workspaceColumns=workspaceColumns;render();},mountManager:root=>{state.manager=root;render();},setNodes:nodes=>{state.nodes=nodes;render();},select:id=>{state.selected=id;render();},load:async()=>{state.nodes=(await request()).nodes;render();return state.nodes;}};
  }
  return{create,request};
 })();

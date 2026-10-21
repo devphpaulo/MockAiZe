@@ -60,16 +60,12 @@ globalThis.FilterStudio=(()=>{
    if(doc&&!f.group){const groups=F.groups(doc,headers());f.group=groups.find(g=>g.key===state.draft.inputGroup)?.key||groups.find(g=>g.count>1)?.key||groups[0]?.key||'';}
   }
   function select(id,label,options,value,attrs=''){return `<div class="filter-control"><label for="${id}">${label}</label><select id="${id}" ${attrs}>${options.map(([key,text])=>`<option value="${h(key)}" ${key===value?'selected':''}>${h(text)}</option>`).join('')}</select></div>`;}
-  function head(){
-   ensure();
-   $('pageHead').innerHTML=`<div class="heading-row"><div><h1>${h(state.draft.name)}</h1><p class="subline">Filtre grupos por campos e valores · prévia em tempo real</p></div><button type="button" class="ghost small" data-action="undo" title="Desfazer alteração na filtragem" ${state.undo.at(-1)?.draft.mode==='filter'?'':'disabled'}><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 3 10l5 5M3 10h10a7 7 0 0 1 7 7"/></svg>Desfazer</button></div><div class="filter-head"><div class="operation-field"><label>Operação</label><div class="segmented"><button data-mode="new">Novos Registros</button><button data-mode="return">Retorno</button><button data-mode="filter" class="active">Filtragem</button><button data-mode="manual">Manual</button></div></div><div class="filter-name-summary"><span class="hint">Nome do XML filtrado</span><code id="filterNameSummary">${h(state.snapshot?.name||data().fileName||'filtrado.xml')}</code></div></div>`;
-   $('editorToolbar').innerHTML='';
-  }
+  function head(){ensure();$('pageHead').innerHTML=`<div class="filter-head"><div class="operation-field"><label>Operação</label>${AppNavigation.operationControl('filter')}</div><div class="filter-name-summary" hidden><code id="filterNameSummary">${h(state.snapshot?.name||data().fileName||'filtrado.xml')}</code></div></div>`;$('editorToolbar').innerHTML='';}
   function presetHeader(){
    const selected=activePreset(),modified=selected&&JSON.stringify(selected.filter)!==JSON.stringify(data());
    const saveLabel=selected?'Salvar preset':'Salvar como preset';
    const svg=path=>`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
-   return `<div class="filter-preset-block filter-preset-header"><label class="sr-only" for="filterPresetTrigger">Preset do filtro${modified?' · alterações locais':''}</label><div id="filterPresetCombobox" class="return-combobox"></div><div class="filter-preset-actions"><button class="ghost small" data-filter-action="save-preset" aria-label="${saveLabel}" title="${saveLabel}" ${selected&&!modified?'disabled':''}>${svg('<path d="M4 3h14l3 3v15H3V3zm3 0v6h10V3M7 21v-8h10v8"/>')}</button><button class="ghost small" data-filter-action="rename-preset" aria-label="Renomear preset" title="Renomear preset" ${selected?'':'disabled'}>${svg('<path d="m16 3 5 5M4 20l4-1L21 6l-3-3L5 16z"/>')}</button><button class="ghost small danger" data-filter-action="delete-preset" aria-label="Excluir preset" title="Excluir preset" ${selected?'':'disabled'}>${svg('<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/>')}</button></div></div>`;
+   return `<div class="filter-preset-block filter-preset-header"><label class="sr-only" for="filterPresetTrigger">Preset do filtro${modified?' · alterações locais':''}</label><div id="filterPresetCombobox" class="return-combobox"></div><div class="filter-preset-actions"><button class="ghost small" data-filter-action="save-preset" aria-label="${saveLabel}" title="${saveLabel}" ${selected&&!modified?'disabled':''}>${svg('<path d="M4 3h14l3 3v15H3V3zm3 0v6h10V3M7 21v-8h10v8"/>')}</button><button class="ghost small" data-filter-action="new-preset" aria-label="Adicionar preset" title="Adicionar preset">＋</button><button class="ghost small" data-filter-action="rename-preset" aria-label="Renomear preset" title="Renomear preset" ${selected?'':'disabled'}>${svg('<path d="m16 3 5 5M4 20l4-1L21 6l-3-3L5 16z"/>')}</button><button class="ghost small danger" data-filter-action="delete-preset" aria-label="Excluir preset" title="Excluir preset" ${selected?'':'disabled'}>${svg('<path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/>')}</button></div></div>`;
   }
   function conditionId(condition){if(!conditionIds.has(condition))conditionIds.set(condition,crypto.randomUUID());return conditionIds.get(condition);}
   function conditionSummary(condition){
@@ -246,10 +242,10 @@ globalThis.FilterStudio=(()=>{
   }
   function render(){
    ensure();compute();
-   $('inputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">${nameEditor?'Nome do arquivo':'Filtragem'}</span><div class="pane-actions"><button class="small ${nameEditor?'soft':''}" data-filter-action="filename" aria-expanded="${nameEditor}">ƒ Nome do arquivo</button>${nameEditor?'':o.loadXmlButton()}</div></div><div class="pane-subtitle"><span class="inline-badge">${nameEditor?'Configure a fórmula · clique novamente para voltar aos filtros':'Atualização em tempo real'}</span>${nameEditor?'':presetHeader()}</div></div><div class="code-scroll filter-form" id="inputCode">${nameEditor?'<div id="filterNameEditor" class="filter-name-editor"></div>':builder()}</div>`;
+   $('inputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">${nameEditor?'Nome do arquivo':'Filtragem'}</span><div class="pane-actions">${nameEditor?'':o.loadXmlButton()}${nameEditor?'':presetHeader()}</div></div><div class="pane-subtitle"><span class="inline-badge">${nameEditor?'Configure a fórmula · clique novamente para voltar aos filtros':'Atualização em tempo real'}</span></div></div><div class="code-scroll filter-form" id="inputCode">${nameEditor?'<div id="filterNameEditor" class="filter-name-editor"></div>':builder()}</div>`;
    $('inputPanel').classList.remove('mobile-hidden');$('outputPanel').classList.remove('mobile-hidden');if(!nameEditor)mountPresets();output();
   }
-  function footer(){const snap=state.snapshot,ready=snap&&!state.stale;$('bottomBar').innerHTML=`<div class="bottom-summary" role="status">${h(previewError||(snap?snap.count+' de '+snap.originalCount+' grupo(s) mantido(s)':'Configure as condições no painel esquerdo.'))}</div><div class="export-actions"><span class="filename-summary">${h(snap?.name||'filtrado.xml')}</span><button data-filter-action="export" data-action="export-xml" ${ready&&!exporting?'':'disabled'}>↓ Exportar XML filtrado</button></div>`;}
+  function footer(){o.presentation?.();const snap=state.snapshot,ready=snap&&!state.stale;$('bottomBar').innerHTML=`<div class="bottom-summary" role="status">${h(previewError||(snap?snap.count+' de '+snap.originalCount+' grupo(s) mantido(s)':'Configure as condições no painel esquerdo.'))}</div><div class="export-actions"><span class="filename-summary">${h(snap?.name||'filtrado.xml')}</span><button data-filter-action="export" data-action="export-xml" ${ready&&!exporting?'':'disabled'}>↓ Exportar XML filtrado</button></div>`;}
   function refresh(){if(state.draft?.mode!=='filter')return;compute();output();footer();}
   async function apply(){refresh();}
   async function exportXml(){
@@ -277,7 +273,7 @@ globalThis.FilterStudio=(()=>{
    if(action==='toggle-condition'){toggleCondition(Number(button.dataset.index));return;}
    if(action==='filename'){toggleName();return;}
    if(action==='export'){exportXml();return;}
-   if(action==='save-preset'){savePreset();return;}
+   if(action==='save-preset'){savePreset();return;}if(action==='new-preset'){presetNameDialog(false);return;}
    if(action==='rename-preset'){presetNameDialog(true);return;}
    if(action==='delete-preset'){deletePreset();return;}
    if(action==='previous'){previous=!previous;output();return;}

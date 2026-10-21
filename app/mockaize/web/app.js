@@ -1,48 +1,22 @@
 (() => {
  'use strict';
  const $=id=>document.getElementById(id),csrf=document.querySelector('meta[name="csrf-token"]').content;
- let settings={};
+ let settings={},navigation=null;
  function notify(message){UiMotion.toast($('toast'),message);}
  async function api(url,method='GET',body){const response=await fetch(url,{method,credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},...(body?{body:JSON.stringify(body)}:{})});const result=await response.json();if(!response.ok)throw Error(result.error||'Não foi possível concluir a operação.');return result;}
- function setupSidebarResize(){
-  settings.studioLayout={sidebarWidth:224,inspectorWidth:320,editorMode:'panel',syncScroll:false,...settings.studioLayout};
-  const handle=$('homeSidebarResize');let width=Number(settings.studioLayout?.sidebarWidth)||224,drag=null,saveTimer,saveQueue=Promise.resolve();
-  const maximum=()=>Math.max(192,Math.floor(Math.min(448,innerWidth-672)/8)*8);
-  function paint(){
-   width=Math.max(192,Math.min(maximum(),Math.round(width/8)*8));
-   document.documentElement.style.setProperty('--library-sidebar-width',width+'px');
-   handle.setAttribute('aria-valuenow',String(width));handle.setAttribute('aria-valuemax',String(maximum()));
-  }
-  function persist(){
-   clearTimeout(saveTimer);saveTimer=setTimeout(()=>{
-    const studioLayout={...settings.studioLayout,sidebarWidth:width};settings.studioLayout=studioLayout;
-    saveQueue=saveQueue.then(()=>api('/api/settings','PUT',{studioLayout})).catch(error=>notify(error.message));
-   },250);
-  }
-  function finish(){if(!drag)return;drag=null;document.body.classList.remove('resizing-home-sidebar');persist();}
-  handle.addEventListener('pointerdown',event=>{if(event.button!==0||innerWidth<=700)return;event.preventDefault();handle.setPointerCapture(event.pointerId);drag={x:event.clientX,width};document.body.classList.add('resizing-home-sidebar');});
-  handle.addEventListener('pointermove',event=>{if(!drag)return;width=drag.width+event.clientX-drag.x;paint();});
-  for(const type of ['pointerup','pointercancel','lostpointercapture'])handle.addEventListener(type,finish);
-  window.addEventListener('blur',finish);
-  handle.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();width=event.key==='Home'?192:event.key==='End'?maximum():width+(event.key==='ArrowRight'?1:-1)*(event.shiftKey?32:8);paint();persist();});
-  handle.addEventListener('dblclick',()=>{width=224;paint();persist();});
-  window.addEventListener('resize',()=>{if(innerWidth>700)paint();});paint();
- }
- function showLibrary(open){document.querySelectorAll('.hero,.overview,.create-panel,.structure-guide').forEach(el=>el.hidden=open);$('libraryManager').hidden=!open;document.querySelector('.page-location h1').textContent=open?'Organizar diretórios':'Visão geral';const url=new URL(location);url.searchParams.set('view',open?'library':'home');history.replaceState(null,'',url);}
- const library=LibraryUI.create({notify,onOpen:id=>{location.href='/studio?id='+encodeURIComponent(id);},onSelect:()=>showLibrary(true),onRender:state=>{
-  const roots=state.nodes.filter(item=>item.kind==='workspace');let active=library.node(state.selected||state.current);while(active?.parent_id)active=library.node(active.parent_id);const current=active?.id||$('homeWorkspace').value||settings.lastSelection?.workspaceId||roots[0]?.id;const workspaceSelect=$('homeWorkspace');const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));workspaceSelect.innerHTML=roots.length?roots.map(item=>`<option value="${escape(item.id)}" ${item.id===current?'selected':''}>${escape(item.name)}</option>`).join(''):'<option value="">Crie um workspace</option>';workspaceSelect.disabled=!roots.length;
-  $('empty').hidden=state.nodes.length>0;$('exportPs').disabled=library?.node(state.selected)?.kind!=='variation';
+ function showLibrary(open){document.querySelectorAll('.hero,.overview,.create-panel,.structure-guide').forEach(el=>el.hidden=open);$('libraryManager').hidden=!open;navigation?.update({view:open?'library':'home'});const url=new URL(location);url.searchParams.set('view',open?'library':'home');history.replaceState(null,'',url);}
+ const library=LibraryUI.create({notify,onOpen:id=>{location.href='/studio?id='+encodeURIComponent(id);},onRender:state=>{
+  const roots=state.nodes.filter(item=>item.kind==='workspace');let active=library.node(state.selected||state.current);while(active?.parent_id)active=library.node(active.parent_id);navigation?.update({workspaceId:active?.id||settings.lastSelection?.workspaceId||roots[0]?.id});
   $('counts').innerHTML=[['workspace','Workspace','Workspaces'],['folder','Pasta','Pastas'],['variation','Arquivo / variação','Arquivos / variações']].map(([kind,single,plural])=>{const count=state.nodes.filter(n=>n.kind===kind).length;return `<div class="metric"><strong>${String(count).padStart(2,'0')}</strong><span>${count===1?single:plural}</span></div>`;}).join('');
-  const parent=library?.node(state.selected);$('selection').textContent=$('kind').value==='workspace'?'Workspace é a pasta principal.':parent?`Criar dentro de “${parent.kind==='variation'?library.path(parent.parent_id):library.path(parent.id)}”.`:'Selecione um workspace ou uma pasta na lateral.';
+  const parent=library?.node(state.selected);$('selection').textContent=$('kind').value==='workspace'?'Workspace é a pasta principal.':parent?`Criar dentro de “${parent.kind==='variation'?library.path(parent.parent_id):library.path(parent.id)}”.`:'Selecione um workspace ou uma pasta no menu Biblioteca.';
  }});
- library.mountTree($('tree'));library.mountManager($('libraryManager'));
- document.querySelectorAll('.home-link,.brand').forEach(el=>el.addEventListener('click',()=>showLibrary(false)));
- $('organizeLibrary').onclick=()=>showLibrary(true);
- $('homeWorkspace').onchange=event=>{library.state.current=event.target.value;library.state.selected=event.target.value;library.state.checked.clear();library.state.closed.delete(event.target.value);library.render();};
+ library.mountManager($('libraryManager'));
  $('kind').onchange=()=>library.render();
  $('createForm').onsubmit=async event=>{event.preventDefault();const kind=$('kind').value;let parent=library.node(library.state.selected||library.state.current);if(parent?.kind==='variation')parent=library.node(parent.parent_id);const button=event.submitter;button.disabled=true;try{const result=await LibraryUI.request({action:'create',kind,parentId:kind==='workspace'?null:parent?.id,name:$('name').value});library.state.selected=result.id;library.setNodes(result.library.nodes);$('name').value='';if(kind==='variation')location.href='/studio?id='+encodeURIComponent(result.id);else{library.state.current=result.id;showLibrary(true);library.render();}}catch(e){notify(e.message);}finally{button.disabled=false;}};
- $('exportPs').onclick=()=>{const selected=library.node(library.state.selected);if(selected?.kind==='variation')location.href='/studio?id='+encodeURIComponent(selected.id)+'&export=1';else notify('Abra um arquivo no estúdio para exportar PS1 + BAT.');};
  function theme(){const value=settings.theme==='light'?'light':'dark',button=$('themeButton');document.documentElement.dataset.theme=value;button.innerHTML=value==='light'?'<svg class="theme-icon moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.1A8.7 8.7 0 0 1 8.9 3.8 8.8 8.8 0 1 0 20.2 15.1Z"/></svg>':'<svg class="theme-icon sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';button.setAttribute('aria-label',value==='light'?'Mudar para tema escuro':'Mudar para tema claro');button.title=value==='light'?'Mudar para tema escuro':'Mudar para tema claro';}
  $('themeButton').onclick=async()=>{try{settings=await api('/api/settings','PUT',{theme:document.documentElement.dataset.theme==='light'?'dark':'light'});theme();}catch(e){notify(e.message);}};
- (async()=>{try{settings=await api('/api/settings');setupSidebarResize();theme();await library.load();const params=new URLSearchParams(location.search),parent=params.get('parent');if(library.node(parent)){library.state.current=parent;library.state.selected=parent;library.render();}showLibrary(params.get('view')==='library');}catch(e){notify(e.message);}})();
+ function selectedFile(){const selected=library.node(library.state.selected);if(selected?.kind==='variation')return selected.id;let ws=selected;while(ws?.parent_id)ws=library.node(ws.parent_id);if(!ws)ws=library.node(settings.lastSelection?.workspaceId);const within=n=>{for(let p=library.node(n.parent_id);p;p=library.node(p.parent_id))if(p.id===ws?.id)return true;return false;};const files=library.state.nodes.filter(n=>n.kind==='variation');return(files.find(n=>n.id===settings.lastSelection?.variationId&&(!ws||within(n)))||files.find(n=>!ws||within(n)))?.id;}
+ (async()=>{try{settings=await api('/api/settings');theme();await library.load();
+ navigation=AppNavigation.create({library,themeButton:$('themeButton'),notify,context:{workspaceId:settings.lastSelection?.workspaceId},onHome:()=>showLibrary(false),onLibrary:()=>showLibrary(true),onOpen:id=>{location.href='/studio?id='+encodeURIComponent(id);},onWorkspace:id=>{library.state.selected=id;library.state.current=id;library.state.checked.clear();library.render();navigation.update({workspaceId:id});},onMode:mode=>{const id=selectedFile();if(id)location.href='/studio?id='+encodeURIComponent(id)+'&mode='+encodeURIComponent(mode);else notify('Crie ou abra um arquivo para escolher uma operação.');},onTool:tool=>{const id=selectedFile();if(tool==='help')return notify('Use Biblioteca para abrir ou organizar suas pastas e arquivos.');if(id){location.href='/studio?id='+encodeURIComponent(id)+'&tool='+encodeURIComponent(tool);}else notify('Abra um arquivo no estúdio para usar esta ferramenta.');}});
+const params=new URLSearchParams(location.search),parent=params.get('parent');if(library.node(parent)){library.state.current=parent;library.state.selected=parent;library.render();}showLibrary(params.get('view')==='library');}catch(e){notify(e.message);}})();
 })();

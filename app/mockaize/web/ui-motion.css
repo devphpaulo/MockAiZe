@@ -30,7 +30,7 @@
   left:auto;
   transform:none;
   max-width:min(480px,calc(100vw - 32px));
-  padding:16px 20px;
+  padding:16px 24px;
   border:1px solid var(--line,#404040);
   border-radius:8px;
   background:var(--elevated,var(--surface,#242424));
@@ -41,9 +41,9 @@
   z-index:1000;
   pointer-events:none;
 }
-.operation-switch { position:relative; isolation:isolate; padding:4px; border-radius:8px; background:var(--elevated); }
+.operation-switch { position:relative; isolation:isolate; padding:8px; border-radius:8px; background:var(--elevated); }
 .operation-switch > .operation-indicator { position:absolute; inset-block:4px; left:0; border-radius:6px; background:var(--green); box-shadow:none; pointer-events:none; z-index:0; }
-.operation-switch > button { position:relative; z-index:1; height:32px; min-height:32px; border-radius:var(--button-radius,6px); padding:4px 8px; transition:color 120ms; }
+.operation-switch > button { position:relative; z-index:1; height:32px; min-height:32px; border-radius:var(--button-radius,6px); padding:8px 8px; transition:color 120ms; }
 .operation-switch > button.active { background:transparent; color:#08160d; box-shadow:none; }
 /* Button 14 treatment applies only to the XML download control. */
 #bottomBar button:is([data-action="export-xml"],[data-action="manual-export"]) {
@@ -67,7 +67,7 @@
   min-width:0;
   height:32px;
   min-height:32px;
-  padding:0 12px;
+  padding:0 16px;
   border:1px solid var(--control-border);
   border-radius:var(--button-radius,6px);
   background:var(--control);
@@ -77,14 +77,14 @@
   box-shadow:0 1px 2px rgb(0 0 0 / 6%);
 }
 .return-combobox-trigger > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.combobox-chevron { flex:none; width:8px; height:8px; margin-inline:8px 4px; border-right:1.5px solid var(--muted); border-bottom:1.5px solid var(--muted); rotate:45deg; translate:0 -2px; transition:rotate 160ms; }
+.combobox-chevron { flex:none; width:8px; height:8px; margin-inline:8px 8px; border-right:1.5px solid var(--muted); border-bottom:1.5px solid var(--muted); rotate:45deg; translate:0 -2px; transition:rotate 160ms; }
 .return-combobox-trigger[aria-expanded="true"] .combobox-chevron { rotate:225deg; translate:0 2px; }
 .return-combobox-content {
   position:fixed;
   box-sizing:border-box;
   inset:auto;
   margin:0;
-  padding:4px;
+  padding:8px;
   overflow:hidden;
   border:1px solid var(--control-border);
   border-radius:8px;
@@ -97,8 +97,8 @@
   flex:none;
   width:100%;
   height:36px;
-  margin:0 0 4px;
-  padding:8px 12px;
+  margin:0 0 8px;
+  padding:8px 16px;
   border:1px solid var(--control-border);
   border-radius:6px;
   background:var(--control);
@@ -112,7 +112,7 @@
   justify-content:flex-start;
   width:100%;
   min-height:32px;
-  padding:6px 8px;
+  padding:8px 8px;
   border:0;
   border-radius:4px;
   background:transparent;
@@ -126,7 +126,7 @@
 .return-combobox-option > span:first-child { flex:1; min-width:0; overflow-wrap:anywhere; }
 .return-combobox-option.highlighted,.return-combobox-content .return-combobox-option:hover,.return-combobox-content .return-combobox-add:hover { background:var(--selection); }
 .combobox-check { margin-inline-start:auto; color:var(--green); }
-.return-combobox-separator { flex:none; height:1px; margin:4px -4px; background:var(--line); }
+.return-combobox-separator { flex:none; height:1px; margin:8px -8px; background:var(--line); }
 .return-combobox-add { flex:none; }
 .return-combobox-add > span:first-child { color:var(--muted); font-size:18px; }
 .return-combobox-empty { padding:16px 8px; color:var(--muted); font-size:12px; }

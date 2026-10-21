@@ -24,7 +24,8 @@ def ensure_schema(db):
 
 def snapshot():
     with storage.connect() as db:
-        return {'nodes':[dict(row) for row in db.execute('''SELECT n.*,v.revision,v.file_index FROM library_nodes n
+        return {'nodes':[dict(row) for row in db.execute('''SELECT n.*,v.revision,v.file_index,
+            CASE WHEN json_valid(v.config_json) THEN json_extract(v.config_json,'$.mode') END AS mode FROM library_nodes n
             LEFT JOIN variations v ON v.id=n.id WHERE n.deleted_at IS NULL ORDER BY n.name COLLATE NOCASE''')]}
 
 

@@ -4,30 +4,31 @@ globalThis.StudioLayout = (() => {
   const $ = id => document.getElementById(id);
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   function create({ preferences = {}, save, redraw, closeInspector, notify }) {
-    const prefs = { sidebarWidth: 224, inspectorWidth: 320, editorMode: 'panel', syncScroll: false, ...preferences };
+    const prefs = { sidebarWidth: 224, inspectorWidth: 360, editorMode: 'panel', syncScroll: false, ...preferences };
     let saveTimer, frame, dragging = null, presented = false, presentation = 'closed', sheetAnimation = null, sheetVersion = 0;
     const expectedScroll = new WeakMap(), boundScroll = new WeakSet();
     const scheduleDraw = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(redraw); };
     const persist = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => save({ ...prefs }).catch(error => notify(error.message)), 250); };
     function widths() {
       if (innerWidth > 850) {
-        prefs.sidebarWidth = clamp(prefs.sidebarWidth, 192, Math.max(192, Math.floor(Math.min(448, innerWidth - 672) / 8) * 8));
-        prefs.inspectorWidth = clamp(prefs.inspectorWidth, 272, Math.max(272, Math.floor(Math.min(720, innerWidth - prefs.sidebarWidth - 400) / 8) * 8));
+        // Retain the legacy preference for settings/backup compatibility; no rail is rendered.
+        prefs.sidebarWidth = clamp(prefs.sidebarWidth, 192, 448);
+        prefs.inspectorWidth = clamp(prefs.inspectorWidth, 272, Math.max(272, Math.floor(Math.min(720, innerWidth - 400) / 8) * 8));
       }
-      document.documentElement.style.setProperty('--sidebar-width', `${prefs.sidebarWidth}px`);
+      document.documentElement.style.setProperty('--sidebar-width', '0px');
       document.documentElement.style.setProperty('--inspector-width', `${prefs.inspectorWidth}px`);
-      for (const [id, value] of [['sidebarResize', prefs.sidebarWidth], ['inspectorResize', prefs.inspectorWidth]]) $(id).setAttribute('aria-valuenow', String(value));
+      for (const [id, value] of [['sidebarResize', prefs.sidebarWidth], ['inspectorResize', prefs.inspectorWidth]]) $(id)?.setAttribute('aria-valuenow', String(value));
       scheduleDraw();
     }
     function resize(which, value, commit = true) {
       const min = which === 'sidebar' ? 192 : 272;
-      const available = which === 'sidebar' ? innerWidth - prefs.inspectorWidth - 400 : innerWidth - prefs.sidebarWidth - 400;
+      const available = which === 'sidebar' ? innerWidth - prefs.inspectorWidth - 400 : innerWidth - 400;
       const max = Math.max(min, Math.min(which === 'sidebar' ? 448 : 720, available));
       prefs[`${which}Width`] = clamp(Math.round(value / 8) * 8, min, max);
       widths(); if (commit) persist();
     }
     for (const [id, which] of [['sidebarResize', 'sidebar'], ['inspectorResize', 'inspector']]) {
-      const handle = $(id);
+      const handle = $(id);if(!handle)continue;
       handle.addEventListener('pointerdown', event => {
         if (event.button !== 0) return;
         event.preventDefault(); handle.setPointerCapture(event.pointerId);
