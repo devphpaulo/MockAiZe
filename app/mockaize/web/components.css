@@ -60,3 +60,15 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.55}
 .lib-table-head{background:var(--elevated)}
 .lib-table-row>button{background:transparent}
 .library-dialog input[type=checkbox],.library-dialog input[type=radio]{width:16px;height:16px;min-height:16px;padding:0}
+
+/* Manual/filter previews share a single header row after removing helper bands. */
+.app:is(.manual-mode,.filter-mode) .pane-head{height:64px;min-height:64px;padding:8px 16px;gap:0;justify-content:center}
+.app:is(.manual-mode,.filter-mode) .pane-title-row{min-height:48px;align-items:center;margin:0}
+.app.manual-mode .pane-title-row{flex-wrap:nowrap}
+.app.manual-mode .pane-title-row>.pane-title{flex:1 1 auto;flex-basis:auto}
+.app.manual-mode .pane-title-row>.pane-actions{margin-left:auto}
+.app.manual-mode .manual-record-group{margin-left:auto;flex:0 1 640px;max-width:640px;justify-content:flex-end}
+.app.manual-mode .manual-record-group select{min-width:0;max-width:none;flex:1;width:0}
+@media(max-width:1280px){.app.manual-mode .manual-record-group{flex-basis:48vw}}
+@media(max-width:960px){.app:is(.manual-mode,.filter-mode) .pane-head{height:auto;min-height:64px}.app.filter-mode .pane-title-row{flex-wrap:wrap}.app.manual-mode .pane-title-row{flex-wrap:wrap}.app.manual-mode .pane-title-row>.pane-title{flex-basis:100%}}
+@media(max-width:680px){.app.manual-mode .manual-record-group{flex-basis:100%;max-width:none}.app.manual-mode .editor-toolbar{flex-wrap:wrap}.app.manual-mode .pane-title-row{gap:8px}.app.manual-mode .pane-title-row>.pane-actions{margin-left:auto}}

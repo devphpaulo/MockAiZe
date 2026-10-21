@@ -24,3 +24,9 @@ Implementada na branch `staging`, baseada na `dev`. A referência é o protótip
 ## Integração
 
 A navegação usa as APIs reais, não os dados ou a persistência isolada do protótipo. Arquivos estáticos novos estão no servidor e no empacotamento Windows. A preferência legada de largura da lateral continua válida para compatibilidade de configurações e backups, mas não ocupa espaço na interface.
+
+## Ajuste dos cabeçalhos de prévia
+
+- Manual e Filtragem usam cabeçalhos em uma linha, com títulos alinhados entre os dois painéis e sem as faixas auxiliares de texto abaixo.
+- Removidos Atualização em tempo real, status textual do XML filtrado, Cabeçalho compartilhado e a explicação da prévia manual. Erros e resultados continuam nos componentes próprios e no rodapé.
+- No Manual, Grupo do registro permanece compacto e alinhado à direita da barra; carregamento e contagem ficam à esquerda. Novos registros e Retorno mantêm os seletores à direita conforme o padrão aprovado.
