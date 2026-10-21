@@ -216,3 +216,10 @@ option { background: var(--surface-2); color: var(--text); }
 
 @media(min-width:701px){.shell:has(>.library-sidebar){grid-template-columns:var(--library-sidebar-width,224px) minmax(0,1fr)}}
 @media(max-width:700px){.library-sidebar .library{max-height:none}}
+.home-sidebar-resize{position:absolute;top:0;right:-4px;bottom:0;width:8px;z-index:12;cursor:col-resize;touch-action:none;background:transparent}
+.home-sidebar-resize::after{content:"";position:absolute;inset:0 3px;background:transparent;transition:background 120ms}
+.home-sidebar-resize:hover::after,.home-sidebar-resize:focus-visible::after,.resizing-home-sidebar .home-sidebar-resize::after{background:var(--accent)}
+.resizing-home-sidebar,.resizing-home-sidebar *{cursor:col-resize!important;user-select:none!important}
+.library-sidebar #tree>.lib-branch{min-width:var(--library-tree-min-width,120px)}
+.library-sidebar #tree .lib-tree-row .lib-node{flex:1 0 56px;min-width:56px}
+@media(max-width:700px){.home-sidebar-resize{display:none}}

@@ -108,11 +108,16 @@ globalThis.LibraryUI=(()=>{
     return `<div class="lib-branch" data-lib-branch="${h(item.id)}" data-state="${expanded?'open':'closed'}"><div class="lib-tree-row ${item.id===state.selected?'active':''}" data-lib-row="${h(item.id)}" data-kind="${folder?'folder':'file'}" ${folder?`data-lib-drop="${h(item.id)}"`:''} ${item.kind!=='workspace'?`draggable="true" data-lib-drag="${h(item.id)}"`:''}><button type="button" class="lib-disclosure" data-lib-toggle="${h(item.id)}" aria-label="${expanded?'Recolher':'Expandir'} ${h(item.name)}" ${folder?`aria-controls="${h(contentId)}" aria-expanded="${expanded}"`:'disabled tabindex="-1"'}>${folder?'<svg class="lib-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>':''}</button><button type="button" class="lib-node" data-lib-open="${h(item.id)}" ${folder?`aria-expanded="${expanded}" aria-controls="${h(contentId)}"`:''} title="${h(path(item.id))}">${folder?folderIcons:icon(item.kind)}<span>${h(item.name)}</span></button><button type="button" class="lib-more" data-lib-menu="${h(item.id)}" aria-haspopup="menu" aria-expanded="false" aria-label="Opções de ${h(item.name)}">${actionIcon('more')}</button></div>${folder?`<div class="lib-children" id="${h(contentId)}" ${expanded?'':'inert'}><div class="lib-children-inner">${nested.length?treeMarkup(item.id):'<p class="lib-folder-empty">Pasta vazia</p>'}</div></div>`:''}</div>`;
    }).join('');
   }
+  function updateTreeWidth(){
+   if(!state.tree)return;let depth=0;
+   function visit(parent,level){for(const item of children(parent)){depth=Math.max(depth,level);if(item.kind!=='variation'&&!state.closed.has(item.id))visit(item.id,level+1);}}
+   visit(null,0);state.tree.style.setProperty('--library-tree-min-width',(120+depth*24)+'px');
+  }
   function toggleBranch(id,expand){
    const item=node(id);if(!item||item.kind==='variation')return;
    const expanded=expand??state.closed.has(id);expanded?state.closed.delete(id):state.closed.add(id);
    const branch=state.tree?.querySelector(`[data-lib-branch="${CSS.escape(id)}"]`);if(!branch)return;
-   branch.dataset.state=expanded?'open':'closed';const button=branch.querySelector('.lib-disclosure');button.setAttribute('aria-expanded',String(expanded));button.setAttribute('aria-label',(expanded?'Recolher ':'Expandir ')+item.name);branch.querySelector('.lib-node').setAttribute('aria-expanded',String(expanded));branch.querySelector('.lib-children').inert=!expanded;
+   branch.dataset.state=expanded?'open':'closed';const button=branch.querySelector('.lib-disclosure');button.setAttribute('aria-expanded',String(expanded));button.setAttribute('aria-label',(expanded?'Recolher ':'Expandir ')+item.name);branch.querySelector('.lib-node').setAttribute('aria-expanded',String(expanded));branch.querySelector('.lib-children').inert=!expanded;updateTreeWidth();
   }
   function validDrop(ids,parentId){
    return !state.busy&&node(parentId)?.kind!=='variation'&&!!node(parentId)&&ids.length>0&&ids.every(id=>node(id)&&node(id).kind!=='workspace'&&!descendants(id).has(parentId))&&ids.some(id=>node(id).parent_id!==parentId);
@@ -167,7 +172,7 @@ globalThis.LibraryUI=(()=>{
   }
   function render(preserveTree=false){
    hideMenu();
-   if(state.tree&&!preserveTree){state.tree.innerHTML=treeMarkup()||'<p class="lib-hint">Crie seu primeiro workspace.</p>';bind(state.tree);}
+   if(state.tree&&!preserveTree){state.tree.innerHTML=treeMarkup()||'<p class="lib-hint">Crie seu primeiro workspace.</p>';bind(state.tree);updateTreeWidth();}
    if(state.manager)renderManager();
    options.onRender?.(state);
   }

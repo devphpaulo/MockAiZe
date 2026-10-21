@@ -43,7 +43,7 @@ globalThis.FilterStudio=(()=>{
  function create(o){
   const {state,X,h}=o,$=id=>document.getElementById(id),F=XmlFilter;
   let timer=null,cachedXml=null,cachedDoc=null,owner=null,previous=false,previewError='',exporting=false;
-  const conditionIds=new WeakMap(),collapsedConditions=new WeakSet();let sorting=null;
+  const conditionIds=new WeakMap(),expandedConditions=new WeakSet();let sorting=null;
   const folds={current:{xml:null,closed:new Set()},previous:{xml:null,closed:new Set()}};
   const data=()=>state.draft.filter;
   const presets=()=>state.draft.filterPresets;
@@ -77,7 +77,7 @@ globalThis.FilterStudio=(()=>{
    return field+' · '+(F.operators[condition.operator]||'Escolha a condição')+(['exists','missing','empty','notEmpty'].includes(condition.operator)?'':condition.value?' “'+condition.value+'”':'');
   }
   function conditionCard(c,i,fields){
-   const id=conditionId(c),closed=collapsedConditions.has(c);
+   const id=conditionId(c),closed=!expandedConditions.has(c);
    const svg=content=>`<svg viewBox="0 0 24 24" aria-hidden="true">${content}</svg>`;
    return `<section class="filter-condition ${closed?'is-collapsed':''}" data-condition-id="${id}" data-condition-index="${i}" aria-label="Condição ${i+1}"><div class="filter-condition-head"><button type="button" class="filter-sort-handle" data-filter-handle="${i}" aria-label="Mover condição ${i+1}" aria-describedby="filterSortHelp" title="Arraste para reordenar · ↑ e ↓ pelo teclado">${svg('<circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/>')}</button><button type="button" class="filter-condition-toggle" data-filter-action="toggle-condition" data-index="${i}" aria-expanded="${!closed}" aria-controls="conditionBody-${id}"><span class="filter-condition-heading"><strong>Condição ${i+1}</strong><span class="filter-condition-summary">${h(conditionSummary(c))}</span></span>${svg('<path d="m6 9 6 6 6-6"/>')}</button><button type="button" class="filter-condition-remove" data-filter-action="remove" data-index="${i}" aria-label="Remover condição ${i+1}" title="Remover condição">${svg('<path d="M4 7h16M9 7V4h6v3m3 0-1 14H7L6 7m4 4v6m4-6v6"/>')}</button></div><div class="filter-condition-body" id="conditionBody-${id}" ${closed?'hidden':''}>${select('filterField'+i,'Campo ou grupo',[['','Selecione um campo'],...fields.map(n=>[n.key,n.display])],c.path,`data-filter-condition="path" data-index="${i}"`)}${select('filterOperator'+i,'Condição',Object.entries(F.operators),c.operator,`data-filter-condition="operator" data-index="${i}"`)}<div class="filter-control"><label for="filterValue${i}">Valor</label><input id="filterValue${i}" data-filter-condition="value" data-index="${i}" maxlength="2000" value="${h(c.value)}" ${['exists','missing','empty','notEmpty'].includes(c.operator)?'disabled placeholder="Não se aplica"':''}></div></div></section>`;
   }
@@ -87,8 +87,8 @@ globalThis.FilterStudio=(()=>{
   }
   function toggleCondition(index){
    const condition=data().conditions[index];if(!condition)return;
-   const card=$('inputPanel').querySelector(`[data-condition-id="${conditionId(condition)}"]`),closed=!collapsedConditions.has(condition);
-   if(closed)collapsedConditions.add(condition);else collapsedConditions.delete(condition);
+   const card=$('inputPanel').querySelector(`[data-condition-id="${conditionId(condition)}"]`),closed=expandedConditions.has(condition);
+   if(closed)expandedConditions.delete(condition);else expandedConditions.add(condition);
    card.classList.toggle('is-collapsed',closed);card.querySelector('.filter-condition-body').hidden=closed;card.querySelector('.filter-condition-toggle').setAttribute('aria-expanded',String(!closed));
   }
   function moveCondition(from,to){
