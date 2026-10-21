@@ -2,25 +2,9 @@
 globalThis.UiMotion = (() => {
   'use strict';
   const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const toastStates = new WeakMap();
   let previousMode = null, observedGroup = null;
-  function toast(element, message, duration = 4200) {
-    const previous = toastStates.get(element);
-    if (previous) { clearTimeout(previous.timer); previous.animation?.cancel(); }
-    const state = {};
-    toastStates.set(element, state);
-    element.textContent = message;
-    element.hidden = false;
-    if (!reduced()) state.animation = element.animate([
-      {opacity:0, translate:'0 20px'}, {opacity:1, translate:'0 0'}
-    ], {duration:280, easing:'cubic-bezier(.22,1,.36,1)'});
-    state.timer = setTimeout(async () => {
-      if (!reduced()) {
-        state.animation = element.animate([{opacity:1,translate:'0 0'},{opacity:0,translate:'0 8px'}], {duration:160,easing:'ease-in',fill:'forwards'});
-        try { await state.animation.finished; } catch { return; }
-      }
-      if (toastStates.get(element) === state) { element.hidden = true; state.animation?.cancel(); }
-    }, duration);
+  function toast(element, message, options = {}) {
+    return AppAlerts.notify(element, message, typeof options === 'number' ? {duration:options} : options);
   }
   function springPosition(time) {
     const stiffness=500, damping=35, decay=damping/2;

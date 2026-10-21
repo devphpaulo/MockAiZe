@@ -36,7 +36,7 @@ globalThis.ReturnCombobox = (() => {
       });highlight();
     }
     function position() {
-      const rect=trigger.getBoundingClientRect(),gap=4,availableBelow=innerHeight-rect.bottom-16,availableAbove=rect.top-16;
+      const rect=trigger.getBoundingClientRect(),gap=8,availableBelow=innerHeight-rect.bottom-16,availableAbove=rect.top-16;
       const above=availableBelow<240&&availableAbove>availableBelow,space=Math.max(120,above?availableAbove:availableBelow);
       const width=Math.min(Math.max(240,rect.width),innerWidth-32);
       content.style.width=width+'px';content.style.maxHeight=Math.min(360,space)+'px';

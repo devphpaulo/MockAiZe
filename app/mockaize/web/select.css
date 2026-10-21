@@ -89,7 +89,7 @@
     margin:0;
     padding:8px;
     inset:auto;
-    top:calc(anchor(bottom) + 4px);
+    top:calc(anchor(bottom) + 8px);
     left:anchor(left);
     position-try-fallbacks:flip-block,flip-inline,flip-block flip-inline;
     overflow:auto;

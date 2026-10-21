@@ -36,8 +36,8 @@ globalThis.ManualStudio=(()=>{
   function previewKey(key){if(recordIndex(key)===null)return key;const path=JSON.parse(key),depth=JSON.parse(data().recordGroup).length;path[depth-1].index=activeRecord+1;return JSON.stringify(path);}
   function navigate(index){if(!closeField())return;activeRecord=Math.max(0,Math.min(index,data().recordCount-1));state.resetScroll=true;o.render();}
   function addRecord(){
-   if(!data().recordGroup)return o.notify('Selecione o grupo que representa um registro.');
-   if(data().recordCount>=500)return o.notify('O limite é de 500 registros por XML.');
+   if(!data().recordGroup)return o.notify('Selecione o grupo que representa um registro.','warning');
+   if(data().recordCount>=500)return o.notify('O limite é de 500 registros por XML.','warning');
    if(!closeField())return;const previous=activeRecord,inherited=Object.entries(data().formulas).filter(([key])=>recordIndex(key)===previous);
    o.remember();activeRecord=data().recordCount;data().recordCount++;data().confirmed=false;
    for(const [key,formula] of inherited)data().formulas[reindex(key,previous,activeRecord)]=reindexFormula(formula,previous,activeRecord);
@@ -130,7 +130,7 @@ globalThis.ManualStudio=(()=>{
   function applyField(){
    if(!activeField)return true;
    try{previewFormula();o.remember();data().formulas[activeField]=E.clone(state.formulaDraft);delete data().values[activeField];if(draftValues.has(activeField))data().generated[activeField]=E.clone(draftValues.get(activeField));data().confirmed=false;state.formulaDirty=false;o.appliedBaseline();o.changed(false);o.render();return true;}
-   catch(error){const node=$('ruleError');if(node){node.textContent=error.message;node.hidden=false;}return false;}
+   catch(error){const node=$('ruleError');if(node){AppAlerts.render(node,error.message,{type:'error'});}return false;}
   }
   function closeField(){if(!activeField)return true;if(state.formulaDirty&&!applyField())return false;clearDraft();return true;}
   function toggleField(key){
@@ -148,7 +148,7 @@ globalThis.ManualStudio=(()=>{
    const read=calculator(true);filledCount=0;
    for(const field of model().fields){const value=read(field.key);if(value)filledCount++;const input=formFields.get(field.key);if(input&&input!==document.activeElement)input.value=value;}
    preview();updateFooter();updateName();
-   if(activeField){try{previewFormula();if($('ruleError'))$('ruleError').hidden=true;}catch(error){if($('ruleError')){$('ruleError').hidden=false;$('ruleError').textContent=error.message;}}}
+   if(activeField){try{previewFormula();if($('ruleError'))$('ruleError').hidden=true;}catch(error){if($('ruleError')){AppAlerts.render($('ruleError'),error.message,{type:'error'});}}}
   }
   function formulaChanged(){clearTimeout(liveTimer);liveTimer=setTimeout(refreshValues,120);}
   document.addEventListener('click',event=>{
@@ -188,12 +188,12 @@ globalThis.ManualStudio=(()=>{
    delete data().formulas[key];delete data().generated[key];data().values[key]=target.value;data().confirmed=false;
    filledCount+=Number(!!target.value)-Number(!!previous);
    const f=model().byKey.get(key),error=f&&errorFor(f),errorNode=target.closest('.manual-field').querySelector('.manual-error');
-   target.setAttribute('aria-invalid',error?'true':'false');if(errorNode){errorNode.hidden=!error;errorNode.textContent=error;}
+   target.setAttribute('aria-invalid',error?'true':'false');if(errorNode){AppAlerts.render(errorNode,error||'',{type:'error',title:'Revise este campo'});}
    updateValue(key);updateFooter();if(nameTimer)clearTimeout(nameTimer);nameTimer=setTimeout(updateName,150);formulaChanged();o.edited();return true;
   }
   function focusField(key){if(!closeField())return;if(nameEditor){nameEditor=false;o.render();}const index=recordIndex(key);if(index!==null&&index!==activeRecord)navigate(index);const input=formFields.get(key);input?.scrollIntoView({block:'center',behavior:'smooth'});input?.focus();}
-  async function confirm(){if(state.formulaDirty&&!o.applyName())return false;if(!data().templateXml)return o.notify('Adicione um modelo XML primeiro.');for(const f of model().fields){const message=errorFor(f);if(message){focusField(f.key);o.notify(f.name+': '+message);return false;}}X.parse(X.serialize(build()));evaluateName();data().confirmed=true;o.changed(false);if(!await o.save()){data().confirmed=false;o.changed(false);return false;}o.render();o.notify('Preenchimento confirmado e salvo.');return true;}
-  async function exportXml(){if(!await confirm())return;const name=evaluateName();const xml=X.serialize(build()),artifact=await o.publish({xml,name});state.draft.fileIndex=artifact.fileIndex;state.draft.revision=artifact.revision;const link=document.createElement('a');link.href=artifact.downloadUrl;link.download=name;document.body.append(link);link.click();link.remove();o.notify('XML de entrada exportado e salvo em Documentos\\MockAíZé.');}
+  async function confirm(){if(state.formulaDirty&&!o.applyName())return false;if(!data().templateXml)return o.notify('Adicione um modelo XML primeiro.','warning');for(const f of model().fields){const message=errorFor(f);if(message){focusField(f.key);o.notify(f.name+': '+message,'error');return false;}}X.parse(X.serialize(build()));evaluateName();data().confirmed=true;o.changed(false);if(!await o.save()){data().confirmed=false;o.changed(false);return false;}o.render();o.notify('Preenchimento confirmado e salvo.','success');return true;}
+  async function exportXml(){if(!await confirm())return;const name=evaluateName();const xml=X.serialize(build()),artifact=await o.publish({xml,name});state.draft.fileIndex=artifact.fileIndex;state.draft.revision=artifact.revision;const link=document.createElement('a');link.href=artifact.downloadUrl;link.download=name;document.body.append(link);link.click();link.remove();o.notify('XML de entrada exportado e salvo em Documentos\\MockAíZé.','success');}
   return{nameLabel,fieldEditorKey:()=>activeField,fieldByKey:key=>data().templateXml?model().byKey.get(key):null,previewFormula,applyField,removeFieldFormula,formulaChanged,context,evaluateName,toggleName,nameEditorOpen:()=>nameEditor,document:()=>data().templateXml?build(true):null,ensure,head,render,footer,editModel,install,input,focusField,confirm,exportXml,addRecord,changeGroup,goToRecord:navigate,previous:()=>navigate(activeRecord-1),next:()=>navigate(activeRecord+1)};
  }
  return{create};

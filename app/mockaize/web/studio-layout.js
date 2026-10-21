@@ -8,7 +8,7 @@ globalThis.StudioLayout = (() => {
     let saveTimer, frame, dragging = null, presented = false, presentation = 'closed', sheetAnimation = null, sheetVersion = 0;
     const expectedScroll = new WeakMap(), boundScroll = new WeakSet();
     const scheduleDraw = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(redraw); };
-    const persist = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => save({ ...prefs }).catch(error => notify(error.message)), 250); };
+    const persist = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => save({ ...prefs }).catch(error => notify(error.message,'error')), 250); };
     function widths() {
       if (innerWidth > 850) {
         // Retain the legacy preference for settings/backup compatibility; no rail is rendered.

@@ -166,22 +166,22 @@ globalThis.FilterStudio=(()=>{
   function presetNameDialog(rename=false){
    if(savingPreset)return;
    const selected=rename?activePreset():null;if(rename&&!selected)return;
-   if(!rename&&presets().length>=50)return o.notify('Cada arquivo aceita até 50 presets.');
+   if(!rename&&presets().length>=50)return o.notify('Cada arquivo aceita até 50 presets.','warning');
    o.openModal(rename?'Renomear preset':'Salvar preset de filtro','O preset guarda o grupo, as condições, a ação e o nome do XML.',`<div class="form-field"><label for="filterPresetName">Nome do preset</label><input id="filterPresetName" maxlength="120" value="${h(selected?.name||'')}" placeholder="Ex.: Correspondentes de Recife"></div>`,[
     {text:'Cancelar',run:o.closeModal},{text:rename?'Renomear':'Salvar preset',primary:true,run:async()=>{
      const name=validPresetName($('filterPresetName').value,selected?.id);if(!rename)checkPreset();
      const ok=await persistPreset(()=>{if(rename)selected.name=name;else{const preset={id:crypto.randomUUID(),name,filter:structuredClone(data())};presets().push(preset);state.draft.activeFilterPresetId=preset.id;}});
-     if(ok){o.closeModal();o.notify(rename?'Preset renomeado.':'Preset salvo.');}
+     if(ok){o.closeModal();o.notify(rename?'Preset renomeado.':'Preset salvo.','success');}
     }}]);
   }
   async function savePreset(){
    const selected=activePreset();if(!selected)return presetNameDialog();
-   try{checkPreset();if(await persistPreset(()=>{selected.filter=structuredClone(data());}))o.notify('Preset atualizado.');}catch(error){o.notify(error.message);}
+   try{checkPreset();if(await persistPreset(()=>{selected.filter=structuredClone(data());}))o.notify('Preset atualizado.','success');}catch(error){o.notify(error.message,'error');}
   }
   function deletePreset(){
    const selected=activePreset();if(!selected)return;
    o.openModal('Excluir preset?',selected.name,'<p>O preset será excluído. Os filtros atuais continuam disponíveis para edição.</p>',[
-    {text:'Cancelar',run:o.closeModal},{text:'Excluir preset',danger:true,run:async()=>{if(await persistPreset(()=>{state.draft.filterPresets=presets().filter(p=>p.id!==selected.id);state.draft.activeFilterPresetId='';})){o.closeModal();o.notify('Preset excluído.');}}}]);
+    {text:'Cancelar',run:o.closeModal},{text:'Excluir preset',danger:true,run:async()=>{if(await persistPreset(()=>{state.draft.filterPresets=presets().filter(p=>p.id!==selected.id);state.draft.activeFilterPresetId='';})){o.closeModal();o.notify('Preset excluído.','success');}}}]);
   }
   function context(snapshot=state.snapshot){
    const input=source(),output=snapshot?.xml?X.parse(snapshot.xml):input;
@@ -238,7 +238,7 @@ globalThis.FilterStudio=(()=>{
    const snap=state.snapshot,xml=previous||!snap?(doc?X.serialize(doc):''):snap.xml;
    $('outputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">${previous?'Versão anterior · XML original':'XML filtrado'}</span><div class="pane-actions"><button class="small ${previous?'soft':''}" data-filter-action="previous" aria-pressed="${previous}" ${doc?'':'disabled'}>${previous?'Voltar ao filtrado':'Versão anterior'}</button></div></div><div class="pane-subtitle"><span class="inline-badge" role="status">${previous?'Documento original · linhas excluídas destacadas em vermelho':previewError?(snap?'Revise a fórmula do nome · XML filtrado':'Complete as condições · exibindo XML original'):snap?snap.count+' mantido(s) · '+snap.removed+' excluído(s) · XML completo':'Carregue um XML para começar'}</span></div></div><div class="code-scroll" id="outputCode">${xml?markup(xml):'<div class="empty"><p>Cole ou importe um XML no painel de filtros.</p></div>'}</div>`;
    $('outputCode').scrollTop=position.top;$('outputCode').scrollLeft=position.left;
-   const error=$('filterError');if(error){error.textContent=previewError;error.hidden=!previewError;}
+   const error=$('filterError');if(error){AppAlerts.render(error,previewError,{type:'error'});}
   }
   function render(){
    ensure();compute();
@@ -252,7 +252,7 @@ globalThis.FilterStudio=(()=>{
    if(exporting)return;refresh();if(!state.snapshot||state.stale)return;
    exporting=true;footer();
    try{if(!await o.save())return;const snapshot=structuredClone(state.snapshot),artifact=await o.publish(snapshot);state.draft.revision=artifact.revision;state.draft.fileIndex=artifact.fileIndex;state.artifact=artifact;const a=document.createElement('a');a.href=artifact.downloadUrl;a.download=snapshot.name;document.body.append(a);a.click();a.remove();}
-   catch(error){o.notify(error.message);}finally{exporting=false;footer();}
+   catch(error){o.notify(error.message,'error');}finally{exporting=false;footer();}
   }
   function edit(target){
    if(state.draft?.mode!=='filter')return false;

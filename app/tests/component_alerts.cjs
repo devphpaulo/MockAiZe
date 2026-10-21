@@ -1,0 +1,30 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const context={document:{querySelectorAll:()=>[],body:{}},MutationObserver:class{observe(){}},Node:{ELEMENT_NODE:1}};
+vm.createContext(context);
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../mockaize/web/alerts.js'),'utf8'),context);
+const alerts=context.AppAlerts;
+for(const [type,variant,role] of [['success',23,'status'],['warning',24,'status'],['error',25,'alert'],['info',26,'status']]){
+ const html=alerts.markup('<img src=x onerror=alert(1)> & "teste"',{type});
+ assert(html.includes(`data-alert-variant="${variant}"`));
+ assert(html.includes(`data-alert-type="${type}"`));
+ assert(html.includes(`role="${role}"`));
+ assert(html.includes('&lt;img src=x onerror=alert(1)&gt; &amp; &quot;teste&quot;'));
+ assert(!html.includes('<img'));
+ assert(html.includes('aria-hidden="true"'));
+}
+assert(alerts.markup('Aviso',{type:'unknown'}).includes('data-alert-variant="26"'));
+assert(alerts.markup('Ajuda',{live:false}).includes('role="note"'));
+assert(alerts.markup('Teste',{title:'<título>'}).includes('&lt;título&gt;'));
+assert(!alerts.markup('Teste').includes('alert-dismiss'));
+const element={classList:{add(){}},dataset:{},attributes:{},setAttribute(k,v){this.attributes[k]=v;}};
+alerts.render(element,'Falha',{type:'error'});
+assert.equal(element.dataset.alertVariant,25);
+assert.equal(element.attributes.role,'alert');
+assert.equal(element.hidden,false);
+alerts.render(element,'',{type:'error'});
+assert.equal(element.hidden,true);
+console.log('Alerts 23–26: severity, semantics, text escaping, custom title and hidden state passed.');

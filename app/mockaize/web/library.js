@@ -24,7 +24,7 @@ globalThis.LibraryUI=(()=>{
   const actionIcon=action=>`<svg class="lib-icon" viewBox="0 0 24 24" aria-hidden="true">${drawings[action]||drawings.open}</svg>`;
   const actionButton=(action,text,attrs='',disabled=false)=>`<button type="button" ${attrs} class="lib-action-button ${action==='delete'?'lib-danger':''}" ${disabled?'disabled':''}>${actionIcon(action)}<span>${text}</span></button>`;
   function close(){document.getElementById('libraryDialog')?.close();}
-  function dialog(title,content,actions){let d=document.getElementById('libraryDialog');if(!d){d=document.createElement('dialog');d.id='libraryDialog';d.className='library-dialog';document.body.append(d);}d.innerHTML=`<form method="dialog"><header><h2>${h(title)}</h2><button type="button" data-lib-dismiss aria-label="Fechar">×</button></header><div class="lib-dialog-body">${content}<p class="lib-error" role="alert" hidden></p></div><footer><button type="button" data-lib-dismiss>Cancelar</button>${actions.map((a,i)=>`<button type="button" data-lib-confirm="${i}" class="${a.danger?'danger':'primary'}">${h(a.text)}</button>`).join('')}</footer></form>`;d.querySelectorAll('[data-lib-dismiss]').forEach(b=>b.onclick=close);d.querySelector('form').onsubmit=event=>event.preventDefault();d.onclick=event=>{if(event.target!==d)return;const r=d.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();};d.oncancel=event=>{event.preventDefault();close();};d.querySelectorAll('[data-lib-confirm]').forEach(b=>b.onclick=async()=>{if(!d.querySelector('form').reportValidity())return;b.disabled=true;try{await actions[Number(b.dataset.libConfirm)].run(d);}catch(error){const e=d.querySelector('.lib-error');e.hidden=false;e.textContent=error.message;}finally{b.disabled=false;}});d.showModal();d.querySelector('input,select')?.focus();}
+  function dialog(title,content,actions){let d=document.getElementById('libraryDialog');if(!d){d=document.createElement('dialog');d.id='libraryDialog';d.className='library-dialog';document.body.append(d);}d.innerHTML=`<form method="dialog"><header><h2>${h(title)}</h2><button type="button" data-lib-dismiss aria-label="Fechar">×</button></header><div class="lib-dialog-body">${content}<p class="lib-error" role="alert" hidden></p></div><footer><button type="button" data-lib-dismiss>Cancelar</button>${actions.map((a,i)=>`<button type="button" data-lib-confirm="${i}" class="${a.danger?'danger':'primary'}">${h(a.text)}</button>`).join('')}</footer></form>`;d.querySelectorAll('[data-lib-dismiss]').forEach(b=>b.onclick=close);d.querySelector('form').onsubmit=event=>event.preventDefault();d.onclick=event=>{if(event.target!==d)return;const r=d.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();};d.oncancel=event=>{event.preventDefault();close();};d.querySelectorAll('[data-lib-confirm]').forEach(b=>b.onclick=async()=>{if(!d.querySelector('form').reportValidity())return;b.disabled=true;try{await actions[Number(b.dataset.libConfirm)].run(d);}catch(error){const e=d.querySelector('.lib-error');AppAlerts.render(e,error.message,{type:'error'});}finally{b.disabled=false;}});d.showModal();d.querySelector('input,select')?.focus();}
 
   function hideMenu(){menuTrigger?.setAttribute('aria-expanded','false');if(menu?.matches(':popover-open'))menu.hidePopover();}
   async function mutate(payload){
@@ -98,7 +98,7 @@ globalThis.LibraryUI=(()=>{
    const entry=(action,text)=>`<button type="button" role="menuitem" data-menu-action="${action}" class="${action==='delete'?'lib-danger':''}">${actionIcon(action)}<span>${text}</span></button>`;
    menu.innerHTML=entry('open',item.kind==='variation'?'Abrir no estúdio':'Abrir pasta')+(item.kind==='variation'?'':entry('folder','Nova pasta')+entry('variation','Novo arquivo'))+'<div class="lib-menu-separator" role="separator"></div>'+entry('rename','Renomear')+(item.kind==='workspace'?'':entry('move','Mover')+entry('copy','Copiar'))+entry('delete','Excluir');
    menu.showPopover();
-   const rect=trigger.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(rect.right-menu.offsetWidth,innerWidth-menu.offsetWidth-8))+'px';menu.style.top=Math.max(8,Math.min(rect.bottom+4,innerHeight-menu.offsetHeight-8))+'px';
+   const rect=trigger.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(rect.right-menu.offsetWidth,innerWidth-menu.offsetWidth-8))+'px';menu.style.top=Math.max(8,Math.min(rect.bottom+8,innerHeight-menu.offsetHeight-8))+'px';
    trigger.setAttribute('aria-expanded','true');menu.querySelector('button')?.focus({preventScroll:true});
   }
   function treeMarkup(parent=null){
@@ -133,7 +133,7 @@ globalThis.LibraryUI=(()=>{
      if(button.hasAttribute('data-lib-action'))return act(button.dataset.libAction,[...state.checked]);
      if(button.hasAttribute('data-lib-create'))return createItem(button.dataset.libCreate);
      if(button.hasAttribute('data-lib-browse'))return browse(button.dataset.libBrowse==='root'?null:button.dataset.libBrowse);
-    }catch(error){options.notify?.(error.message);}
+    }catch(error){options.notify?.(error.message,'error');}
    };
    root.onchange=event=>{
     const input=event.target;
@@ -155,7 +155,7 @@ globalThis.LibraryUI=(()=>{
    root.ondrop=async event=>{
     const target=destination(event.target),ids=[...dragIds],parentId=target?.dataset.libDrop;event.preventDefault();clearDrag();dragIds=[];
     if(!validDrop(ids,parentId))return;
-    try{await mutate({action:'move_many',ids:ids.filter(id=>node(id).parent_id!==parentId),parentId});options.notify?.('Itens movidos para '+node(parentId).name+'.');}catch(error){options.notify?.(error.message);}
+    try{await mutate({action:'move_many',ids:ids.filter(id=>node(id).parent_id!==parentId),parentId});options.notify?.('Itens movidos para '+node(parentId).name+'.','success');}catch(error){options.notify?.(error.message,'error');}
    };
   }
   function breadcrumb(){
