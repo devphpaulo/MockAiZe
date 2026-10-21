@@ -271,3 +271,7 @@ dialog.presence-xml-dialog[open]{width:min(1280px,calc(100vw - 32px))}
 .filter-condition.sort-before::before{top:-8px}.filter-condition.sort-after::after{bottom:-8px}
 .filter-sort-overlay{position:fixed;top:0;left:0;margin:0;border:1px solid var(--green);border-radius:6px;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);pointer-events:none;z-index:110;opacity:.96;cursor:grabbing}
 @media(prefers-reduced-motion:reduce){.filter-condition-toggle>svg{transition:none}}
+.xml-loader-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.xml-loader-toolbar label{font-size:12px;font-weight:600}
+.xml-loader-toolbar>button{flex:none}
+.xml-load-button>.icon{width:16px;height:16px;flex:none}
