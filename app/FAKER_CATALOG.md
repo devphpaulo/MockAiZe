@@ -10,6 +10,10 @@
 
 ## Cobertura e exceções
 
+O menu atual tem 15 categorias, filtradas por `VISIBLE_METHODS` conforme a seleção do usuário. Moeda foi retirada do menu. IDs anteriormente disponíveis continuam reconhecidos pela validação e são publicados em `legacyItems`, permitindo editar o item já salvo sem disponibilizar todas as opções removidas em novas regras. Nome fantasia é uma transformação do perfil empresarial; CNPJ empresarial oferece modos N/A, máscara e estabelecimento, com cálculo dos dígitos verificadores.
+
+Nome completo permite selecionar primeiro nome e sobrenome por checkbox. Endereço completo e logradouro/número permitem combinar logradouro, número, bairro, cidade, UF, CEP e país. A lista de componentes é persistida em `params.components`; a geração usa os componentes do mesmo perfil. “Fonte do valor” possui busca sem distinção de acentos, filtragem da lista e seleção por Enter ou navegação por teclado.
+
 Os métodos públicos dos providers das categorias selecionadas estão no catálogo ou em `INTERNAL_EXCLUSIONS`. CPF e CNPJ continuam nos geradores próprios do MockAiZe; `lorem.get_words_list` é um helper de construção utilizado pelos métodos de texto e não uma opção autônoma. Providers das demais categorias não aparecem no editor.
 
 ## Perfis e presets existentes

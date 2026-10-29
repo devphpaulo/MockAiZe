@@ -71,7 +71,7 @@ _CATEGORIES: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
         ("language_name", "Idioma"),
     )),
     ("company", "Empresa fictícia", (
-        ("company", "Razão social"), ("company_id", "Identificador da empresa"),
+        ("company", "Razão social"), ("trade_name", "Nome fantasia"), ("company_id", "CNPJ"),
         ("company_suffix", "Sufixo empresarial"), ("catch_phrase", "Frase de efeito"),
         ("catch_phrase_verb", "Verbo da frase de efeito"), ("catch_phrase_noun", "Substantivo da frase de efeito"),
         ("catch_phrase_attribute", "Atributo da frase de efeito"), ("bs", "Descrição de negócio"),
@@ -168,6 +168,15 @@ for _address_method in (item.method for item in ITEMS if item.category == "addre
         "options": [["any", "Aleatória"], *[[uf, f"{uf} · {name}"] for uf, (name, _city) in BRAZIL_STATES.items()]],
     },)
 
+for _id, _default in {"person.name": ["first_name", "last_name"], "address.address": ["street_name", "building_number", "bairro", "city", "state_abbr", "postcode"], "address.street_address": ["street_name", "building_number"]}.items():
+    _options = [["first_name", "Primeiro nome"], ["last_name", "Sobrenome"]] if _id.startswith("person") else [["street_name", "Logradouro"], ["building_number", "Número"], ["bairro", "Bairro"], ["city", "Cidade"], ["state_abbr", "UF"], ["postcode", "CEP"], ["country", "País"]]
+    PARAMETER_SPECS[_id] = (*PARAMETER_SPECS.get(_id, ()), {"name": "components", "label": "Componentes", "type": "multiselect", "options": _options, "default": _default})
+PARAMETER_SPECS["company.company_id"] = (
+    {"name": "mode", "label": "Tipo de CNPJ", "type": "select", "options": [["N", "Numérico"], ["A", "Alfanumérico"]], "default": "N"},
+    {"name": "mask", "label": "Máscara", "type": "select", "options": [["no", "Sem máscara"], ["yes", "Com máscara"]], "default": "no"},
+    {"name": "establishment", "label": "Estabelecimento", "type": "text", "default": "0001"},
+)
+
 # Public provider helpers are deliberately not selectable because they are
 # either the application's own CPF/CNPJ contract or data-building helpers.
 # Every other public Faker method from an approved provider is catalogued.
@@ -184,7 +193,7 @@ def _generator() -> Faker:
 
 def _method_parameters(generator: Faker, method: str) -> list[dict[str, Any]]:
     """Expose method metadata without allowing arbitrary argument execution."""
-    signature = inspect.signature(getattr(generator, method))
+    signature = inspect.signature(getattr(generator, "company" if method == "trade_name" else method))
     def default_value(value: Any) -> Any:
         if value is inspect.Parameter.empty:
             return None
@@ -204,20 +213,35 @@ def _method_parameters(generator: Faker, method: str) -> list[dict[str, Any]]:
     ]
 
 
+# Visibility is independent of persisted IDs: removed options remain readable.
+VISIBLE_METHODS = {
+ "person": {"name", "first_name", "last_name"},
+ "company": {"company", "trade_name", "company_id"},
+ "phone_number": {"phone_number", "cellphone_number"},
+ "bank": {"bank", "bank_country", "bban", "iban", "swift", "aba"},
+ "currency": set(), "color": {"color_name"},
+ "barcode": {"ean", "ean8", "ean13", "upc_a", "upc_e"},
+ "internet": {"email", "company_email", "user_name", "domain_name", "ipv4", "ipv4_private", "ipv4_public", "ipv6", "mac_address", "image_url", "dga"},
+ "geo": {"latitude", "longitude", "coordinate"}, "job": {"job"}, "lorem": {"sentence"},
+ "passport": {"passport_number", "passport_owner", "passport_gender", "passport_dob", "passport_dates"},
+}
+
 def manifest() -> dict[str, Any]:
     generator = _generator()
     categories: list[dict[str, Any]] = []
     for category, label, _ in _CATEGORIES:
-        items = [item for item in ITEMS if item.category == category]
+        items = [item for item in ITEMS if item.category == category and item.method in VISIBLE_METHODS.get(category, {i.method for i in ITEMS if i.category == category})]
+        if not items:
+            continue
         categories.append({
             "id": category,
             "label": label,
             "items": [{"id": item.id, "label": item.label, "method": item.method,
-                       "providerParameters": _method_parameters(generator, item.method), "returnAnnotation": str(inspect.signature(getattr(generator, item.method)).return_annotation), "parameters": list(PARAMETER_SPECS.get(item.id, ())) }
+                       "providerParameters": _method_parameters(generator, item.method), "returnAnnotation": str(inspect.signature(getattr(generator, "company" if item.method == "trade_name" else item.method)).return_annotation), "parameters": list(PARAMETER_SPECS.get(item.id, ())) }
                       for item in items],
         })
     return {"catalogVersion": CATALOG_VERSION, "fakerVersion": FAKER_VERSION, "locale": LOCALE,
-            "categories": categories, "internalExclusions": INTERNAL_EXCLUSIONS}
+            "categories": categories, "legacyItems": [{"id": item.id, "category": item.category, "categoryLabel": item.category_label, "label": item.label, "parameters": list(PARAMETER_SPECS.get(item.id, ()))} for item in ITEMS if item.method not in VISIBLE_METHODS.get(item.category, {item.method})], "internalExclusions": INTERNAL_EXCLUSIONS}
 
 
 def validate_formula(formula: object) -> CatalogItem:
@@ -243,6 +267,10 @@ def validate_formula(formula: object) -> CatalogItem:
             raise ValueError(f"Parâmetro {name} deve ser um inteiro entre {spec['min']} e {spec['max']}.")
         if spec["type"] == "select" and (not isinstance(value, str) or value not in {option[0] for option in spec["options"]}):
             raise ValueError(f"Parâmetro {name} possui uma opção inválida.")
+        if spec["type"] == "multiselect" and (not isinstance(value, list) or not value or any(not isinstance(v, str) or v not in {o[0] for o in spec["options"]} for v in value) or len(set(value)) != len(value)):
+            raise ValueError("Selecione componentes válidos sem repetição.")
+        if spec["type"] == "text" and (not isinstance(value, str) or not re.fullmatch(r"[A-Z0-9]{4}", value) or value == "0000" or params.get("mode", "N") == "N" and not value.isdigit()):
+            raise ValueError("Estabelecimento: informe quatro caracteres válidos, diferentes de 0000.")
     group = formula.get("group", "")
     if not isinstance(group, str) or len(group) > 128:
         raise ValueError("Grupo Faker inválido.")
@@ -275,7 +303,7 @@ def generate(formula: object) -> dict[str, Any]:
     item = validate_formula(formula)
     generator = _generator()
     profile_key = (0, _profile_family(item), formula.get("group", ""), formula.get("params", {}).get("state", "any"))
-    value = _profile_value(generator, item, profile_key, {}, formula.get("params", {}))
+    value = _resolved_value(generator, item, profile_key, {}, formula.get("params", {}))
     return {"catalogVersion": CATALOG_VERSION, "catalogId": item.id, "value": to_text(value)}
 
 
@@ -318,7 +346,7 @@ def generate_batch(payload: object) -> dict[str, Any]:
         identity = profile_key if family in {"person", "company", "address"} else (profile_key, item.id, formula.get("params", {}))
         digest = hashlib.sha256(json.dumps([seed, identity], sort_keys=True).encode()).digest()
         generator.seed_instance(int.from_bytes(digest, "big"))
-        resolved[key] = to_text(_profile_value(generator, item, profile_key, profile_values, formula.get("params", {})))
+        resolved[key] = to_text(_resolved_value(generator, item, profile_key, profile_values, formula.get("params", {})))
         total_length += len(resolved[key])
         if total_length > 16_000_000:
             raise ValueError("O resultado do lote Faker excede 16 milhões de caracteres. Reduza o lote.")
@@ -331,6 +359,19 @@ def _profile_family(item: CatalogItem) -> str:
     if item.category == "internet" and item.method in {"company_email", "ascii_company_email"}:
         return "company"
     return item.category
+
+
+def _resolved_value(generator, item, key, profiles, params):
+    if item.id == "company.company_id":
+        from faker.providers.company.pt_BR import company_id_checksum
+        base = generator.company_id(use_alphanumeric=params.get("mode") == "A")[:8] + params.get("establishment", "0001")
+        value = base + "".join(str(d) for d in company_id_checksum([ord(c) - 48 for c in base]))
+        return f"{value[:2]}.{value[2:5]}.{value[5:8]}/{value[8:12]}-{value[12:]}" if params.get("mask") == "yes" else value
+    value = _profile_value(generator, item, key, profiles, {k: v for k, v in params.items() if k != "components"})
+    if "components" in params:
+        separator = " " if item.category == "person" else ", "
+        return separator.join(profiles[key][component] for component in params["components"])
+    return value
 
 
 def _profile_value(generator: Faker, item: CatalogItem, key: tuple[int, str, str, str],
@@ -354,8 +395,9 @@ def _profile_value(generator: Faker, item: CatalogItem, key: tuple[int, str, str
             name = generator.company()
             slug = re.sub(r"[^a-z0-9]+", ".", unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()).strip(".")
             profiles[key] = {"company": name, "company_email": "contato@" + (slug or "empresa") + ".example.test"}
-        if item.category == "company" and item.method == "company":
-            return profiles[key]["company"]
+        if item.category == "company" and item.method in {"company", "trade_name"}:
+            name = profiles[key]["company"]
+            return re.sub(r"\s+(?:LTDA\.?|S/A|S\.A\.)$", "", name, flags=re.I) if item.method == "trade_name" else name
         if item.category == "internet" and item.method in {"company_email", "ascii_company_email"}:
             return profiles[key]["company_email"]
     if key[1] == "address" and item.category == "address":

@@ -26,4 +26,10 @@ A geração de 10.000 valores não representa uma medição de todos os formatos
 
 A API externa em `mockaize-api` não recebeu código Faker na implementação anterior: depende apenas de tzdata e tem intérprete próprio. Sua política já suporta limite de registros customizado ou desativado. Compatibilidade de presets com fórmulas Faker nessa API continua sendo uma entrega separada; a API local do desktop foi revisada e testada aqui.
 
+## Correção da prévia de presets anteriores ao Faker
+
+Reprodução no navegador com caminho `RzSocCorresp`: o editor resolvia somente o registro zero, mas `testFormula` recalculava a prévia com todos os registros quando havia soma global. Os registros seguintes falhavam com “O valor Faker não foi resolvido para este registro”. Agora `formulaPreviewConfig` define uma única configuração de prévia, e `testFormulaAsync` resolve Faker e gera o XML usando essa mesma configuração. Testes de referências à saída também entram na resolução assíncrona quando dependem de regras Faker.
+
+A regressão reproduz a mensagem original e passa em dez cenários reais de navegador: pessoa/empresa/endereço legados, Faker novo, composição, soma global e modos Novos registros/Retorno. A suíte Python passou nos 76 testes com mutex de QA isolado da instância desktop em execução. O executável local foi regenerado. O teste opcional `tests/faker_preview_browser.cjs` utiliza Playwright e Edge headless; `MOCKAIZE_PLAYWRIGHT_MODULE` permite indicar a instalação do Playwright.
+
 O ciclo visual completo dos quatro modos dentro do executável instalado, sem rede, continua sem evidência de execução nesta revisão. Build e testes de módulos/HTTP não substituem esse aceite de C15. Assim, a declaração anterior de todos os cards concluídos deve ser entendida como cobertura de implementação, não aceite integral comprovado.

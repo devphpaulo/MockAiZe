@@ -51,7 +51,7 @@ globalThis.MockEngine = (() => {
   function fakerKey(f,c){return JSON.stringify([f,c.recordIndex||0]);}
   const LEGACY_FAKER_FIELDS={
    person:{name:['person','name'],firstName:['person','first_name'],lastName:['person','last_name'],email:['internet','email']},
-   company:{legalName:['company','company'],tradeName:['company','company'],email:['internet','company_email']},
+   company:{legalName:['company','company'],tradeName:['company','trade_name'],email:['internet','company_email']},
    address:{street:['address','street_address'],number:['address','building_number'],district:['address','bairro'],city:['address','city'],state:['address','state_abbr'],zip:['address','postcode'],full:['address','address']}
   };
   function legacyFaker(f){
@@ -68,11 +68,12 @@ globalThis.MockEngine = (() => {
   function validateFaker(formula,catalog){
    if(!hasFaker(formula))return;
    if(formula.type==='compose'){for(const part of formula.parts||[])validateFaker(part,catalog);return;}
-   const f=upgradeLegacyFormula(formula),category=catalog?.categories.find(c=>c.items.some(i=>i.id===f.catalogId)),item=category?.items.find(i=>i.id===f.catalogId);
+   const f=upgradeLegacyFormula(formula),allCategories=[...(catalog?.categories||[]),...(catalog?.legacyItems||[]).map(item=>({id:item.category,items:[item]}))],category=allCategories.find(c=>c.items.some(i=>i.id===f.catalogId)),item=category?.items.find(i=>i.id===f.catalogId);
    if(!item||f.catalogVersion!==catalog.catalogVersion||f.category&&f.category!==category.id)throw Error('Dado ou versão Faker inválido.');
    if(typeof (f.group??'')!=='string'||(f.group||'').length>128)throw Error('Grupo Faker inválido.');
    for(const [name,value] of Object.entries(f.params||{})){
     const spec=item.parameters.find(p=>p.name===name);
+    if(spec?.type==='multiselect'&&(!Array.isArray(value)||!value.length||new Set(value).size!==value.length||value.some(v=>!spec.options.some(o=>o[0]===v))))throw Error('Selecione componentes válidos.');
     if(!spec||spec.type==='integer'&&(!Number.isInteger(value)||value<spec.min||value>spec.max)||spec.type==='select'&&!spec.options.some(o=>o[0]===value))throw Error('Parâmetro Faker inválido: '+name);
    }
   }
@@ -338,22 +339,32 @@ globalThis.MockXml=(()=>{
  }
  function generate(config,inputXml){const iterator=generationSteps(config,inputXml);let step;do{step=iterator.next();}while(!step.done);return step.value;}
  async function generateAsync(config,inputXml,{signal,onProgress}={}){const iterator=generationSteps(config,inputXml);while(true){if(signal?.aborted)throw new DOMException('Geração cancelada','AbortError');const step=iterator.next();if(step.done)return step.value;if(typeof step.value==='number'&&step.value%10===0){onProgress?.(step.value+1);await new Promise(resolve=>setTimeout(resolve,0));}else if(typeof step.value==='object'&&step.value.prepared%10===0){await new Promise(resolve=>setTimeout(resolve,0));}}}
- function testFormula(config,inputXml,formula,targetPath=null){
+ function formulaPreviewConfig(config,inputXml,formula,targetPath=null){
   const source=parse(inputXml||config.sourceTemplate),available=records(source,config.inputGroup).length||1;
-  const formulaCount=config.mode==='return'?available:Number(config.count||1);
-  const globalSum=f=>f?.type==='groupSum'&&f.allRecords||f?.type==='compose'&&(f.parts||[]).some(globalSum);
-  const needsAll=globalSum(formula)||Object.values(config.rules||{}).some(rule=>globalSum(rule.generator));
-  const preview={...config,count:needsAll?config.count:1,returnSource:needsAll?config.returnSource:'first',previewOnly:!needsAll,previewContextCount:formulaCount,
-   rules:{...(config.rules||{})},filename:{type:'literal',value:'preview'}};
+  const formulaCount=config.previewContextCount??(config.mode==='return'?available:Number(config.count||1));
+  const preview={...config,rules:{...(config.rules||{})},filename:{type:'literal',value:'preview'}};
   if(targetPath)preview.rules[targetPath]={...(preview.rules[targetPath]||{}),generator:formula,fixed:null};
   else preview.filename=formula;
-  const result=generate(preview,inputXml||config.sourceTemplate);
+  const globalSum=f=>f?.type==='groupSum'&&f.allRecords||f?.type==='compose'&&(f.parts||[]).some(globalSum);
+  const needsAll=globalSum(preview.filename)||Object.values(preview.rules).some(rule=>rule.fixed==null&&globalSum(rule.generator));
+  return {...preview,count:needsAll?config.count:1,returnSource:needsAll?config.returnSource:'first',previewOnly:!needsAll,previewContextCount:formulaCount};
+ }
+ function formulaTestResult(preview,inputXml,targetPath){
+  const result=generate(preview,inputXml||preview.sourceTemplate);
   if(!targetPath)return result.name;
   const actualPath=result.outputPaths[targetPath];
   if(!actualPath)throw Error('O campo não está presente na prévia. Verifique a política de presença e o caminho selecionado.');
   const output=parse(result.xml,{maxBytes:100000000}),node=resolve(output,actualPath);
   if(!node)throw Error('O campo não foi encontrado na saída da prévia.');
   return node.nodeType===2?node.value:node.textContent;
+ }
+ function testFormula(config,inputXml,formula,targetPath=null){
+  return formulaTestResult(formulaPreviewConfig(config,inputXml,formula,targetPath),inputXml,targetPath);
+ }
+ async function testFormulaAsync(config,inputXml,formula,targetPath,resolveFaker){
+  const preview=formulaPreviewConfig(config,inputXml,formula,targetPath);
+  const resolved=await resolveFaker(preview,inputXml||config.sourceTemplate);
+  return formulaTestResult(resolved,inputXml,targetPath);
  }
  function fakerRequests(config,inputXml){
   const seen=new Map();
@@ -382,5 +393,5 @@ globalThis.MockXml=(()=>{
   return [...seen.values()];
  }
 
- return{parse,fields,nodes,groups,recordGroups,resolve,records,project,display,key,serialize,automap,outputPath,templatePath,generate,generateAsync,testFormula,fakerRequests};
+ return{parse,fields,nodes,groups,recordGroups,resolve,records,project,display,key,serialize,automap,outputPath,templatePath,generate,generateAsync,testFormula,testFormulaAsync,formulaPreviewConfig,fakerRequests};
 })();

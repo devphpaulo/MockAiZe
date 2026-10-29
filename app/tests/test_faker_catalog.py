@@ -18,6 +18,30 @@ from mockaize import faker_catalog, powershell_export, server, storage
 
 
 class FakerCatalogCase(unittest.TestCase):
+    def test_requested_catalog_visibility_preserves_removed_ids(self):
+        manifest = faker_catalog.manifest()
+        categories = {c['id']: {i['method'] for i in c['items']} for c in manifest['categories']}
+        self.assertEqual(categories['person'], {'name', 'first_name', 'last_name'})
+        self.assertEqual(categories['company'], {'company', 'trade_name', 'company_id'})
+        self.assertNotIn('currency', categories)
+        self.assertEqual(categories['color'], {'color_name'})
+        self.assertEqual(categories['lorem'], {'sentence'})
+        self.assertIn('currency.currency', {i['id'] for i in manifest['legacyItems']})
+        faker_catalog.generate({'type':'faker','catalogVersion':1,'catalogId':'currency.currency'})
+
+    def test_checkbox_components_share_the_profile(self):
+        f={'type':'faker','catalogVersion':1,'catalogId':'person.name','params':{'components':['last_name']}}
+        self.assertTrue(faker_catalog.generate(f)['value'])
+        with self.assertRaises(ValueError):
+            faker_catalog.generate({**f,'params':{'components':[]}})
+        address={**f,'catalogId':'address.address','params':{'state':'CE','components':['city','state_abbr']}}
+        self.assertEqual(faker_catalog.generate(address)['value'], 'Fortaleza, CE')
+
+    def test_company_cnpj_modes_and_establishment(self):
+        for mode in ('N','A'):
+            f={'type':'faker','catalogVersion':1,'catalogId':'company.company_id','params':{'mode':mode,'mask':'yes','establishment':'0002'}}
+            value=faker_catalog.generate(f)['value']
+            self.assertRegex(value, r'^[A-Z0-9]{2}\.[A-Z0-9]{3}\.[A-Z0-9]{3}/0002-\d{2}$')
     def test_real_http_batch_enforces_authentication_and_returns_controlled_errors(self):
         httpd = ThreadingHTTPServer(("127.0.0.1", 0), server.Handler)
         httpd.session_token = "test-session"
@@ -104,10 +128,10 @@ class FakerCatalogCase(unittest.TestCase):
         manifest = faker_catalog.manifest()
         self.assertEqual(manifest["catalogVersion"], 1)
         self.assertEqual(manifest["fakerVersion"], "40.44.0")
-        self.assertEqual(len(manifest["categories"]), 16)
+        self.assertEqual(len(manifest["categories"]), 15)
         self.assertEqual({category["id"] for category in manifest["categories"]}, {
             "person", "company", "address", "phone_number", "automotive", "bank", "credit_card",
-            "currency", "color", "barcode", "internet", "geo", "job", "lorem", "passport", "ssn",
+            "color", "barcode", "internet", "geo", "job", "lorem", "passport", "ssn",
         })
 
     def test_every_catalogue_item_can_generate_one_text_value(self):
@@ -139,7 +163,7 @@ class FakerCatalogCase(unittest.TestCase):
                 if provider_class.__module__.startswith("faker.providers."):
                     methods.update(name for name, value in provider_class.__dict__.items()
                                    if not name.startswith("_") and callable(value))
-            catalogued = {item.method for item in faker_catalog.ITEMS if item.category == category}
+            catalogued = {item.method for item in faker_catalog.ITEMS if item.category == category and item.method != "trade_name"}
             excluded = {method.split(".", 1)[1] for method in faker_catalog.INTERNAL_EXCLUSIONS
                         if method.startswith(category + ".")}
             self.assertEqual(methods, catalogued | excluded)

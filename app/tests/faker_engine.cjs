@@ -31,6 +31,23 @@ assert.equal(X.fakerRequests(fixed, '<R/>').length, 0);
 assert.throws(() => X.fakerRequests({...config,count:10001}, '<R/>'), /10000/);
 assert.equal(X.fakerRequests({...config,count:10000}, '<R/>').length, 10000);
 
+// A global aggregate makes the preview generate every record. Resolve Faker
+// against that exact preview, including when testing an old company formula.
+const oldCompany={type:'company',field:'legalName',group:'correspondente'};
+const aggregateConfig={...config,inputGroup:'',count:3,rules:{
+  company:{generator:oldCompany},
+  total:{generator:{type:'groupSum',allRecords:true,source:'output',group:'',path:''}}
+}};
+const fullPreview=X.formulaPreviewConfig(aggregateConfig,'<R/>',oldCompany,'company');
+assert.equal(fullPreview.previewOnly,false);
+assert.equal(X.fakerRequests(fullPreview,'<R/>').length,3);
+const previewValues=Object.fromEntries(X.fakerRequests(fullPreview,'<R/>').map((item,index)=>[item.key,'Empresa '+index]));
+for(let index=0;index<3;index++)assert.equal(E.evaluate(oldCompany,{recordIndex:index,fakerValues:previewValues}),'Empresa '+index);
+const singlePreview=X.formulaPreviewConfig({...config,inputGroup:''},'<R/>',formula,'name');
+assert.equal(singlePreview.previewOnly,true);
+assert.equal(singlePreview.previewContextCount,2);
+assert.equal(X.fakerRequests(singlePreview,'<R/>').length,1);
+
 // Adding a Manual record reindexes structural references, preserving profile names.
 const group = [{name:'R',ns:'',index:1},{name:'Item',ns:'',index:1}];
 const field = JSON.stringify([...group,{name:'Name',ns:'',index:1}]);
