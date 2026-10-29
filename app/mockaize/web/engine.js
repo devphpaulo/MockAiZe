@@ -48,12 +48,35 @@ globalThis.MockEngine = (() => {
   }
   function listValues(values){const items=(Array.isArray(values)?values:String(values??'').split(/\r?\n/)).map(v=>String(v).trim()).filter(Boolean);if(!items.length)throw Error('Lista: informe ao menos um valor, um por linha.');if(items.length>1000)throw Error('A lista aceita até 1.000 valores.');return items;}
   const pick=values=>values[randomInt(0,values.length-1)];
-  const slug=value=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'.').replace(/^\.|\.$/g,'');
-  function cachedProfile(f,c,kind,make){const cache=c.profiles;const key=JSON.stringify([kind,f.group||'principal',f.state||'any']);if(!cache)return make();if(!cache.has(key))cache.set(key,make());return cache.get(key);}
-  function personProfile(){const firstName=pick(['Ana','Marina','Clara','Beatriz','Camila','Luana','Helena','Sofia','Pedro','Lucas','Rafael','Bruno','Thiago','André','Mateus','Daniel']);const lastName=pick(['Almeida','Barbosa','Carvalho','Costa','Ferreira','Lima','Martins','Oliveira','Pereira','Ribeiro','Santos','Souza']);const name=firstName+' '+lastName;return{name,firstName,lastName,email:slug(name)+randomInt(10,9999)+'@example.test'};}
-  function companyProfile(){const tradeName=pick(['Aurora','Horizonte','Ipê','Solar','Atlântica','Nascente','Vereda','Candeia','Brisa','Cedro'])+' '+pick(['Tecnologia','Serviços','Comércio','Logística','Alimentos','Soluções','Engenharia','Consultoria']);return{tradeName,legalName:tradeName+' LTDA',email:'contato.'+slug(tradeName)+randomInt(10,9999)+'@example.test'};}
-  function addressProfile(f){const state=f.state&&f.state!=='any'?f.state:pick(Object.keys(LOCATIONS));if(!Object.hasOwn(LOCATIONS,state))throw Error('Selecione uma UF válida.');const street=pick(['Rua','Avenida','Travessa'])+' '+pick(['dos Ipês','das Acácias','do Horizonte','das Palmeiras','da Nascente','do Sol','das Flores','da Serra']);const number=String(randomInt(1,2500)),district=pick(['Centro','Jardim Primavera','Vila Nova','Boa Vista','Parque das Flores','Alto da Serra']);const zip=chars(5,'0123456789')+'-'+chars(3,'0123456789');const city=LOCATIONS[state];return{street,number,district,city,state,zip,full:`${street}, ${number} - ${district}, ${city}/${state}, ${zip}`};}
-  function profileValue(f,c,kind,make,fallback){const profile=cachedProfile(f,c,kind,make);const field=f.field||fallback;if(!Object.hasOwn(profile,field))throw Error('Escolha um dado válido para o perfil.');return profile[field];}
+  function fakerKey(f,c){return JSON.stringify([f,c.recordIndex||0]);}
+  const LEGACY_FAKER_FIELDS={
+   person:{name:['person','name'],firstName:['person','first_name'],lastName:['person','last_name'],email:['internet','email']},
+   company:{legalName:['company','company'],tradeName:['company','company'],email:['internet','company_email']},
+   address:{street:['address','street_address'],number:['address','building_number'],district:['address','bairro'],city:['address','city'],state:['address','state_abbr'],zip:['address','postcode'],full:['address','address']}
+  };
+  function legacyFaker(f){
+   if(!Object.hasOwn(LEGACY_FAKER_FIELDS,f.type))return null;
+   const fields=LEGACY_FAKER_FIELDS[f.type],field=f.field||{person:'name',company:'legalName',address:'street'}[f.type];
+   if(!Object.hasOwn(fields,field))throw Error('Escolha um dado válido para o perfil.');
+   const [category,method]=fields[field];
+   return{type:'faker',catalogVersion:1,category,catalogId:category+'.'+method,params:f.type==='address'?{state:f.state||'any'}:{},group:f.group||'principal'};
+  }
+  function legacyProfileValue(f,c){return fakerValue(legacyFaker(f),c);}
+
+  function upgradeLegacyFormula(formula){if(!formula||typeof formula!=='object')return formula;if(formula.type==='compose')return{...formula,parts:(formula.parts||[]).map(upgradeLegacyFormula)};return legacyFaker(formula)||formula;}
+  function hasFaker(f){return !!f&&typeof f==='object'&&(f.type==='faker'||['person','company','address'].includes(f.type)||(f.parts||[]).some(hasFaker));}
+  function validateFaker(formula,catalog){
+   if(!hasFaker(formula))return;
+   if(formula.type==='compose'){for(const part of formula.parts||[])validateFaker(part,catalog);return;}
+   const f=upgradeLegacyFormula(formula),category=catalog?.categories.find(c=>c.items.some(i=>i.id===f.catalogId)),item=category?.items.find(i=>i.id===f.catalogId);
+   if(!item||f.catalogVersion!==catalog.catalogVersion||f.category&&f.category!==category.id)throw Error('Dado ou versão Faker inválido.');
+   if(typeof (f.group??'')!=='string'||(f.group||'').length>128)throw Error('Grupo Faker inválido.');
+   for(const [name,value] of Object.entries(f.params||{})){
+    const spec=item.parameters.find(p=>p.name===name);
+    if(!spec||spec.type==='integer'&&(!Number.isInteger(value)||value<spec.min||value>spec.max)||spec.type==='select'&&!spec.options.some(o=>o[0]===value))throw Error('Parâmetro Faker inválido: '+name);
+   }
+  }
+  function fakerValue(f,c){const value=c.fakerValues?.[fakerKey(f,c)];if(typeof value!=='string')throw Error('O valor Faker não foi resolvido para este registro.');return value;}
   function parseDate(value){if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))throw Error('Informe uma data no formato AAAA-MM-DD.');const d=new Date(value+'T12:00:00Z');if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==value)throw Error('Data inválida.');return d;}
   function dateCustomDefaults(){return{day:true,month:true,year:true,hour:true,minute:true,second:true,order:'DMY',yearDigits:'4',dateSeparator:'/',timeSeparator:':',join:' ',milliseconds:false,timezone:false,zone:'app'};}
   function dateMask(f){
@@ -95,9 +118,10 @@ globalThis.MockEngine = (() => {
     cpf:f=>cpf(f.mask), cnpj,
     list:f=>{const values=listValues(f.values);return f.mode==='random'?pick(values):values[integer(f.index??0,0,values.length-1,'Posição na lista')];},
     hash:f=>chars(integer(f.length??32,1,4096,'Quantidade de caracteres'),f.format==='alphanumeric'?'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789':f.format==='HEX'?'0123456789ABCDEF':'0123456789abcdef'),
-    person:(f,c)=>profileValue(f,c,'person',personProfile,'name'),
-    company:(f,c)=>profileValue(f,c,'company',companyProfile,'legalName'),
-    address:(f,c)=>profileValue(f,c,'address',()=>addressProfile(f),'street'),
+    person:legacyProfileValue,
+    company:legacyProfileValue,
+    address:legacyProfileValue,
+    faker:fakerValue,
     zeros:f=>'0'.repeat(integer(f.length??8,1,1000,'Quantidade de zeros')),
     sequence, date:dateValue,
     alpha:f=>chars(integer(f.length??9,1,512,'Comprimento'),f.alphabet||ALPHA),
@@ -107,9 +131,9 @@ globalThis.MockEngine = (() => {
   };
   function evaluate(formula,context,depth=0){if(depth>6)throw Error('A composição excedeu seis níveis.');if(!formula||!Object.hasOwn(generators,formula.type))throw Error('Escolha um gerador válido.');return String(generators[formula.type](formula,context,depth));}
   function filename(value){let name=String(value||'').trim();if(!name)throw Error('O nome do arquivo não pode estar vazio.');if(/[<>:"/\\|?*\u0000-\u001F]/.test(name))throw Error('O nome não pode conter barras ou caracteres < > : " | ? *.');if(/[. ]$/.test(name))throw Error('O nome não pode terminar com ponto ou espaço.');if(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name))throw Error('Nome reservado pelo sistema operacional.');if(!/\.xml$/i.test(name))name+='.xml';if(name.length>180)throw Error('O nome deve ter no máximo 180 caracteres.');return name;}
-  function defaults(type){const values={literal:{value:''},copy:{path:''},field:{source:'output',path:''},groupSum:{source:'output',group:'',path:'',allRecords:false},cpf:{mask:false},cnpj:{mode:'N',mask:false,establishment:'0001'},list:{values:'Ativo\nInativo',mode:'single',index:0},hash:{length:32,format:'hex'},person:{field:'name',group:'cliente'},company:{field:'legalName',group:'empresa'},address:{field:'street',state:'any',group:'endereco'},date:{mode:'offset',days:5,format:'yyyy-MM-dd',value:'2026-10-17',holidays:''},zeros:{length:8},sequence:{start:1,step:1,width:4,scope:'record'},alpha:{length:9,alphabet:ALPHA},random:{min:100,max:5000,decimals:2},id:{mode:'common',prefix:'CT',length:12},compose:{operation:'concat',separator:'',parts:[{type:'literal',value:'CT'},{type:'sequence',start:1,step:1,width:4}]},config:{},count:{}};return{type,...structuredCopy(values[type]||{})};}
+  function defaults(type){const values={literal:{value:''},copy:{path:''},field:{source:'output',path:''},groupSum:{source:'output',group:'',path:'',allRecords:false},cpf:{mask:false},cnpj:{mode:'N',mask:false,establishment:'0001'},list:{values:'Ativo\nInativo',mode:'single',index:0},hash:{length:32,format:'hex'},person:{field:'name',group:'cliente'},company:{field:'legalName',group:'empresa'},address:{field:'street',state:'any',group:'endereco'},faker:{catalogVersion:1,category:'person',catalogId:'person.name',params:{},group:'principal'},date:{mode:'offset',days:5,format:'yyyy-MM-dd',value:'2026-10-17',holidays:''},zeros:{length:8},sequence:{start:1,step:1,width:4,scope:'record'},alpha:{length:9,alphabet:ALPHA},random:{min:100,max:5000,decimals:2},id:{mode:'common',prefix:'CT',length:12},compose:{operation:'concat',separator:'',parts:[{type:'literal',value:'CT'},{type:'sequence',start:1,step:1,width:4}]},config:{},count:{}};return{type,...structuredCopy(values[type]||{})};}
   function structuredCopy(v){return JSON.parse(JSON.stringify(v));}
-  return{evaluate,filename,cnpjDigits,validCPF,validCNPJ,checkLength,limitLength,ruleContext,ruleValue,listValues,locations:LOCATIONS,parseDate,formatDate,dateMask,dateCustomDefaults,defaults,clone:structuredCopy};
+ return{evaluate,filename,cnpjDigits,validCPF,validCNPJ,checkLength,limitLength,ruleContext,ruleValue,listValues,locations:LOCATIONS,parseDate,formatDate,dateMask,dateCustomDefaults,defaults,clone:structuredCopy,upgradeLegacyFormula,fakerKey,hasFaker,validateFaker};
 })();
 
 globalThis.MockXml=(()=>{
@@ -242,10 +266,10 @@ globalThis.MockXml=(()=>{
   const source=parse(inputXml||config.sourceTemplate),template=config.mode==='new'?parse(inputXml||config.sourceTemplate):parse(config.outputTemplate);
   const outGroup=config.mode==='new'?config.inputGroup:config.outputGroup,requested=Number(config.count);
   if(!config.inputGroup||!outGroup)throw Error('Selecione os grupos de entrada e saída antes de gerar.');
-  if(!Number.isInteger(requested)||requested<1||requested>500)throw Error('Quantidade: informe de 1 a 500 registros.');
+  if(!Number.isInteger(requested)||requested<1||requested>10000)throw Error('Quantidade: informe de 1 a 10000 registros.');
   const available=records(source,config.inputGroup).length||1,fullCount=config.mode==='return'?available:requested;
   const count=config.previewOnly?1:fullCount,formulaCount=config.previewContextCount??fullCount;
-  if(count>500)throw Error('O retorno excede 500 registros. Reduza a amostra.');
+  if(count>10000)throw Error('O retorno excede 10000 registros. Reduza a amostra.');
   const initialRecords=records(template,outGroup);if(!initialRecords.length)throw Error('Selecione o grupo que representa um registro.');
   const headerPaths=config.headersByMode?.[config.mode]||[];
   for(const path of headerPaths){
@@ -267,7 +291,7 @@ globalThis.MockXml=(()=>{
    if(policy.requirement==='optional'&&(policy.include===false||policy.distribution==='alternate')&&hasPrefix(JSON.parse(outGroup),JSON.parse(path)))throw Error(display(path)+': a raiz e o caminho da unidade do registro devem permanecer presentes.');
   }
   const doc=template.cloneNode(true),layout={...replaceRecords(doc,outGroup,count),templateGroup:outGroup,outputPaths:{},templatePaths:{}},prefix=JSON.parse(outGroup);
-  const context={referenceDateTime:config.referenceDateTime||new Date().toISOString(),timeZone:config.timeZone||'America/Fortaleza',count:formulaCount,baseDate:config.baseDate,configName:config.name,fileIndex:config.fileIndex||0};
+  const context={referenceDateTime:config.referenceDateTime||new Date().toISOString(),timeZone:config.timeZone||'America/Fortaleza',count:formulaCount,baseDate:config.baseDate,configName:config.name,fileIndex:config.fileIndex||0,fakerValues:config.fakerValues||{}};
   const repeated=path=>hasPrefix(JSON.parse(path),prefix);
   const actualPath=(path,index)=>reindex(outputPath(path,{wrapperPath:layout.wrapperPath}),layout.group,index);
   // Register every target before evaluation: dependents may precede their sources.
@@ -331,5 +355,32 @@ globalThis.MockXml=(()=>{
   if(!node)throw Error('O campo não foi encontrado na saída da prévia.');
   return node.nodeType===2?node.value:node.textContent;
  }
- return{parse,fields,nodes,groups,recordGroups,groupValues,resolve,records,project,display,key,serialize,automap,outputPath,templatePath,generate,generateAsync,testFormula};
+ function fakerRequests(config,inputXml){
+  const seen=new Map();
+  function visit(formula,index){
+   if(!formula||typeof formula!=='object')return;
+   const effective=E.upgradeLegacyFormula(formula);
+   if(effective.type==='faker'){
+    const key=E.fakerKey(effective,{recordIndex:index});
+    if(!seen.has(key))seen.set(key,{key,formula:effective});
+    if(seen.size>250000)throw Error('A operação excede o limite de 250.000 fórmulas Faker.');
+    return;
+   }
+   for(const part of effective.parts||[])visit(part,index);
+  }
+  let count=Number(config.count??1);
+  if(config.mode==='return')count=records(parse(inputXml||config.sourceTemplate),config.inputGroup).length||1;
+  if(config.previewOnly)count=1;
+  if(!Number.isInteger(count)||count<1||count>10000)throw Error('Quantidade: informe de 1 a 10000 registros.');
+  if(config.mode==='manual'){
+   for(const rule of Object.values(config.rules||{}))visit(rule.generator,rule.recordIndex??0);
+  }else for(let index=0;index<count;index++){
+   for(const rule of Object.values(config.rules||{}))if(rule.fixed==null)visit(rule.generator,index);
+  }
+  // The filename is evaluated once, using record zero.
+  visit(config.filename,0);
+  return [...seen.values()];
+ }
+
+ return{parse,fields,nodes,groups,recordGroups,resolve,records,project,display,key,serialize,automap,outputPath,templatePath,generate,generateAsync,testFormula,fakerRequests};
 })();

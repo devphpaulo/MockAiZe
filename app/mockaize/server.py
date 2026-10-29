@@ -127,6 +127,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, body, "application/json; charset=utf-8")
         if route == "/api/settings":
             return self._send(200, json.dumps(storage.get_settings(), ensure_ascii=False).encode(), "application/json; charset=utf-8")
+        if route == "/api/faker/catalog":
+            from . import faker_catalog
+            return self._send(200, json.dumps(faker_catalog.manifest(), ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if route == "/api/backup/export":
             body = json.dumps(storage.export_workspace_backup(), ensure_ascii=False, separators=(",", ":")).encode("utf-8")
             return self._send(200, body, "application/json; charset=utf-8", {
@@ -223,6 +226,23 @@ class Handler(BaseHTTPRequestHandler):
         if not self._is_local_request() or not self._has_session(mutation=True):
             return self._send(403, b"Forbidden", "text/plain; charset=utf-8")
         parts = urlparse(self.path).path.strip("/").split("/")
+        if parts == ["api", "faker", "preview"]:
+            try:
+                from . import faker_catalog
+                payload = json.loads(self._read_body(16_384, "application/json"))
+                if not isinstance(payload, dict) or set(payload) != {"formula"}:
+                    raise ValueError("Solicitação de amostra Faker inválida.")
+                return self._send(200, json.dumps(faker_catalog.generate(payload["formula"]), ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except (ValueError, TypeError, json.JSONDecodeError) as exc:
+                return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+        if parts == ["api", "faker", "batch"]:
+            try:
+                from . import faker_catalog
+                payload = json.loads(self._read_body(4_000_000, "application/json"))
+                result = faker_catalog.generate_batch(payload)
+                return self._send(200, json.dumps(result, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except (ValueError, TypeError, json.JSONDecodeError) as exc:
+                return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if len(parts) == 4 and parts[:2] == ["api", "variations"] and parts[3] == "recover":
             from . import preset_store
             try:

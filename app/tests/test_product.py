@@ -339,6 +339,18 @@ class ProductCase(unittest.TestCase):
         self.assertIsNone(powershell_export.get_bundle_member(bundle["id"], "zip"))
 
     @unittest.skipUnless(os.name == "nt", "mutex nomeado é específico do Windows")
+    def test_mutex_name_lookup_cannot_leak_last_error_into_creation(self):
+        import ctypes
+        from unittest.mock import Mock
+        kernel = Mock()
+        kernel.CreateMutexW.return_value = 42
+        def name_with_stale_error():
+            ctypes.set_last_error(183)
+            return "Local\\MockAize-Test"
+        with patch("ctypes.WinDLL", return_value=kernel), patch.object(InstanceGuard, "_mutex_name", side_effect=name_with_stale_error):
+            self.assertTrue(InstanceGuard().acquire())
+
+    @unittest.skipUnless(os.name == "nt", "mutex nomeado é específico do Windows")
     def test_singleton_mutex_and_rendezvous_live_inside_documents_root(self):
         owner, second = InstanceGuard(), InstanceGuard()
         self.assertTrue(InstanceGuard._is_safe_local_url("http://127.0.0.1:45678/"))

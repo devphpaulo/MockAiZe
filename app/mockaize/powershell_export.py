@@ -17,7 +17,7 @@ PS_ENGINE = r'''# MockAíZé standalone runner. MIT License; no application, Pyt
 param(
   [string]$OutputDirectory = $PSScriptRoot,
   [string]$InputFile,
-  [ValidateRange(0,500)][int]$Count = 0,
+  [ValidateRange(0,10000)][int]$Count = 0,
   [string]$BaseDate,
   [long]$FileIndex = -1
 )
@@ -246,7 +246,7 @@ try {
   }
   $records=New-Object 'System.Collections.Generic.List[Xml.XmlElement]';if($targetGroup -is [Xml.XmlElement]){$records.Add($targetGroup)}else{throw 'Grupo de saída não é um elemento XML.'}
   $available=1;if($sourceGroup.ParentNode){$available=0;foreach($n in $sourceGroup.ParentNode.ChildNodes){if($n -is [Xml.XmlElement] -and $n.LocalName -ceq $sourceGroup.LocalName -and $n.NamespaceURI -ceq $sourceGroup.NamespaceURI){$available++}}}
-  $requested=if($Count -gt 0){$Count}else{[int]$config.recordCount};if($requested -lt 1 -or $requested -gt 500){throw 'Quantidade deve ficar entre 1 e 500.'};$total=if($mode -eq 'return'){$available}else{$requested};if($total -lt 1 -or $total -gt 500){throw 'A amostra de retorno precisa conter de 1 a 500 registros.'}
+  $requested=if($Count -gt 0){$Count}else{[int]$config.recordCount};if($requested -lt 1 -or $requested -gt 10000){throw 'Quantidade deve ficar entre 1 e 10000.'};$total=if($mode -eq 'return'){$available}else{$requested};if($total -lt 1 -or $total -gt 10000){throw 'A amostra de retorno precisa conter de 1 a 10000 registros.'}
   $originalGroup=$outputGroup;$wrapper=$null
   if($targetGroup -eq $template.DocumentElement -and $total -gt 1){$oldRoot=$template.DocumentElement;$template.RemoveChild($oldRoot)|Out-Null;$wrapper=$template.CreateElement('MockRegistros');$template.AppendChild($wrapper)|Out-Null;$wrapper.AppendChild($oldRoot)|Out-Null;$targetGroup=$oldRoot;$records.Clear()}
   if($targetGroup -ne $template.DocumentElement){$parent=$targetGroup.ParentNode;$siblings=@(foreach($n in $parent.ChildNodes){if($n -is [Xml.XmlElement] -and $n.LocalName -ceq $targetGroup.LocalName -and $n.NamespaceURI -ceq $targetGroup.NamespaceURI){$n}});$anchor=$siblings[-1].NextSibling;foreach($n in $siblings){[void]$parent.RemoveChild($n)};$records.Clear();for($i=0;$i -lt $total;$i++){$copy=[Xml.XmlElement]$template.ImportNode($siblings[0],$true);if($null -ne $anchor){[void]$parent.InsertBefore($copy,$anchor)}else{[void]$parent.AppendChild($copy)};$records.Add($copy)}}else{for($i=1;$i -lt $total;$i++){$copy=[Xml.XmlElement]$template.ImportNode($targetGroup,$true);$template.DocumentElement.ParentNode.AppendChild($copy)|Out-Null;$records.Add($copy)}}
@@ -310,6 +310,16 @@ def create_bundle(variation_id: str, expected_revision: int) -> dict:
     if isinstance(expected_revision, bool) or item["revision"] != expected_revision:
         raise RuntimeError("A variação mudou. Salve e tente exportar novamente.")
     config = storage.normalize_config(item["config"])
+    def uses_faker(value):
+        if isinstance(value, dict):
+            if value.get("type") in {"faker", "person", "company", "address"}:
+                return True
+            return any(uses_faker(child) for child in value.values())
+        if isinstance(value, list):
+            return any(uses_faker(child) for child in value)
+        return False
+    if uses_faker(config):
+        raise ValueError("A exportação PS1/BAT não oferece suporte a fórmulas Faker. Gere e exporte o XML pelo estúdio.")
     if config["mode"] in {"manual", "filter"}:
         raise ValueError("Nos modos Manual e Filtragem, use a exportação de XML no estúdio.")
     runner_config = {**config, "name": item["name"], "fileIndex": item["file_index"]}

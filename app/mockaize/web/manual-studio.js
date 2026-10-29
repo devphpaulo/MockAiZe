@@ -3,8 +3,8 @@ globalThis.ManualStudio=(()=>{
  'use strict';
  function create(o){
   const {state,X,E,h}=o,$=id=>document.getElementById(id);let cachedTemplate=null,cachedGroup=null,cachedCount=0,cachedHeaders=null,cached=null,owner=null,activeRecord=0,previewFields=new Map(),formFields=new Map(),filledCount=0;
-  const data=()=>state.draft.manual;
-  let nameEditor=false,nameTimer=null,activeField=null,liveTimer=null;const nameCache=new Map(),draftValues=new Map();
+  const data=()=>state.draft.manual;let fakerValues={},fakerRevision=0,fakerSeed=crypto.randomUUID();
+  let confirming=false,nameEditor=false,nameTimer=null,activeField=null,liveTimer=null;const nameCache=new Map(),draftValues=new Map();
   function manualGroups(doc){return X.recordGroups(doc,state.draft.headersByMode?.new||[]).filter(group=>X.resolve(doc,group.key)!==doc.documentElement);}
   function chooseGroup(doc,preferred=''){
    const groups=manualGroups(doc),existing=groups.find(group=>group.key===preferred);
@@ -12,10 +12,10 @@ globalThis.ManualStudio=(()=>{
   }
   function ensure(xml){
    state.draft.manual??={templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:''};
-   const manual=data();manual.recordCount??=1;manual.recordGroup??='';manual.filename??={type:'literal',value:manual.fileName||state.draft.name+'_manual.xml'};manual.formulas??={};manual.generated??={};manual.entryMode??='manual';
+   const manual=data();manual.recordCount??=1;manual.recordGroup??='';manual.filename??={type:'literal',value:manual.fileName||state.draft.name+'_manual.xml'};manual.formulas??={};manual.generated??={};manual.entryMode??='manual';manual.fakerSeed??=crypto.randomUUID();
    if(!manual.templateXml&&xml){manual.templateXml=xml;manual.values={};manual.confirmed=false;manual.recordCount=1;}
    if(manual.templateXml&&!manual.recordGroup)manual.recordGroup=chooseGroup(X.parse(manual.templateXml),state.draft.inputGroup);
-   if(owner!==manual){owner=manual;activeRecord=0;nameEditor=false;activeField=null;nameCache.clear();draftValues.clear();}
+   if(owner!==manual){owner=manual;fakerRevision++;fakerSeed=manual.fakerSeed;fakerValues={};activeRecord=0;nameEditor=false;activeField=null;nameCache.clear();draftValues.clear();}
   }
   function model(){
    const {templateXml,recordGroup,recordCount}=data(),headers=JSON.stringify(state.draft.headersByMode?.new||[]);
@@ -37,7 +37,7 @@ globalThis.ManualStudio=(()=>{
   function navigate(index){if(!closeField())return;activeRecord=Math.max(0,Math.min(index,data().recordCount-1));state.resetScroll=true;o.render();}
   function addRecord(){
    if(!data().recordGroup)return o.notify('Selecione o grupo que representa um registro.','warning');
-   if(data().recordCount>=500)return o.notify('O limite é de 500 registros por XML.','warning');
+   if(data().recordCount>=10000)return o.notify('O limite é de 10000 registros por XML.','warning');
    if(!closeField())return;const previous=activeRecord,inherited=Object.entries(data().formulas).filter(([key])=>recordIndex(key)===previous);
    o.remember();activeRecord=data().recordCount;data().recordCount++;data().confirmed=false;
    for(const [key,formula] of inherited)data().formulas[reindex(key,previous,activeRecord)]=reindexFormula(formula,previous,activeRecord);
@@ -53,7 +53,7 @@ globalThis.ManualStudio=(()=>{
   function reindex(path,from,to){
    if(recordIndex(path)!==from)return path;const parts=JSON.parse(path);parts[JSON.parse(data().recordGroup).length-1].index=to+1;return JSON.stringify(parts);
   }
-  function reindexFormula(formula,from,to){const copy=E.clone(formula);if(copy.path)copy.path=reindex(copy.path,from,to);if(copy.group)copy.group=reindex(copy.group,from,to);if(copy.parts)copy.parts=copy.parts.map(p=>reindexFormula(p,from,to));return copy;}
+  function reindexFormula(formula,from,to){const copy=E.clone(formula);if(copy.path)copy.path=reindex(copy.path,from,to);if(copy.type==='groupSum'&&copy.group)copy.group=reindex(copy.group,from,to);if(copy.parts)copy.parts=copy.parts.map(p=>reindexFormula(p,from,to));return copy;}
   function formulaFor(key){return activeField===key&&state.inspectorMode==='field'&&state.formulaDraft?state.formulaDraft:data().formulas[key];}
   function calculator(placeholders=false,override=null){
    const m=model(),memo=new Map(),visiting=new Set(),profiles=new Map();
@@ -69,7 +69,7 @@ globalThis.ManualStudio=(()=>{
      const formula=override?.key===path?override.formula:formulaFor(path),rule=ruleFor(field);let value=data().values[path]??'';
      if(formula){
       const index=recordIndex(path)??0;if(!profiles.has(index))profiles.set(index,new Map());
-      const ctx={...o.nameContext(),count:data().recordCount,recordIndex:index,profiles:profiles.get(index),sourceValue:readOriginal,outputValue:read,groupValues:f=>{
+      const ctx={...o.nameContext(),count:data().recordCount,recordIndex:index,profiles:profiles.get(index),fakerValues,sourceValue:readOriginal,outputValue:read,groupValues:f=>{
        const reader=node=>read(X.key(node));
        return f.allRecords?XmlFilter.values(m.doc,f,reader):X.groupValues(m.doc,f.group,f.path,reader,recordIndex(path)!==null&&JSON.parse(f.group).length===JSON.parse(data().recordGroup).length);
       }};
@@ -115,7 +115,7 @@ globalThis.ManualStudio=(()=>{
   function context(){
    let doc=null;const document=()=>doc??=build();
    const read=path=>{const node=X.resolve(document(),path);if(!node)throw Error('Campo não encontrado: '+X.display(path));return node.nodeType===2?node.value:node.textContent;};
-   return{...o.nameContext(),count:data().recordCount,recordIndex:0,profiles:new Map(),sourceValue:read,outputValue:read,groupValues:f=>XmlFilter.values(document(),f)};
+   return{...o.nameContext(),count:data().recordCount,recordIndex:0,profiles:new Map(),fakerValues,sourceValue:read,outputValue:read,groupValues:f=>XmlFilter.values(document(),f)};
   }
   function evaluateName(formula=data().filename){
    const ctx=context(),key=JSON.stringify([formula,data().values,data().formulas,activeField?state.formulaDraft:null,data().recordCount,data().recordGroup,ctx.fileIndex,ctx.baseDate,ctx.configName]);
@@ -127,15 +127,16 @@ globalThis.ManualStudio=(()=>{
   function toggleName(){if(!closeField())return;nameEditor=!nameEditor;state.inspectorOpen=false;if(nameEditor){state.inspectorMode='filename';state.inspectorTab='value';}o.render();}
   function clearDraft(){state.formulaDraft=null;state.editorBaseline=null;state.formulaDirty=false;state.sampleText='';activeField=null;}
   function previewFormula(formula=state.formulaDraft){return calculator(false,{key:activeField,formula})(activeField);}
+  function hasFaker(formula){return E.hasFaker(formula);}
   function applyField(){
    if(!activeField)return true;
-   try{previewFormula();o.remember();data().formulas[activeField]=E.clone(state.formulaDraft);delete data().values[activeField];if(draftValues.has(activeField))data().generated[activeField]=E.clone(draftValues.get(activeField));data().confirmed=false;state.formulaDirty=false;o.appliedBaseline();o.changed(false);o.render();return true;}
+   try{if(hasFaker(state.formulaDraft))o.validateFaker(state.formulaDraft);else previewFormula();o.remember();data().formulas[activeField]=E.clone(state.formulaDraft);delete data().values[activeField];if(draftValues.has(activeField))data().generated[activeField]=E.clone(draftValues.get(activeField));data().confirmed=false;state.formulaDirty=false;o.appliedBaseline();o.changed(false);o.render();formulaChanged();return true;}
    catch(error){const node=$('ruleError');if(node){AppAlerts.render(node,error.message,{type:'error'});}return false;}
   }
   function closeField(){if(!activeField)return true;if(state.formulaDirty&&!applyField())return false;clearDraft();return true;}
   function toggleField(key){
    const same=activeField===key;if(!closeField())return;
-   if(!same){if(nameEditor&&state.formulaDirty&&!o.applyName())return;nameEditor=false;activeField=key;state.selectedKey=key;state.inspectorMode='field';state.inspectorTab='value';state.formulaDraft=E.clone(data().formulas[key]||{type:'literal',value:data().values[key]||''});state.editorBaseline=null;state.formulaDirty=false;state.fixedDraft=false;state.notesDraft={};}
+   if(!same){if(nameEditor&&state.formulaDirty&&!o.applyName())return;nameEditor=false;activeField=key;state.selectedKey=key;state.inspectorMode='field';state.inspectorTab='value';state.formulaDraft=E.upgradeLegacyFormula(E.clone(data().formulas[key]||{type:'literal',value:data().values[key]||''}));state.editorBaseline=null;state.formulaDirty=false;state.fixedDraft=false;state.notesDraft={};}
    o.render();
   }
   function removeFieldFormula(){
@@ -143,14 +144,21 @@ globalThis.ManualStudio=(()=>{
    o.remember();const value=data().generated[key]?.value||data().values[key]||'';delete data().formulas[key];delete data().generated[key];data().values[key]=value;data().confirmed=false;clearDraft();o.changed(false);o.render();
   }
   function changeEntryMode(mode){if(!closeField())return;o.remember();data().entryMode=mode;o.changed(false);o.render();}
-  function refreshValues(){
+  async function hydrateFaker(filename=(state.inspectorMode==='filename'&&state.formulaDraft)?state.formulaDraft:data().filename){
+   const formulas={...data().formulas};if(activeField&&state.formulaDraft)formulas[activeField]=state.formulaDraft;
+   const config=await o.resolveFaker({mode:'manual',fakerSeed,count:data().recordCount,rules:Object.fromEntries(Object.entries(formulas).map(([key,generator])=>[key,{generator,recordIndex:recordIndex(key)??0}])),filename},data().templateXml);
+   return config.fakerValues||{};
+  }
+  async function previewFormulaAsync(formula=state.formulaDraft){const revision=fakerRevision,values=await hydrateFaker(state.inspectorMode==='filename'?formula:data().filename);if(revision!==fakerRevision)throw new DOMException('A seleção mudou.','AbortError');Object.assign(fakerValues,values);return state.inspectorMode==='filename'?evaluateName(formula):previewFormula(formula);}
+  async function refreshValues(){
    if(state.draft?.mode!=='manual'||!data().templateXml)return;
+   const revision=++fakerRevision;let values;try{values=await hydrateFaker();}catch(error){if(revision!==fakerRevision)return;if($('ruleError'))AppAlerts.render($('ruleError'),error.message,{type:'error'});return;}if(revision!==fakerRevision||state.draft?.mode!=='manual')return;fakerValues=values;
    const read=calculator(true);filledCount=0;
    for(const field of model().fields){const value=read(field.key);if(value)filledCount++;const input=formFields.get(field.key);if(input&&input!==document.activeElement)input.value=value;}
    preview();updateFooter();updateName();
    if(activeField){try{previewFormula();if($('ruleError'))$('ruleError').hidden=true;}catch(error){if($('ruleError')){AppAlerts.render($('ruleError'),error.message,{type:'error'});}}}
   }
-  function formulaChanged(){clearTimeout(liveTimer);liveTimer=setTimeout(refreshValues,120);}
+  function formulaChanged(){fakerRevision++;clearTimeout(liveTimer);liveTimer=setTimeout(()=>{refreshValues();},120);}
   document.addEventListener('click',event=>{
    if(state.draft?.mode!=='manual')return;
    const toggle=event.target.closest('[data-manual-formula]'),mode=event.target.closest('[data-manual-entry-mode]');
@@ -178,10 +186,10 @@ globalThis.ManualStudio=(()=>{
     const calculated=!!formulaFor(f.key),formulaMode=data().entryMode==='formula',open=activeField===f.key;
     return heading+`<div class="manual-field ${calculated?'has-formula':''}"><label for="manual-${i}">${h(f.name)}${g.required?' *':''}</label><div class="manual-value-row"><input id="manual-${i}" data-manual-key="${h(f.key)}" value="${h(read(f.key))}" placeholder="${h(g.example)}" title="${h(g.text)}" aria-describedby="manual-error-${i}" ${formulaMode&&calculated?'readonly':''} autocomplete="off" spellcheck="false">${formulaMode?`<button type="button" class="manual-formula-trigger ${calculated?'configured':''}" data-manual-formula="${h(f.key)}" aria-label="Fórmula de ${h(f.name)}" aria-expanded="${open}">ƒ Fórmula</button>`:''}</div><p class="manual-error" id="manual-error-${i}" role="alert" hidden></p>${open?'<div id="manualFieldEditor" class="manual-field-editor filter-name-editor"></div>':''}</div>`;
    }).join('');
-   $('inputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">${nameEditor?'Nome do arquivo':'Preencher registro'}</span><div class="pane-actions"><button class="small" data-action="manual-add-record" ${!data().recordGroup||data().recordCount>=500?'disabled':''}>＋ Adicionar registro</button><div class="manual-entry-modes segmented" role="group" aria-label="Preenchimento dos campos"><button class="small ${data().entryMode==='manual'?'active':''}" data-manual-entry-mode="manual" aria-pressed="${data().entryMode==='manual'}">Manual</button><button class="small ${data().entryMode==='formula'?'active':''}" data-manual-entry-mode="formula" aria-pressed="${data().entryMode==='formula'}">Fórmulas</button></div></div></div></div><div class="code-scroll manual-form" id="inputCode">${nameEditor?'<div id="manualNameEditor" class="filter-name-editor"></div>':fields}</div>${RecordPagination.footer(activeRecord,data().recordCount,'manual')}`;$('outputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">XML de entrada · preenchimento manual</span></div></div><div class="code-scroll" id="outputCode"></div>${RecordPagination.footer(activeRecord,data().recordCount,'manual-output')}`;for(const field of $('inputCode').querySelectorAll('[data-manual-key]'))formFields.set(field.dataset.manualKey,field);preview();}
+   $('inputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">${nameEditor?'Nome do arquivo':'Preencher registro'}</span><div class="pane-actions"><button class="small" data-action="manual-add-record" ${!data().recordGroup||data().recordCount>=10000?'disabled':''}>＋ Adicionar registro</button><div class="manual-entry-modes segmented" role="group" aria-label="Preenchimento dos campos"><button class="small ${data().entryMode==='manual'?'active':''}" data-manual-entry-mode="manual" aria-pressed="${data().entryMode==='manual'}">Manual</button><button class="small ${data().entryMode==='formula'?'active':''}" data-manual-entry-mode="formula" aria-pressed="${data().entryMode==='formula'}">Fórmulas</button></div></div></div></div><div class="code-scroll manual-form" id="inputCode">${nameEditor?'<div id="manualNameEditor" class="filter-name-editor"></div>':fields}</div>${RecordPagination.footer(activeRecord,data().recordCount,'manual')}`;$('outputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">XML de entrada · preenchimento manual</span></div></div><div class="code-scroll" id="outputCode"></div>${RecordPagination.footer(activeRecord,data().recordCount,'manual-output')}`;for(const field of $('inputCode').querySelectorAll('[data-manual-key]'))formFields.set(field.dataset.manualKey,field);preview();formulaChanged();}
   function footer(){o.presentation?.();const read=data().templateXml?calculator(true):null;filledCount=read?model().fields.reduce((count,f)=>count+Number(!!read(f.key)),0):0;$('bottomBar').innerHTML=`<span class="hint"><b id="manualFilled">${filledCount}</b> de ${data().templateXml?model().fields.length:0} campos preenchidos · <span id="manualStatus">${data().confirmed?'Preenchimento confirmado':'Confirme para validar e salvar'}</span></span><button class="primary" data-action="manual-export" ${data().templateXml?'':'disabled'}><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>Exportar XML de entrada</button>`;}
   function editModel(){o.loadXml('manual');}
-  function install(xml){X.parse(xml);o.remember();state.draft.manual={templateXml:xml,values:{},confirmed:false,fileName:data()?.fileName||'',filename:E.clone(data().filename),formulas:{},generated:{},entryMode:data().entryMode,recordCount:1,recordGroup:chooseGroup(X.parse(xml),state.draft.inputGroup)};owner=data();activeRecord=0;nameEditor=false;activeField=null;nameCache.clear();draftValues.clear();cachedTemplate=null;o.changed();o.render();}
+  function install(xml){X.parse(xml);o.remember();state.draft.manual={templateXml:xml,values:{},confirmed:false,fileName:data()?.fileName||'',filename:E.clone(data().filename),formulas:{},generated:{},entryMode:data().entryMode,recordCount:1,recordGroup:chooseGroup(X.parse(xml),state.draft.inputGroup)};owner=null;fakerRevision++;activeRecord=0;nameEditor=false;activeField=null;nameCache.clear();draftValues.clear();cachedTemplate=null;o.changed();o.render();}
   function input(target){
    if(!target.dataset.manualKey)return false;
    const key=target.dataset.manualKey,previous=data().values[key]??data().generated[key]?.value??'';
@@ -192,9 +200,10 @@ globalThis.ManualStudio=(()=>{
    updateValue(key);updateFooter();if(nameTimer)clearTimeout(nameTimer);nameTimer=setTimeout(updateName,150);formulaChanged();o.edited();return true;
   }
   function focusField(key){if(!closeField())return;if(nameEditor){nameEditor=false;o.render();}const index=recordIndex(key);if(index!==null&&index!==activeRecord)navigate(index);const input=formFields.get(key);input?.scrollIntoView({block:'center',behavior:'smooth'});input?.focus();}
-  async function confirm(){if(state.formulaDirty&&!o.applyName())return false;if(!data().templateXml)return o.notify('Adicione um modelo XML primeiro.','warning');for(const f of model().fields){const message=errorFor(f);if(message){focusField(f.key);o.notify(f.name+': '+message,'error');return false;}}X.parse(X.serialize(build()));evaluateName();data().confirmed=true;o.changed(false);if(!await o.save()){data().confirmed=false;o.changed(false);return false;}o.render();o.notify('Preenchimento confirmado e salvo.','success');return true;}
+  async function confirmCurrent(){if(state.formulaDirty&&!o.applyName())return false;if(!data().templateXml)return o.notify('Adicione um modelo XML primeiro.','warning');try{fakerValues=await hydrateFaker();}catch(error){return o.notify(error.message,'error');}for(const f of model().fields){const message=errorFor(f);if(message){focusField(f.key);o.notify(f.name+': '+message,'error');return false;}}X.parse(X.serialize(build()));evaluateName();data().confirmed=true;o.changed(false);if(!await o.save()){data().confirmed=false;o.changed(false);return false;}o.render();o.notify('Preenchimento confirmado e salvo.','success');return true;}
+  async function confirm(){if(confirming)return false;confirming=true;try{return await confirmCurrent();}catch(error){o.notify(error.message,'error');return false;}finally{confirming=false;}}
   async function exportXml(){if(!await confirm())return;const name=evaluateName();const xml=X.serialize(build()),artifact=await o.publish({xml,name});state.draft.fileIndex=artifact.fileIndex;state.draft.revision=artifact.revision;const link=document.createElement('a');link.href=artifact.downloadUrl;link.download=name;document.body.append(link);link.click();link.remove();o.notify('XML de entrada exportado e salvo em Documentos\\MockAíZé.','success');}
-  return{nameLabel,fieldEditorKey:()=>activeField,fieldByKey:key=>data().templateXml?model().byKey.get(key):null,previewFormula,applyField,removeFieldFormula,formulaChanged,context,evaluateName,toggleName,nameEditorOpen:()=>nameEditor,document:()=>data().templateXml?build(true):null,ensure,head,render,footer,editModel,install,input,focusField,confirm,exportXml,addRecord,changeGroup,goToRecord:navigate,previous:()=>navigate(activeRecord-1),next:()=>navigate(activeRecord+1)};
+  return{nameLabel,fieldEditorKey:()=>activeField,fieldByKey:key=>data().templateXml?model().byKey.get(key):null,previewFormula,previewFormulaAsync,applyField,removeFieldFormula,formulaChanged,context,evaluateName,toggleName,nameEditorOpen:()=>nameEditor,document:()=>data().templateXml?build(true):null,ensure,head,render,footer,editModel,install,input,focusField,confirm,exportXml,addRecord,changeGroup,goToRecord:navigate,previous:()=>navigate(activeRecord-1),next:()=>navigate(activeRecord+1)};
  }
  return{create};
 })();

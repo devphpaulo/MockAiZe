@@ -33,6 +33,11 @@ try {
     & $python -m pip install 'PyInstaller==6.22.3'
     if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar PyInstaller (código $LASTEXITCODE)." }
   }
+  & $python -c "from importlib.metadata import version; assert version('faker') == '40.44.0'" *> $null
+  if ($LASTEXITCODE -ne 0) {
+    & $python -m pip install 'Faker==40.44.0'
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar Faker (código $LASTEXITCODE)." }
+  }
   & $python -c "from importlib.metadata import version; from packaging.version import Version; from zoneinfo import ZoneInfo; assert Version(version('tzdata')) >= Version('2025.2'); ZoneInfo('America/Fortaleza')" *> $null
   if ($LASTEXITCODE -ne 0) {
     & $python -m pip install 'tzdata>=2025.2'

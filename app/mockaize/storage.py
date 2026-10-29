@@ -388,7 +388,7 @@ CONFIG_DEFAULTS = {
     "headersByMode": {"new": [], "return": []},
     "returnModels": [], "activeReturnId": "",
 }
-GENERATOR_TYPES = {"literal", "copy", "field", "config", "count", "cpf", "cnpj", "list", "hash", "person", "company", "address", "zeros", "sequence", "date", "alpha", "random", "id", "compose", "groupSum"}
+GENERATOR_TYPES = {"literal", "copy", "field", "config", "count", "cpf", "cnpj", "list", "hash", "person", "company", "address", "zeros", "sequence", "date", "alpha", "random", "id", "compose", "groupSum", "faker"}
 FORMULA_FIELDS = {
     "groupSum": {"source", "group", "path", "allRecords"},
     "literal": {"value"}, "copy": {"path"}, "field": {"source", "path"},
@@ -400,6 +400,7 @@ FORMULA_FIELDS = {
     "date": {"mode", "days", "format", "value", "holidays", "custom"},
     "alpha": {"length", "alphabet"}, "random": {"min", "max", "decimals"},
     "id": {"mode", "prefix", "length"}, "compose": {"operation", "separator", "parts"},
+    "faker": {"catalogVersion", "category", "catalogId", "params", "group"},
 }
 
 
@@ -431,6 +432,14 @@ def validate_formula(formula: object, depth: int = 0) -> None:
         raise ValueError("Fórmula tipada inválida ou composição muito profunda.")
     if set(formula) - ({"type"} | FORMULA_FIELDS[formula["type"]]):
         raise ValueError("A fórmula contém propriedades não reconhecidas.")
+    if formula["type"] == "faker":
+        # A bare type is the neutral placeholder used by the versioned preset
+        # codec.  It cannot be resolved; editor-created formulas always carry
+        # the catalogue identity validated below.
+        if set(formula) == {"type"}:
+            return
+        from . import faker_catalog
+        faker_catalog.validate_formula(formula)
     if formula["type"] == "date" and "custom" in formula:
         custom = formula["custom"]
         flags = {"day", "month", "year", "hour", "minute", "second", "milliseconds", "timezone"}
@@ -530,11 +539,13 @@ def normalize_config(config: object) -> dict:
     if active_preset and active_preset not in preset_ids:
         raise ValueError("Preset de filtro selecionado não encontrado.")
     manual = normalized["manual"]
-    if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup", "filename", "formulas", "generated", "entryMode"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
+    if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup", "filename", "formulas", "generated", "entryMode", "fakerSeed"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
         or not isinstance(manual["templateXml"], str) or not isinstance(manual["values"], dict)
         or not isinstance(manual["confirmed"], bool) or not isinstance(manual["fileName"], str)
         or len(manual["fileName"]) > 180):
         raise ValueError("Preenchimento manual inválido.")
+    if "fakerSeed" in manual and (not isinstance(manual["fakerSeed"], str) or not 1 <= len(manual["fakerSeed"]) <= 128):
+        raise ValueError("Semente do preenchimento manual inválida.")
     if manual.get("entryMode", "manual") not in ("manual", "formula"):
         raise ValueError("Modo de preenchimento manual inválido.")
     if not isinstance(manual.get("formulas", {}), dict) or not isinstance(manual.get("generated", {}), dict):
@@ -551,8 +562,8 @@ def normalize_config(config: object) -> dict:
     if "filename" in manual: validate_formula(manual["filename"])
     manual.setdefault("recordCount", 1)
     manual.setdefault("recordGroup", "")
-    if isinstance(manual["recordCount"], bool) or not isinstance(manual["recordCount"], int) or not 1 <= manual["recordCount"] <= 500:
-        raise ValueError("A quantidade de registros manuais deve estar entre 1 e 500.")
+    if isinstance(manual["recordCount"], bool) or not isinstance(manual["recordCount"], int) or not 1 <= manual["recordCount"] <= 10_000:
+        raise ValueError("A quantidade de registros manuais deve estar entre 1 e 10000.")
     if not isinstance(manual["recordGroup"], str):
         raise ValueError("Grupo de registro manual inválido.")
     if manual["recordGroup"]: validate_structural_path(manual["recordGroup"])
@@ -577,8 +588,8 @@ def normalize_config(config: object) -> dict:
         if document["xml"]:
             try: ET.fromstring(document["xml"])
             except ET.ParseError as exc: raise ValueError(f"XML de entrada inválido: {exc}") from exc
-    if isinstance(normalized["recordCount"], bool) or not isinstance(normalized["recordCount"], int) or not 1 <= normalized["recordCount"] <= 500:
-        raise ValueError("A quantidade deve ser um inteiro entre 1 e 500.")
+    if isinstance(normalized["recordCount"], bool) or not isinstance(normalized["recordCount"], int) or not 1 <= normalized["recordCount"] <= 10_000:
+        raise ValueError("A quantidade deve ser um inteiro entre 1 e 10000.")
     if not isinstance(normalized["fileName"], str) or not normalized["fileName"].strip() or len(normalized["fileName"]) > 120:
         raise ValueError("Informe um nome de arquivo entre 1 e 120 caracteres.")
     if (not isinstance(normalized["mode"], str) or normalized["mode"] not in {"new", "return", "manual", "filter"}

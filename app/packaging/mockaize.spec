@@ -15,7 +15,13 @@ web = code / "mockaize" / "web"
 python_license = Path(sys.base_prefix) / "LICENSE.txt"
 pyinstaller_dist = distribution("pyinstaller")
 tzdata_dist = distribution("tzdata")
+faker_dist = distribution("faker")
 tzdata_files = collect_data_files("tzdata")
+faker_licenses = [
+    (str(faker_dist.locate_file(item)), "licenses/Faker")
+    for item in faker_dist.files
+    if "/licenses/" in str(item).replace("\\", "/") and item.name.startswith("LICENSE")
+]
 tzdata_licenses = [
     (str(tzdata_dist.locate_file(item)), "licenses/tzdata")
     for item in tzdata_dist.files
@@ -34,6 +40,8 @@ if pyinstaller_license is None or not Path(pyinstaller_license).is_file():
     raise FileNotFoundError("PyInstaller COPYING.txt was not found in the build environment.")
 if not tzdata_files or not tzdata_licenses:
     raise FileNotFoundError("tzdata resources or license files are missing from the build environment.")
+if not faker_licenses:
+    raise FileNotFoundError("Faker license files are missing from the build environment.")
 
 a = Analysis(
     [str(code / "mockaize" / "__main__.py")],
@@ -77,8 +85,8 @@ a = Analysis(
         (str(python_license), "licenses"),
         (str(pyinstaller_license), "licenses"),
         (str(repo_root / "THIRD_PARTY_NOTICES.md"), "licenses"),
-    ] + tzdata_files + tzdata_licenses,
-    hiddenimports=collect_submodules("tzdata"),
+    ] + tzdata_files + tzdata_licenses + faker_licenses,
+    hiddenimports=collect_submodules("tzdata") + collect_submodules("faker.providers"),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

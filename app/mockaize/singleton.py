@@ -61,8 +61,10 @@ class InstanceGuard:
             kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
             kernel32.CreateMutexW.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_wchar_p)
             kernel32.CreateMutexW.restype = ctypes.c_void_p
+            kernel32.CloseHandle.argtypes = (ctypes.c_void_p,)
+            name = self._mutex_name()
             ctypes.set_last_error(0)
-            self.handle = kernel32.CreateMutexW(None, 1, self._mutex_name())
+            self.handle = kernel32.CreateMutexW(None, 1, name)
             if not self.handle:
                 raise ctypes.WinError(ctypes.get_last_error())
             if ctypes.get_last_error() == 183:

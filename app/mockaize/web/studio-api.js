@@ -17,8 +17,8 @@ globalThis.StudioApi = (() => {
     }
     return body;
   }
-  const json = (url, method, body) => request(url, { method,
-    headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const json = (url, method, body, options = {}) => request(url, { method,
+    headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), ...options });
   function configFromRecord(record) {
     const config = { inputByMode: {}, inputXml: '', outputXml: '', recordCount: 1, fileName: 'mock',
       manual: {templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:''}, mode: 'new', inputGroup: '', outputGroup: '', returnSource: 'all', baseDate: '',
@@ -104,5 +104,8 @@ globalThis.StudioApi = (() => {
     layout: studioLayout => json('/api/settings', 'PUT', { studioLayout }),
     load: async id => configFromRecord(await request(`/api/variations/${encodeURIComponent(id)}`)),
     bundles: draft => json(`/api/variations/${encodeURIComponent(draft.id)}/powershell`, 'POST', { expectedRevision: draft.revision }),
+    fakerCatalog: () => request('/api/faker/catalog'),
+    fakerPreview: formula => json('/api/faker/preview', 'POST', { formula }),
+    fakerBatch: (items, {seed, ...options} = {}) => json('/api/faker/batch', 'POST', {items, ...(seed ? {seed} : {})}, options),
     artifacts: id => request(`/api/variations/${encodeURIComponent(id)}/artifacts`) };
 })();

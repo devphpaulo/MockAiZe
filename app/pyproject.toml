@@ -8,7 +8,7 @@ version = "0.1.13"
 description = "Gerador local de mocks XML"
 requires-python = ">=3.11"
 license = "MIT"
-dependencies = ["tzdata>=2025.2"]
+dependencies = ["Faker==40.44.0", "tzdata>=2025.2"]
 
 [project.optional-dependencies]
 build = ["pyinstaller==6.22.3"]

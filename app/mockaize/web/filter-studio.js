@@ -42,7 +42,7 @@ globalThis.FilterStudio=(()=>{
  'use strict';
  function create(o){
   const {state,X,h}=o,$=id=>document.getElementById(id),F=XmlFilter;
-  let timer=null,cachedXml=null,cachedDoc=null,owner=null,previous=false,previewError='',exporting=false;
+  let timer=null,cachedXml=null,cachedDoc=null,owner=null,previous=false,previewError='',exporting=false,fakerValues={},fakerRevision=0,fakerSeed=crypto.randomUUID();
   const conditionIds=new WeakMap(),expandedConditions=new WeakSet();let sorting=null;
   const folds={current:{xml:null,closed:new Set()},previous:{xml:null,closed:new Set()}};
   const data=()=>state.draft.filter;
@@ -55,7 +55,7 @@ globalThis.FilterStudio=(()=>{
    state.draft.filter??={group:'',action:'keep',match:'all',conditions:[],fileName:''};
    state.draft.filter.filename??={type:'literal',value:state.draft.filter.fileName||'filtrado.xml'};
    state.draft.filterPresets??=[];state.draft.activeFilterPresetId??='';
-   if(owner!==state.draft.id+'\n'+o.inputText()){owner=state.draft.id+'\n'+o.inputText();previous=false;nameEditor=false;nameCache.clear();}
+   if(owner!==state.draft.id+'\n'+o.inputText()){owner=state.draft.id+'\n'+o.inputText();fakerRevision++;fakerValues={};fakerSeed=crypto.randomUUID();previous=false;nameEditor=false;nameCache.clear();}
    const f=data(),doc=source();
    if(doc&&!f.group){const groups=F.groups(doc,headers());f.group=groups.find(g=>g.key===state.draft.inputGroup)?.key||groups.find(g=>g.count>1)?.key||groups[0]?.key||'';}
   }
@@ -186,7 +186,7 @@ globalThis.FilterStudio=(()=>{
   function context(snapshot=state.snapshot){
    const input=source(),output=snapshot?.xml?X.parse(snapshot.xml):input;
    const read=(doc,path)=>{const node=doc&&X.resolve(doc,path);if(!node)throw Error('Campo não encontrado: '+X.display(path));return node.nodeType===2?node.value:node.textContent;};
-   return{...o.nameContext(),count:snapshot?.count??0,recordIndex:0,profiles:new Map(),sourceValue:path=>read(input,path),outputValue:path=>read(output,path),groupValues:f=>F.values(f.source==='input'?input:output,f)};
+   return{...o.nameContext(),count:snapshot?.count??0,recordIndex:0,profiles:new Map(),fakerValues,sourceValue:path=>read(input,path),outputValue:path=>read(output,path),groupValues:f=>F.values(f.source==='input'?input:output,f)};
   }
   function evaluateName(formula,snapshot=state.snapshot){
    const ctx=context(snapshot),key=JSON.stringify([formula,o.inputText(),snapshot?.xml,ctx.fileIndex,ctx.baseDate,ctx.configName]);
@@ -200,14 +200,14 @@ globalThis.FilterStudio=(()=>{
   }
   function compute(){
    if(timer){clearTimeout(timer);timer=null;}
-   previewError='';const doc=source(),f=data();state.snapshot=null;
+   previewError='';const doc=source(),f=data();let snapshot;
    if(!doc){state.snapshot=null;state.stale=false;return;}
    try{
-    if(f.conditions.length)state.snapshot=F.run(o.inputText(),f,headers());
-    else{const count=f.group?F.occurrences(doc,f.group).length:0;state.snapshot={xml:X.serialize(doc),count,originalCount:count,removed:0,removedPaths:[],matched:0,group:f.group,name:'filtrado.xml'};}
-    state.snapshot.name=evaluateName(f.filename,state.snapshot);
+    if(f.conditions.length)snapshot=F.run(o.inputText(),f,headers());
+    else{const count=f.group?F.occurrences(doc,f.group).length:0;snapshot={xml:X.serialize(doc),count,originalCount:count,removed:0,removedPaths:[],matched:0,group:f.group,name:'filtrado.xml'};}
+    snapshot.name=evaluateName(f.filename,snapshot);state.snapshot=snapshot;
     state.stale=false;
-   }catch(error){previewError=error.message;if(state.snapshot)state.snapshot.name='';state.stale=true;}
+   }catch(error){previewError=error.message;state.stale=true;}
   }
   const tokenPattern=/<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<\/?[^\s/!?<>](?:"[^"]*"|'[^']*'|[^'">])*>/g;
   function syntax(line){return h(line).replace(/(&lt;\/?[\w:.-]+)([\s\S]*?)(&gt;)/g,'<span class="xml-tag">$1</span>$2<span class="xml-tag">$3</span>');}
@@ -243,15 +243,16 @@ globalThis.FilterStudio=(()=>{
   function render(){
    ensure();compute();
    $('inputPanel').innerHTML=`<div class="pane-head"><div class="pane-title-row"><span class="pane-title">${nameEditor?'Nome do arquivo':'Filtragem'}</span><div class="pane-actions">${nameEditor?'':o.loadXmlButton()}${nameEditor?'':presetHeader()}</div></div></div><div class="code-scroll filter-form" id="inputCode">${nameEditor?'<div id="filterNameEditor" class="filter-name-editor"></div>':builder()}</div>`;
-   $('inputPanel').classList.remove('mobile-hidden');$('outputPanel').classList.remove('mobile-hidden');if(!nameEditor)mountPresets();output();
+   $('inputPanel').classList.remove('mobile-hidden');$('outputPanel').classList.remove('mobile-hidden');if(!nameEditor)mountPresets();output();refresh();
   }
   function footer(){o.presentation?.();const snap=state.snapshot,ready=snap&&!state.stale;$('bottomBar').innerHTML=`<div class="bottom-summary" role="status">${h(previewError||(snap?snap.count+' de '+snap.originalCount+' grupo(s) mantido(s)':'Configure as condições no painel esquerdo.'))}</div><div class="export-actions"><span class="filename-summary">${h(snap?.name||'filtrado.xml')}</span><button data-filter-action="export" data-action="export-xml" ${ready&&!exporting?'':'disabled'}>↓ Exportar XML filtrado</button></div>`;}
-  function refresh(){if(state.draft?.mode!=='filter')return;compute();output();footer();}
-  async function apply(){refresh();}
+  async function hydrateFaker(formula=data().filename){const config=await o.resolveFaker({mode:'new',fakerSeed,count:1,rules:{},filename:formula},o.inputText());return config.fakerValues||{};}
+  async function previewFormulaAsync(formula){const revision=fakerRevision,values=await hydrateFaker(formula);if(revision!==fakerRevision)throw new DOMException('A seleção mudou.','AbortError');Object.assign(fakerValues,values);return evaluateName(formula);}
+  async function refresh(){if(state.draft?.mode!=='filter')return;const revision=++fakerRevision;let values;try{values=await hydrateFaker();}catch(error){if(revision!==fakerRevision)return;previewError=error.message;state.stale=true;output();footer();return;}if(revision!==fakerRevision||state.draft?.mode!=='filter')return;fakerValues=values;compute();output();footer();}
+  async function apply(){await refresh();}
   async function exportXml(){
-   if(exporting)return;refresh();if(!state.snapshot||state.stale)return;
-   exporting=true;footer();
-   try{if(!await o.save())return;const snapshot=structuredClone(state.snapshot),artifact=await o.publish(snapshot);state.draft.revision=artifact.revision;state.draft.fileIndex=artifact.fileIndex;state.artifact=artifact;const a=document.createElement('a');a.href=artifact.downloadUrl;a.download=snapshot.name;document.body.append(a);a.click();a.remove();}
+   if(exporting)return;exporting=true;footer();
+   try{await refresh();if(!state.snapshot||state.stale)return;if(!await o.save())return;const snapshot=structuredClone(state.snapshot),artifact=await o.publish(snapshot);state.draft.revision=artifact.revision;state.draft.fileIndex=artifact.fileIndex;state.artifact=artifact;const a=document.createElement('a');a.href=artifact.downloadUrl;a.download=snapshot.name;document.body.append(a);a.click();a.remove();}
    catch(error){o.notify(error.message,'error');}finally{exporting=false;footer();}
   }
   function edit(target){
@@ -284,7 +285,7 @@ globalThis.FilterStudio=(()=>{
    }
    o.remember();if(action==='add')data().conditions.push({path:'',operator:'equals',value:'',connector:'and'});else data().conditions.splice(Number(button.dataset.index),1);o.changed();o.render();
   },true);
-  return{ensure,head,render,footer,apply,edit,context,evaluateName,toggleName,nameEditorOpen:()=>nameEditor};
+  return{ensure,head,render,footer,apply,edit,context,evaluateName,previewFormulaAsync,toggleName,nameEditorOpen:()=>nameEditor};
  }
  return{create};
 })();
