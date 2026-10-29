@@ -160,3 +160,8 @@ Os codecs permanecem separados por produto para preservar versões e empacotamen
 - Diff --check API: PASS excluindo o Bruno preexistente do usuário, que contém whitespace anterior. Hash Git desse arquivo preservado: fa05a33f58b8f9a270f185d9f6c82fb64c8ebbee.
 
 O smoke visual DOM anteriormente bloqueado permanece pendente. Não houve build/release ou instalação nativa de serviço nesta revisão. Branches staging2 preservadas; sem commit/push.
+
+
+## Correção CI — finais de linha das fixtures compartilhadas
+
+O build API 40792479161 revelou que core.autocrlf no checkout Windows converte as fixtures XML para CRLF, quebrando a comparação exata com a codificação canônica LF. O Desktop compartilha os mesmos seis arquivos; por isso recebeu .gitattributes com text eol=lf restrito a app/tests/fixtures/preset-v1/*. O codec e a comparação estrita não foram alterados. A verificação usa checkout-index com core.autocrlf=true e compara todos os arquivos exportados byte a byte com os originais. A correção equivalente na API dispara nova execução completa do Actions.

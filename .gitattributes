@@ -1,0 +1,2 @@
+# Canonical C-PRESET-1 fixtures must retain their exact bytes on Windows.
+app/tests/fixtures/preset-v1/* text eol=lf
