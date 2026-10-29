@@ -37,6 +37,11 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.55}
 .alert-title{font-size:13px;font-weight:600;line-height:20px;letter-spacing:0}
 .alert-description{font-size:12px;line-height:20px;font-weight:400;color:inherit;opacity:.85;min-width:0;white-space:pre-wrap}
 .alert-description :is(p,ol,ul){margin:0}.alert-description button{margin-top:8px}.alert-description a{color:inherit;text-decoration:underline}
+.mapping-summary.app-alert .alert-description{opacity:1}
+.mapping-summary.app-alert .hint{color:inherit;opacity:1}
+.mapping-summary.app-alert button[data-action=disconnect]{color:inherit;background:transparent;border:1px solid currentColor;opacity:1}
+.mapping-summary.app-alert button[data-action=disconnect]:hover{background:color-mix(in srgb,currentColor 12%,transparent)}
+.mapping-summary.app-alert button[data-action=disconnect]:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .app-alert .alert-dismiss{display:grid;place-items:center;flex:none;width:24px;height:24px;min-height:24px;margin:0;padding:0;border:0;border-radius:6px;background:transparent;color:inherit;cursor:pointer}
 .alert-dismiss>.alert-icon{width:16px;height:16px}.alert-dismiss:hover{background:color-mix(in srgb,currentColor 12%,transparent)}.alert-dismiss:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 #toast.alert-stack{position:fixed;inset:auto 24px 80px auto;display:flex;flex-direction:column;gap:8px;width:432px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 112px);overflow:auto;padding:0;margin:0;border:0;border-radius:0;background:transparent;color:inherit;transform:none;box-shadow:none;pointer-events:none;z-index:2000;scrollbar-width:thin}
