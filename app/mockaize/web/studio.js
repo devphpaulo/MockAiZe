@@ -17,16 +17,17 @@
 
 
  let navigation=null,presentationQueued=false;const filenamePreviews=new Map();
- const state={book,draft:null,workspaceId:book.activeWorkspace,configId:null,sessionXml:null,snapshot:null,dirty:false,stale:false,selectedKey:null,sourceKey:null,inspectorMode:'field',inspectorTab:'value',inspectorOpen:false,mobileTab:'input',inputRecord:0,outputRecord:0,formulaDraft:null,undo:[],drag:null,loading:false,operationToken:0,returnResults:{},generationUpdates:new Set()};
+ const state={book,draft:null,workspaceId:book.activeWorkspace,configId:null,sessionXml:null,snapshot:null,dirty:false,stale:false,selectedKey:null,sourceKey:null,inspectorMode:'field',inspectorTab:'value',inspectorOpen:false,mobileTab:'input',inputRecord:0,outputRecord:0,formulaDraft:null,undo:[],drag:null,loading:false,operationToken:0,returnResults:{},generationUpdates:new Set(),syncPending:null,syncFingerprint:null,recovering:false};
+ const recoverButton=document.createElement('button');recoverButton.id='recoverSync';recoverButton.className='ghost small';recoverButton.type='button';recoverButton.textContent='Recuperar';recoverButton.hidden=true;$('saveConfig').before(recoverButton);
  const layout=StudioLayout.create({preferences:settings.studioLayout,save:StudioApi.layout,redraw:()=>drawConnections(),notify:toast,
   closeInspector:()=>{state.inspectorOpen=false;layout.present(false);drawConnections();}});
 
  const libraryUI=LibraryUI.create({nodes:boot.library.nodes,selected:requestedId,notify:toast,
   onOpen:id=>safeSwitch(async()=>{const next=state.book.workspaces.find(w=>w.configs.some(c=>c.id===id));if(next){state.workspaceId=next.id;await loadConfig(id);}}),
-  beforeChange:async()=>{if(state.loading||state.saving)throw Error('Aguarde ou cancele a operação em andamento.');return state.dirty||state.formulaDirty?await saveConfig({silent:true}):true;},
+  beforeChange:async()=>{if(state.loading||state.saving)throw Error('Aguarde ou cancele a operação em andamento.');if(state.syncPending)throw Error('Recupere a sincronização pendente antes de alterar a biblioteca.');return state.dirty||state.formulaDirty?await saveConfig({silent:true}):true;},
   onChange:async()=>{const next=await StudioApi.bootstrap();state.book.workspaces=next.book.workspaces;const ws=state.book.workspaces.find(w=>w.configs.some(c=>c.id===state.configId));if(!ws){location.href='/?view=library';return;}state.workspaceId=ws.id;await loadConfig(state.configId);}});
- const manual=ManualStudio.create({presentation:refreshPresentation,state,X,E,h,inputText,appliedBaseline:()=>{state.editorBaseline=editorFingerprint();},applyName:applyRule,nameContext:()=>({referenceDateTime:dateReference,timeZone:settings.timeZone||'America/Fortaleza',baseDate:state.draft.baseDate,fileIndex:state.draft.fileIndex||0,configName:state.draft.name}),loadXml:editXml,loadXmlButton,renderXml:(doc,keyFor)=>codeMarkup(doc,'manual',keyFor),notify:toast,changed,edited:manualEdited,remember,render,save:()=>saveConfig({silent:true}),publish:snapshot=>StudioApi.publish(state.draft,snapshot),openModal,closeModal});
- const filter=FilterStudio.create({presentation:refreshPresentation,state,X,h,inputText,loadXmlButton,remember,changed,render,openModal,closeModal,notify:toast,applyName:applyRule,nameContext:()=>({referenceDateTime:dateReference,timeZone:settings.timeZone||'America/Fortaleza',baseDate:state.draft.baseDate,fileIndex:state.draft.fileIndex||0,configName:state.draft.name}),save:()=>saveConfig({silent:true}),publish:snapshot=>StudioApi.publish(state.draft,snapshot)});
+ const manual=ManualStudio.create({presentation:refreshPresentation,state,X,E,h,inputText,appliedBaseline:()=>{state.editorBaseline=editorFingerprint();},applyName:applyRule,nameContext:()=>({referenceDateTime:dateReference,timeZone:settings.timeZone||'America/Fortaleza',baseDate:state.draft.baseDate,fileIndex:state.draft.fileIndex||0,configName:state.draft.name}),loadXml:editXml,loadXmlButton,renderXml:(doc,keyFor)=>codeMarkup(doc,'manual',keyFor),notify:toast,changed,edited:manualEdited,remember,render,save:()=>saveConfig({silent:true}),publish:publishSnapshot,openModal,closeModal});
+ const filter=FilterStudio.create({presentation:refreshPresentation,state,X,h,inputText,loadXmlButton,remember,changed,render,openModal,closeModal,notify:toast,applyName:applyRule,nameContext:()=>({referenceDateTime:dateReference,timeZone:settings.timeZone||'America/Fortaleza',baseDate:state.draft.baseDate,fileIndex:state.draft.fileIndex||0,configName:state.draft.name}),save:()=>saveConfig({silent:true}),publish:publishSnapshot});
  function workspace(){return state.book.workspaces.find(w=>w.id===state.workspaceId)||state.book.workspaces[0];}
  function rules(){return state.draft?.rulesByMode[state.draft.mode]||{};}
  function bindingSource(rule){return rule?.sourcePath||(rule?.generator?.type==='copy'?rule.generator.path:null);}
@@ -53,6 +54,7 @@
  async function saveConfig({silent=false,duringGeneration=false}={}) {
   if(state.loading&&!duringGeneration)return false;
   if(!state.draft||state.saving)return false;
+  if(state.syncPending){toast('Recupere a sincronização pendente antes de salvar novamente.','warning');return false;}
   refreshDirty();if(state.formulaDirty&&!applyRule())return false;
   if(state.draft.mode!=='manual'){state.draft.sourceTemplate=inputText();state.sessionXml=null;
   state.draft.inputByMode??={};state.draft.inputByMode[state.draft.mode]={xml:state.draft.sourceTemplate,group:state.draft.inputGroup};}
@@ -60,13 +62,32 @@
   state.saving=true;$('saveConfig').disabled=true;$('savedState').textContent='Salvando…';
   try {
    const saved=await StudioApi.save(savedDraft);
+   state.syncPending=null;state.syncFingerprint=null;
    Object.assign(state.draft,{revision:saved.revision});
    const meta=workspace().configs.find(c=>c.id===state.configId);if(meta)meta.name=saved.name;
    state.savedFingerprint=contentFingerprint(savedDraft);refreshDirty();renderNav();renderSaved();
    if(!silent)toast('Configuração salva em Documentos\\MockAíZé.','success');
    return true;
-  }catch(error){toast(error.message,'error');renderSaved();return false;}
-  finally{state.saving=false;$('saveConfig').disabled=false;}
+  }catch(error){
+   if(error.synchronization?.pending){
+    rememberSyncPending(error,savedDraft);toast(error.message+' Use “Recuperar” antes de tentar salvar novamente.','error');
+   }else{toast(error.message,'error');renderSaved();}
+   return false;
+  }
+  finally{state.saving=false;$('saveConfig').disabled=!state.draft||!!state.syncPending;}
+ }
+ async function publishSnapshot(snapshot){
+  try{return await StudioApi.publish(state.draft,snapshot);}
+  catch(error){rememberSyncPending(error);throw error;}
+ }
+ function rememberSyncPending(error,draft=state.draft){
+  if(!error.synchronization?.pending)return false;
+  state.syncPending=error.synchronization;state.syncFingerprint=contentFingerprint(draft);
+  if(error.synchronization.committed===true&&Number.isInteger(error.synchronization.revision)){
+   state.draft.revision=error.synchronization.revision;
+   const meta=workspace().configs.find(c=>c.id===state.configId);if(meta)meta.revision=state.draft.revision;
+  }
+  renderSaved();return true;
  }
  function stable(value){if(Array.isArray(value))return value.map(stable);if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().filter(k=>value[k]!==undefined).map(k=>[k,stable(value[k])]));return value;}
  function comparableRules(rules){return Object.fromEntries(Object.entries(rules||{}).map(([path,rule])=>[path,Object.fromEntries(Object.entries(rule).filter(([key,value])=>value!=null&&(!['sourcePath','comment','formulaComment','lineComment'].includes(key)||value!=='')))]).filter(([,rule])=>Object.keys(rule).length));}
@@ -102,11 +123,28 @@
  }
  function changed(generationAffected=true){refreshDirty();if(generationAffected&&state.draft&&state.dirty&&['new','return'].includes(state.draft.mode))state.generationUpdates.add(state.draft.id+':'+state.draft.mode);if(generationAffected){for(const result of Object.values(state.returnResults))result.stale=true;if(state.snapshot)state.stale=true;}renderSaved();renderFooter();}
  function canUndo(){return !!state.undo.length&&(state.draft?.mode!=='filter'||state.undo.at(-1).draft.mode==='filter');}
- function renderSaved(){refreshPresentation();$('savedState').textContent=state.dirty?'● Alterações pendentes':'✓ Salvo';$('savedState').classList.toggle('dirty',state.dirty);document.querySelectorAll('[data-action="undo"]').forEach(button=>button.disabled=!canUndo());}
+ function renderSaved(){refreshPresentation();$('savedState').textContent=state.syncPending?'⚠ Sincronização pendente':state.dirty?'● Alterações pendentes':'✓ Salvo';$('savedState').classList.toggle('dirty',state.dirty||!!state.syncPending);$('recoverSync').hidden=!state.syncPending;$('recoverSync').disabled=state.recovering;$('saveConfig').disabled=!state.draft||!!state.syncPending||state.saving;document.querySelectorAll('[data-action="undo"]').forEach(button=>button.disabled=!canUndo());}
+ async function recoverPending(){
+  if(!state.syncPending||state.recovering)return false;
+  state.recovering=true;renderSaved();
+  try{
+   const recovered=await StudioApi.recover(state.configId),remoteMatches=!!state.syncFingerprint&&contentFingerprint(recovered)===state.syncFingerprint;
+   // A different remote draft may belong to another tab. Preserve our
+   // expected revision so recovery cannot silently bypass a save conflict.
+   if(remoteMatches){state.draft.revision=recovered.revision;state.draft.fileIndex=recovered.fileIndex;}
+   const meta=workspace().configs.find(c=>c.id===state.configId);if(meta){meta.revision=recovered.revision;meta.file_index=recovered.fileIndex;}
+   if(remoteMatches)state.savedFingerprint=state.syncFingerprint;
+   state.syncPending=null;state.syncFingerprint=null;refreshDirty();renderNav();renderSaved();
+   toast(remoteMatches?'Sincronização recuperada; configuração disponível.':'Sincronização recuperada. Seu rascunho continua pendente de salvar.',remoteMatches?'success':'warning');
+   return remoteMatches;
+  }catch(error){toast(error.message,'error');return false;}
+  finally{state.recovering=false;renderSaved();}
+ }
  function remember(){state.undo.push({draft:E.clone(state.draft),sessionXml:state.sessionXml});if(state.undo.length>25)state.undo.shift();}
  function undo(){if(!canUndo())return toast('Nenhuma alteração para desfazer.','warning');const previous=state.undo.pop();if(!previous)return toast('Nenhuma alteração para desfazer.','warning');const {revision,fileIndex}=state.draft;state.draft={...previous.draft,revision,fileIndex};state.sessionXml=previous.sessionXml;changed();state.formulaDraft=null;render();toast('Alteração desfeita.','success');}
  function safeSwitch(action){
   if(state.loading||state.saving||state.switching)return toast('Aguarde ou cancele a operação em andamento.','warning');
+  if(state.syncPending)return toast('Recupere a sincronização pendente antes de sair desta configuração.','warning');
   refreshDirty();if(!state.dirty){Promise.resolve(action()).catch(error=>toast(error.message,'error'));return;}
   openModal('Salvar alterações antes de sair?','Regras, fórmulas e comentários têm alterações pendentes.',
    '<p class="hint">O XML carregado e as configurações de cada operação serão salvos.</p>',[
@@ -382,13 +420,14 @@
     const snapshot=await X.generateAsync(engineConfig(),inputText(),{signal:state.generationController.signal,onProgress:n=>{$('processingText').textContent='Gerando registros… '+n+' processado(s)';}});
     if(state.generationController.signal.aborted)throw new DOMException('Geração cancelada','AbortError');
     state.publishing=true;$('cancelGeneration').disabled=true;$('processingText').textContent='Salvando o arquivo em Documentos\\MockAíZé…';
-    const artifact=await StudioApi.publish(state.draft,snapshot);
+    const artifact=await publishSnapshot(snapshot);
     state.snapshot=snapshot;state.artifact=artifact;state.stale=false;state.outputRecord=0;
     state.draft.fileIndex=artifact.fileIndex;state.draft.revision=artifact.revision;
     toast(`${snapshot.count} registro(s) gerado(s) e salvo(s). Nome e XML prontos para exportar.`,'success');
    }
   }catch(error){
    if(error.name==='AbortError')toast('Geração cancelada. A prévia anterior foi preservada.');
+   else if(rememberSyncPending(error,state.draft))openModal('Sincronização pendente','A geração precisa de recuperação antes de continuar.',`<div class="callout error">${h(error.message)} Use “Recuperar” antes de gerar novamente.</div>`,[{text:'Fechar',primary:true,run:closeModal}]);
    else openModal('Não foi possível gerar o arquivo','A última prévia foi preservada.',`<div class="callout error">${h(error.message)}</div>`,[{text:'Voltar às regras',primary:true,run:closeModal}]);
   }finally{
    state.loading=false;state.publishing=false;state.generationController=null;
@@ -461,7 +500,7 @@
   state.publishing=true;$('cancelGeneration').disabled=true;
   for(const {model,snapshot} of ready){
    $('processingText').textContent='Salvando retorno: '+model.name;
-   const artifact=await StudioApi.publish(state.draft,snapshot);
+   const artifact=await publishSnapshot(snapshot);
    state.draft.fileIndex=artifact.fileIndex;state.draft.revision=artifact.revision;
    state.returnResults[model.id]={snapshot,artifact,stale:false};
   }
@@ -548,7 +587,7 @@
  document.addEventListener('pointerup',event=>{if(!state.drag)return;const drag=state.drag;state.drag=null;if(drag.moved){const dest=event.target.closest('[data-field][data-side="output"]');if(dest){state.suppressClick=true;connect(drag.key,dest.dataset.field);setTimeout(()=>state.suppressClick=false,0);}drawConnections();}});
  function renderThemeToggle(){const light=document.documentElement.dataset.theme==='light',button=$('themeToggle');button.innerHTML=light?'<svg class="theme-icon moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.1A8.7 8.7 0 0 1 8.9 3.8 8.8 8.8 0 1 0 20.2 15.1Z"/></svg>':'<svg class="theme-icon sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>';button.setAttribute('aria-label',light?'Mudar para tema escuro':'Mudar para tema claro');button.title=light?'Mudar para tema escuro':'Mudar para tema claro';} $('themeToggle').onclick=async()=>{try{const theme=document.documentElement.dataset.theme==='light'?'dark':'light';await StudioApi.theme(theme);document.documentElement.dataset.theme=theme;renderThemeToggle();}catch(error){toast(error.message,'error');}};renderThemeToggle();
  $('retryStudio').onclick=()=>loadConfig(state.loadId||requestedId);
- $('saveConfig').onclick=()=>saveConfig();
+ $('saveConfig').onclick=()=>saveConfig();$('recoverSync').onclick=()=>recoverPending();
  $('cancelGeneration').onclick=()=>{if(state.publishing)return;state.generationController?.abort();};
  $('xmlFileInput').onchange=async event=>{
   const file=event.target.files[0];if(!file)return;
@@ -564,7 +603,7 @@
   }catch(error){if($('modal').open)dialogError(error.message);else toast(error.message,'error');}
  };
  document.addEventListener('pointercancel',()=>{state.drag=null;drawConnections();});window.addEventListener('blur',()=>{state.drag=null;drawConnections();});
- window.addEventListener('resize',drawConnections);window.addEventListener('beforeunload',event=>{if(state.dirty||state.loading||state.saving){event.preventDefault();event.returnValue='';}});
+ window.addEventListener('resize',drawConnections);window.addEventListener('beforeunload',event=>{if(state.dirty||state.loading||state.saving||state.syncPending){event.preventDefault();event.returnValue='';}});
  function switchMode(next){if(state.loading||state.saving||state.switching)return toast('Aguarde ou cancele a operação em andamento.','warning');if(!Object.hasOwn(AppNavigation.modes,next)||!state.draft)return;R.capture(state.draft);if(next===state.draft.mode)return;if(state.formulaDirty&&!applyRule())return;remember();if(state.draft.mode!=='manual'){state.draft.inputByMode??={};state.draft.inputByMode[state.draft.mode]={xml:inputText(),group:state.draft.inputGroup};}if(next==='manual')manual.ensure(inputText());state.draft.mode=next;state.inputRecord=0;state.outputRecord=0;const input=state.draft.inputByMode[next];if(input){state.draft.sourceTemplate=input.xml;state.draft.inputGroup=input.group;}state.sessionXml=null;state.snapshot=null;state.artifact=null;state.stale=false;state.selectedKey=null;state.formulaDraft=null;state.editorBaseline=null;state.formulaDirty=false;state.sourceKey=null;state.inspectorOpen=false;changed();render();}
 
  function navigateHome(view='home'){navigation.close();safeSwitch(()=>{location.href='/?view='+view;});}

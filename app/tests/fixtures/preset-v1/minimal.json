@@ -1,0 +1,76 @@
+{
+  "metadata": {
+    "id": "fixture-1",
+    "name": "Exemplo",
+    "libraryPath": "Equipe/Pasta",
+    "revision": 1,
+    "fileIndex": 0,
+    "active": true
+  },
+  "configuration": {
+    "filterPresets": [],
+    "activeFilterPresetId": "",
+    "filter": {
+      "group": "",
+      "action": "keep",
+      "match": "all",
+      "conditions": [],
+      "fileName": "",
+      "filename": {
+        "type": "literal",
+        "value": "filtrado.xml"
+      }
+    },
+    "manual": {
+      "templateXml": "",
+      "values": {},
+      "confirmed": false,
+      "fileName": "",
+      "recordCount": 1,
+      "recordGroup": ""
+    },
+    "inputByMode": {},
+    "inputXml": "",
+    "outputXml": "",
+    "recordCount": 1,
+    "fileName": "mock",
+    "mode": "return",
+    "inputGroup": "",
+    "outputGroup": "",
+    "returnSource": "first",
+    "baseDate": "",
+    "rulesByMode": {
+      "new": {},
+      "return": {}
+    },
+    "presenceByMode": {
+      "new": {},
+      "return": {}
+    },
+    "filenameByMode": {
+      "new": {
+        "type": "literal",
+        "value": "mock"
+      },
+      "return": {
+        "type": "literal",
+        "value": "mock"
+      }
+    },
+    "inputNotes": {},
+    "outputNotesByMode": {
+      "new": {},
+      "return": {}
+    },
+    "headersByMode": {
+      "new": [],
+      "return": []
+    },
+    "returnModels": [],
+    "activeReturnId": ""
+  },
+  "context": {
+    "timeZone": "America/Fortaleza"
+  }
+}
+

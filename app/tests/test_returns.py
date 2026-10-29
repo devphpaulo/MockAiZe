@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from runtime_support import cleanup_temporary
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,7 +27,7 @@ class ReturnPersistenceCase(unittest.TestCase):
 
     def tearDown(self):
         self.override.stop()
-        self.temp.cleanup()
+        cleanup_temporary(self.temp)
 
     def model(self, model_id, value):
         path = json.dumps([{'name':'R','ns':'','index':1},{'name':'N','ns':'','index':1}], separators=(',',':'))

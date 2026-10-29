@@ -17,6 +17,7 @@ from importlib.resources import files
 from urllib.parse import quote, unquote, urlparse
 
 from . import storage
+from .preset_store import PresetSyncError
 
 
 def _report_startup_error(message: str) -> None:
@@ -61,6 +62,15 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_preset_sync_error(self, exc, variation_id=None):
+        revision = exc.revisions.get(variation_id) if isinstance(exc.revisions, dict) else None
+        message = ("A gravação precisa ser recuperada antes de continuar." if variation_id else
+                   "A operação pode já ter sido aplicada. Feche e abra o MockAíZé para recuperar a sincronização antes de repetir a operação.")
+        body = json.dumps({"error": message,
+            "synchronization": {"pending": True, "operationId": exc.operation_id,
+                "committed": exc.committed, "revision": revision}}, ensure_ascii=False).encode()
+        return self._send(503, body, "application/json; charset=utf-8")
 
     def _send_asset(self, body: bytes, content_type: str):
         # Revalidate static resources across pages; API responses remain no-store.
@@ -216,13 +226,32 @@ class Handler(BaseHTTPRequestHandler):
         if not self._is_local_request() or not self._has_session(mutation=True):
             return self._send(403, b"Forbidden", "text/plain; charset=utf-8")
         parts = urlparse(self.path).path.strip("/").split("/")
+        if len(parts) == 4 and parts[:2] == ["api", "variations"] and parts[3] == "recover":
+            from . import preset_store
+            try:
+                payload = json.loads(self._read_body(1024, "application/json"))
+                if payload != {}:
+                    raise ValueError("Solicitação de recuperação inválida.")
+                preset_store.recover()
+                variation = storage.get_variation(parts[2])
+                if variation is None:
+                    return self._send(404, b"Not found", "application/json; charset=utf-8")
+                body = json.dumps({"recovered": True, "variation": variation}, ensure_ascii=False).encode()
+                return self._send(200, body, "application/json; charset=utf-8")
+            except preset_store.PresetSyncError as exc:
+                return self._send_preset_sync_error(exc, parts[2])
+            except (ValueError, TypeError, json.JSONDecodeError) as exc:
+                return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if len(parts) == 4 and parts[:2] == ["api", "variations"] and parts[3] == "artifacts":
+            from . import preset_store
             try:
                 revision = int(self.headers.get("X-Expected-Revision", ""))
                 file_name = unquote(self.headers.get("X-File-Name", ""), errors="strict")
                 xml = self._read_body(100_000_000, "application/xml").decode("utf-8", errors="strict")
                 artifact = storage.publish_xml(parts[2], revision, file_name, xml)
                 return self._send(201, json.dumps(artifact, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except preset_store.PresetSyncError as exc:
+                return self._send_preset_sync_error(exc, parts[2])
             except (ValueError, TypeError, UnicodeError, KeyError, RuntimeError) as exc:
                 body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode()
                 return self._send(409 if isinstance(exc, RuntimeError) else 400, body, "application/json; charset=utf-8")
@@ -254,6 +283,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._read_body(1024, "application/json")
                 result = storage.create_operational_backup()
                 return self._send(201, json.dumps(result, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, OSError, sqlite3.DatabaseError) as exc:
                 return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if len(parts) == 4 and parts[:2] == ["api", "backups"] and parts[3] == "restore":
@@ -262,6 +293,8 @@ class Handler(BaseHTTPRequestHandler):
                 if payload != {"confirm": True}: raise ValueError("Confirme a restauração do snapshot.")
                 result = storage.restore_operational_backup(parts[2])
                 return self._send(200, json.dumps(result, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, KeyError, OSError, sqlite3.DatabaseError, RuntimeError) as exc:
                 status = 404 if isinstance(exc, KeyError) else 400
                 return self._send(status, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
@@ -270,6 +303,8 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(self._read_body(15_000_000, "application/json"))
                 result = storage.import_workspace_backup(payload)
                 return self._send(200, json.dumps({"imported": result}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, json.JSONDecodeError) as exc:
                 return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if parts == ["api", "library"]:
@@ -278,6 +313,8 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(self._read_body(16_384, "application/json"))
                 result = library.command(payload)
                 return self._send(200, json.dumps(result, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, KeyError, sqlite3.DatabaseError) as exc:
                 return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if parts != ["api", "entities"]:
@@ -287,6 +324,8 @@ class Handler(BaseHTTPRequestHandler):
             entity = storage.create_entity(payload.get("kind", ""), payload.get("parentId"), payload.get("name", ""))
             body = json.dumps({"entity": entity}, ensure_ascii=False).encode()
             return self._send(201, body, "application/json; charset=utf-8")
+        except PresetSyncError as exc:
+            return self._send_preset_sync_error(exc)
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
             body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode()
             return self._send(400, body, "application/json; charset=utf-8")
@@ -303,21 +342,25 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(self._read_body(16_384, "application/json"))
                 result = storage.save_settings(payload)
                 return self._send(200, json.dumps(result, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, json.JSONDecodeError) as exc:
                 return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if len(parts) != 3 or parts[:2] != ["api", "variations"]:
             return self._send(404, b"Not found", "text/plain; charset=utf-8")
+        from . import preset_store
         try:
             payload = json.loads(self._read_body(16_200_000, "application/json"))
             variation = storage.save_variation(parts[2], payload.get("expectedRevision"), payload.get("config"), name=payload.get("name"))
             return self._send(200, json.dumps(variation, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+        except preset_store.PresetSyncError as exc:
+            return self._send_preset_sync_error(exc, parts[2])
         except (ValueError, TypeError, json.JSONDecodeError, KeyError, RuntimeError) as exc:
             body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode()
             return self._send(409 if isinstance(exc, RuntimeError) else 400, body, "application/json; charset=utf-8")
         except Exception as exc:
             body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode()
             return self._send(400, body, "application/json; charset=utf-8")
-
 
 def serve():
     from .singleton import InstanceGuard

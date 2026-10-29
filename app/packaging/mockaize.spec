@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 import tomllib
 from importlib.metadata import distribution
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 app_root = Path(SPECPATH).parent
 root = app_root
@@ -13,6 +14,13 @@ assets = code / "mockaize" / "assets"
 web = code / "mockaize" / "web"
 python_license = Path(sys.base_prefix) / "LICENSE.txt"
 pyinstaller_dist = distribution("pyinstaller")
+tzdata_dist = distribution("tzdata")
+tzdata_files = collect_data_files("tzdata")
+tzdata_licenses = [
+    (str(tzdata_dist.locate_file(item)), "licenses/tzdata")
+    for item in tzdata_dist.files
+    if "/licenses/" in str(item).replace("\\", "/") and item.name.startswith("LICENSE")
+]
 pyinstaller_license = next(
     (pyinstaller_dist.locate_file(item) for item in pyinstaller_dist.files
      if str(item).replace("\\", "/").endswith("/licenses/COPYING.txt")),
@@ -24,6 +32,8 @@ if not python_license.is_file():
     raise FileNotFoundError(f"Python runtime license is missing: {python_license}")
 if pyinstaller_license is None or not Path(pyinstaller_license).is_file():
     raise FileNotFoundError("PyInstaller COPYING.txt was not found in the build environment.")
+if not tzdata_files or not tzdata_licenses:
+    raise FileNotFoundError("tzdata resources or license files are missing from the build environment.")
 
 a = Analysis(
     [str(code / "mockaize" / "__main__.py")],
@@ -67,8 +77,8 @@ a = Analysis(
         (str(python_license), "licenses"),
         (str(pyinstaller_license), "licenses"),
         (str(repo_root / "THIRD_PARTY_NOTICES.md"), "licenses"),
-    ],
-    hiddenimports=[],
+    ] + tzdata_files + tzdata_licenses,
+    hiddenimports=collect_submodules("tzdata"),
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

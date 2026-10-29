@@ -1,0 +1,1294 @@
+<?xml version='1.0' encoding='utf-8'?>
+<MockAiZePreset xmlns="urn:mockaize:preset:1" schemaVersion="1" engineSpecVersion="1" format="xml">
+  <Metadata>
+    <Value kind="object">
+      <Property name="active">
+        <Value kind="boolean">true</Value>
+      </Property>
+      <Property name="fileIndex">
+        <Value kind="number">0</Value>
+      </Property>
+      <Property name="id">
+        <Value kind="string">fixture-1</Value>
+      </Property>
+      <Property name="libraryPath">
+        <Value kind="string">Equipe/Pasta</Value>
+      </Property>
+      <Property name="name">
+        <Value kind="string">São &amp; XML</Value>
+      </Property>
+      <Property name="revision">
+        <Value kind="number">3</Value>
+      </Property>
+    </Value>
+  </Metadata>
+  <Configuration>
+    <Value kind="object">
+      <Property name="activeFilterPresetId">
+        <Value kind="string">f1</Value>
+      </Property>
+      <Property name="activeReturnId">
+        <Value kind="string">r1</Value>
+      </Property>
+      <Property name="baseDate">
+        <Value kind="string">2026-10-27</Value>
+      </Property>
+      <Property name="fileName">
+        <Value kind="string">mock</Value>
+      </Property>
+      <Property name="filenameByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="formula">
+              <literal>
+                <Property name="value">
+                  <Value kind="string">mock</Value>
+                </Property>
+              </literal>
+            </Value>
+          </Property>
+          <Property name="return">
+            <Value kind="formula">
+              <literal>
+                <Property name="value">
+                  <Value kind="string">mock</Value>
+                </Property>
+              </literal>
+            </Value>
+          </Property>
+        </Value>
+      </Property>
+      <Property name="filter">
+        <Value kind="object">
+          <Property name="action">
+            <Value kind="string">keep</Value>
+          </Property>
+          <Property name="conditions">
+            <Value kind="array" />
+          </Property>
+          <Property name="fileName">
+            <Value kind="string" />
+          </Property>
+          <Property name="filename">
+            <Value kind="formula">
+              <literal>
+                <Property name="value">
+                  <Value kind="string">filtrado.xml</Value>
+                </Property>
+              </literal>
+            </Value>
+          </Property>
+          <Property name="group">
+            <Value kind="string" />
+          </Property>
+          <Property name="match">
+            <Value kind="string">all</Value>
+          </Property>
+        </Value>
+      </Property>
+      <Property name="filterPresets">
+        <Value kind="array">
+          <Item>
+            <Value kind="object">
+              <Property name="filter">
+                <Value kind="object">
+                  <Property name="action">
+                    <Value kind="string">keep</Value>
+                  </Property>
+                  <Property name="conditions">
+                    <Value kind="array" />
+                  </Property>
+                  <Property name="fileName">
+                    <Value kind="string" />
+                  </Property>
+                  <Property name="filename">
+                    <Value kind="formula">
+                      <literal>
+                        <Property name="value">
+                          <Value kind="string">filtrado.xml</Value>
+                        </Property>
+                      </literal>
+                    </Value>
+                  </Property>
+                  <Property name="group">
+                    <Value kind="string" />
+                  </Property>
+                  <Property name="match">
+                    <Value kind="string">all</Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="id">
+                <Value kind="string">f1</Value>
+              </Property>
+              <Property name="name">
+                <Value kind="string">Filtro</Value>
+              </Property>
+            </Value>
+          </Item>
+        </Value>
+      </Property>
+      <Property name="headersByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="array" />
+          </Property>
+          <Property name="return">
+            <Value kind="array" />
+          </Property>
+        </Value>
+      </Property>
+      <Property name="inputByMode">
+        <Value kind="object" />
+      </Property>
+      <Property name="inputGroup">
+        <Value kind="string" />
+      </Property>
+      <Property name="inputNotes">
+        <Value kind="object">
+          <Property name="types">
+            <Value kind="array">
+              <Item>
+                <Value kind="boolean">false</Value>
+              </Item>
+              <Item>
+                <Value kind="null" />
+              </Item>
+              <Item>
+                <Value kind="number">0</Value>
+              </Item>
+              <Item>
+                <Value kind="number">-2</Value>
+              </Item>
+              <Item>
+                <Value kind="number">1.5</Value>
+              </Item>
+              <Item>
+                <Value kind="string" />
+              </Item>
+              <Item>
+                <Value kind="string">001</Value>
+              </Item>
+              <Item>
+                <Value kind="object">
+                  <Property name="type">
+                    <Value kind="string">literal</Value>
+                  </Property>
+                  <Property name="value">
+                    <Value kind="string">ordinary object</Value>
+                  </Property>
+                </Value>
+              </Item>
+            </Value>
+          </Property>
+        </Value>
+      </Property>
+      <Property name="inputXml">
+        <Value kind="string">&lt;R xmlns="urn:example"&gt;&lt;N a="&amp;amp;"&gt;1&lt;/N&gt;&lt;N&gt;2&lt;/N&gt;&lt;/R&gt;</Value>
+      </Property>
+      <Property name="manual">
+        <Value kind="object">
+          <Property name="confirmed">
+            <Value kind="boolean">false</Value>
+          </Property>
+          <Property name="fileName">
+            <Value kind="string" />
+          </Property>
+          <Property name="filename">
+            <Value kind="formula">
+              <literal>
+                <Property name="value">
+                  <Value kind="string">manual</Value>
+                </Property>
+              </literal>
+            </Value>
+          </Property>
+          <Property name="formulas">
+            <Value kind="object">
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="formula">
+                  <compose>
+                    <Property name="operation">
+                      <Value kind="string">sum</Value>
+                    </Property>
+                    <Property name="parts">
+                      <Value kind="array">
+                        <Item>
+                          <Value kind="formula">
+                            <literal>
+                              <Property name="value">
+                                <Value kind="string">1.25</Value>
+                              </Property>
+                            </literal>
+                          </Value>
+                        </Item>
+                        <Item>
+                          <Value kind="formula">
+                            <literal>
+                              <Property name="value">
+                                <Value kind="string">2.75</Value>
+                              </Property>
+                            </literal>
+                          </Value>
+                        </Item>
+                      </Value>
+                    </Property>
+                  </compose>
+                </Value>
+              </Property>
+            </Value>
+          </Property>
+          <Property name="recordCount">
+            <Value kind="number">1</Value>
+          </Property>
+          <Property name="recordGroup">
+            <Value kind="string" />
+          </Property>
+          <Property name="templateXml">
+            <Value kind="string" />
+          </Property>
+          <Property name="values">
+            <Value kind="object" />
+          </Property>
+        </Value>
+      </Property>
+      <Property name="mode">
+        <Value kind="string">return</Value>
+      </Property>
+      <Property name="outputGroup">
+        <Value kind="string" />
+      </Property>
+      <Property name="outputNotesByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="object" />
+          </Property>
+          <Property name="return">
+            <Value kind="object" />
+          </Property>
+        </Value>
+      </Property>
+      <Property name="outputXml">
+        <Value kind="string">&lt;R xmlns="urn:example"&gt;&lt;N/&gt;&lt;/R&gt;</Value>
+      </Property>
+      <Property name="presenceByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="object" />
+          </Property>
+          <Property name="return">
+            <Value kind="object" />
+          </Property>
+        </Value>
+      </Property>
+      <Property name="recordCount">
+        <Value kind="number">1</Value>
+      </Property>
+      <Property name="returnModels">
+        <Value kind="array">
+          <Item>
+            <Value kind="object">
+              <Property name="filename">
+                <Value kind="formula">
+                  <count />
+                </Value>
+              </Property>
+              <Property name="headers">
+                <Value kind="array" />
+              </Property>
+              <Property name="id">
+                <Value kind="string">r1</Value>
+              </Property>
+              <Property name="name">
+                <Value kind="string">Retorno 1</Value>
+              </Property>
+              <Property name="outputGroup">
+                <Value kind="string" />
+              </Property>
+              <Property name="outputNotes">
+                <Value kind="object" />
+              </Property>
+              <Property name="outputXml">
+                <Value kind="string">&lt;R&gt;&lt;N/&gt;&lt;/R&gt;</Value>
+              </Property>
+              <Property name="presence">
+                <Value kind="object" />
+              </Property>
+              <Property name="rules">
+                <Value kind="object">
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N0&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <address />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N1&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <alpha />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N10&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <groupSum>
+                            <Property name="group">
+                              <Value kind="string">[{"name":"R","ns":"urn:example","index":1}]</Value>
+                            </Property>
+                            <Property name="path">
+                              <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                            </Property>
+                          </groupSum>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N11&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <hash />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N12&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <id />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N13&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <list />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N14&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <literal>
+                            <Property name="value">
+                              <Value kind="string">São ]]&gt; &lt; &amp; &#13;
+	</Value>
+                            </Property>
+                          </literal>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N15&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <person />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N16&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <random />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N17&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <sequence />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N18&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <zeros />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N19&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <compose>
+                            <Property name="operation">
+                              <Value kind="string">sum</Value>
+                            </Property>
+                            <Property name="parts">
+                              <Value kind="array">
+                                <Item>
+                                  <Value kind="formula">
+                                    <literal>
+                                      <Property name="value">
+                                        <Value kind="string">1.25</Value>
+                                      </Property>
+                                    </literal>
+                                  </Value>
+                                </Item>
+                                <Item>
+                                  <Value kind="formula">
+                                    <literal>
+                                      <Property name="value">
+                                        <Value kind="string">2.75</Value>
+                                      </Property>
+                                    </literal>
+                                  </Value>
+                                </Item>
+                              </Value>
+                            </Property>
+                          </compose>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N2&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <cnpj />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N3&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <company />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N4&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <config />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N5&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <copy>
+                            <Property name="path">
+                              <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                            </Property>
+                          </copy>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N6&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <count />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N7&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <cpf />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N8&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <date />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N9&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <field>
+                            <Property name="path">
+                              <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                            </Property>
+                          </field>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="selected">
+                <Value kind="boolean">true</Value>
+              </Property>
+            </Value>
+          </Item>
+          <Item>
+            <Value kind="object">
+              <Property name="filename">
+                <Value kind="formula">
+                  <count />
+                </Value>
+              </Property>
+              <Property name="headers">
+                <Value kind="array" />
+              </Property>
+              <Property name="id">
+                <Value kind="string">r2</Value>
+              </Property>
+              <Property name="name">
+                <Value kind="string">Retorno 2</Value>
+              </Property>
+              <Property name="outputGroup">
+                <Value kind="string" />
+              </Property>
+              <Property name="outputNotes">
+                <Value kind="object" />
+              </Property>
+              <Property name="outputXml">
+                <Value kind="string">&lt;R&gt;&lt;N/&gt;&lt;/R&gt;</Value>
+              </Property>
+              <Property name="presence">
+                <Value kind="object" />
+              </Property>
+              <Property name="rules">
+                <Value kind="object">
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N0&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <address />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N1&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <alpha />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N10&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <groupSum>
+                            <Property name="group">
+                              <Value kind="string">[{"name":"R","ns":"urn:example","index":1}]</Value>
+                            </Property>
+                            <Property name="path">
+                              <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                            </Property>
+                          </groupSum>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N11&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <hash />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N12&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <id />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N13&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <list />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N14&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <literal>
+                            <Property name="value">
+                              <Value kind="string">São ]]&gt; &lt; &amp; &#13;
+	</Value>
+                            </Property>
+                          </literal>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N15&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <person />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N16&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <random />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N17&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <sequence />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N18&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <zeros />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N19&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <compose>
+                            <Property name="operation">
+                              <Value kind="string">sum</Value>
+                            </Property>
+                            <Property name="parts">
+                              <Value kind="array">
+                                <Item>
+                                  <Value kind="formula">
+                                    <literal>
+                                      <Property name="value">
+                                        <Value kind="string">1.25</Value>
+                                      </Property>
+                                    </literal>
+                                  </Value>
+                                </Item>
+                                <Item>
+                                  <Value kind="formula">
+                                    <literal>
+                                      <Property name="value">
+                                        <Value kind="string">2.75</Value>
+                                      </Property>
+                                    </literal>
+                                  </Value>
+                                </Item>
+                              </Value>
+                            </Property>
+                          </compose>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N2&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <cnpj />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N3&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <company />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N4&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <config />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N5&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <copy>
+                            <Property name="path">
+                              <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                            </Property>
+                          </copy>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N6&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <count />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N7&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <cpf />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N8&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <date />
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                  <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N9&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                    <Value kind="object">
+                      <Property name="generator">
+                        <Value kind="formula">
+                          <field>
+                            <Property name="path">
+                              <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                            </Property>
+                          </field>
+                        </Value>
+                      </Property>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="selected">
+                <Value kind="boolean">true</Value>
+              </Property>
+            </Value>
+          </Item>
+        </Value>
+      </Property>
+      <Property name="returnSource">
+        <Value kind="string">first</Value>
+      </Property>
+      <Property name="rulesByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="object">
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N0&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <address />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N1&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <alpha />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N10&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <groupSum>
+                        <Property name="group">
+                          <Value kind="string">[{"name":"R","ns":"urn:example","index":1}]</Value>
+                        </Property>
+                        <Property name="path">
+                          <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                        </Property>
+                      </groupSum>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N11&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <hash />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N12&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <id />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N13&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <list />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N14&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <literal>
+                        <Property name="value">
+                          <Value kind="string">São ]]&gt; &lt; &amp; &#13;
+	</Value>
+                        </Property>
+                      </literal>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N15&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <person />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N16&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <random />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N17&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <sequence />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N18&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <zeros />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N19&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <compose>
+                        <Property name="operation">
+                          <Value kind="string">sum</Value>
+                        </Property>
+                        <Property name="parts">
+                          <Value kind="array">
+                            <Item>
+                              <Value kind="formula">
+                                <literal>
+                                  <Property name="value">
+                                    <Value kind="string">1.25</Value>
+                                  </Property>
+                                </literal>
+                              </Value>
+                            </Item>
+                            <Item>
+                              <Value kind="formula">
+                                <literal>
+                                  <Property name="value">
+                                    <Value kind="string">2.75</Value>
+                                  </Property>
+                                </literal>
+                              </Value>
+                            </Item>
+                          </Value>
+                        </Property>
+                      </compose>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N2&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <cnpj />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N3&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <company />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N4&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <config />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N5&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <copy>
+                        <Property name="path">
+                          <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                        </Property>
+                      </copy>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N6&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <count />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N7&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <cpf />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N8&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <date />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N9&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <field>
+                        <Property name="path">
+                          <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                        </Property>
+                      </field>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+            </Value>
+          </Property>
+          <Property name="return">
+            <Value kind="object">
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N0&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <address />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N1&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <alpha />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N10&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <groupSum>
+                        <Property name="group">
+                          <Value kind="string">[{"name":"R","ns":"urn:example","index":1}]</Value>
+                        </Property>
+                        <Property name="path">
+                          <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                        </Property>
+                      </groupSum>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N11&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <hash />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N12&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <id />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N13&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <list />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N14&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <literal>
+                        <Property name="value">
+                          <Value kind="string">São ]]&gt; &lt; &amp; &#13;
+	</Value>
+                        </Property>
+                      </literal>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N15&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <person />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N16&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <random />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N17&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <sequence />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N18&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <zeros />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N19&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <compose>
+                        <Property name="operation">
+                          <Value kind="string">sum</Value>
+                        </Property>
+                        <Property name="parts">
+                          <Value kind="array">
+                            <Item>
+                              <Value kind="formula">
+                                <literal>
+                                  <Property name="value">
+                                    <Value kind="string">1.25</Value>
+                                  </Property>
+                                </literal>
+                              </Value>
+                            </Item>
+                            <Item>
+                              <Value kind="formula">
+                                <literal>
+                                  <Property name="value">
+                                    <Value kind="string">2.75</Value>
+                                  </Property>
+                                </literal>
+                              </Value>
+                            </Item>
+                          </Value>
+                        </Property>
+                      </compose>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N2&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <cnpj />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N3&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <company />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N4&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <config />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N5&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <copy>
+                        <Property name="path">
+                          <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                        </Property>
+                      </copy>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N6&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <count />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N7&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <cpf />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N8&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <date />
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+              <Property name="[{&quot;name&quot;:&quot;R&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1},{&quot;name&quot;:&quot;N9&quot;,&quot;ns&quot;:&quot;urn:example&quot;,&quot;index&quot;:1}]">
+                <Value kind="object">
+                  <Property name="generator">
+                    <Value kind="formula">
+                      <field>
+                        <Property name="path">
+                          <Value kind="string">[{"name":"R","ns":"urn:example","index":1},{"name":"N","ns":"urn:example","index":1}]</Value>
+                        </Property>
+                      </field>
+                    </Value>
+                  </Property>
+                </Value>
+              </Property>
+            </Value>
+          </Property>
+        </Value>
+      </Property>
+    </Value>
+  </Configuration>
+  <Context>
+    <Value kind="object">
+      <Property name="timeZone">
+        <Value kind="string">America/Fortaleza</Value>
+      </Property>
+    </Value>
+  </Context>
+  <PayloadHash algorithm="sha256">882555d4643b94b902c73b390535875a83c9e5a905a5feb3359b839759ccce95</PayloadHash>
+</MockAiZePreset>

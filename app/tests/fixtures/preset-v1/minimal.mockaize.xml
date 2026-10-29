@@ -1,0 +1,194 @@
+<?xml version='1.0' encoding='utf-8'?>
+<MockAiZePreset xmlns="urn:mockaize:preset:1" schemaVersion="1" engineSpecVersion="1" format="xml">
+  <Metadata>
+    <Value kind="object">
+      <Property name="active">
+        <Value kind="boolean">true</Value>
+      </Property>
+      <Property name="fileIndex">
+        <Value kind="number">0</Value>
+      </Property>
+      <Property name="id">
+        <Value kind="string">fixture-1</Value>
+      </Property>
+      <Property name="libraryPath">
+        <Value kind="string">Equipe/Pasta</Value>
+      </Property>
+      <Property name="name">
+        <Value kind="string">Exemplo</Value>
+      </Property>
+      <Property name="revision">
+        <Value kind="number">1</Value>
+      </Property>
+    </Value>
+  </Metadata>
+  <Configuration>
+    <Value kind="object">
+      <Property name="activeFilterPresetId">
+        <Value kind="string" />
+      </Property>
+      <Property name="activeReturnId">
+        <Value kind="string" />
+      </Property>
+      <Property name="baseDate">
+        <Value kind="string" />
+      </Property>
+      <Property name="fileName">
+        <Value kind="string">mock</Value>
+      </Property>
+      <Property name="filenameByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="formula">
+              <literal>
+                <Property name="value">
+                  <Value kind="string">mock</Value>
+                </Property>
+              </literal>
+            </Value>
+          </Property>
+          <Property name="return">
+            <Value kind="formula">
+              <literal>
+                <Property name="value">
+                  <Value kind="string">mock</Value>
+                </Property>
+              </literal>
+            </Value>
+          </Property>
+        </Value>
+      </Property>
+      <Property name="filter">
+        <Value kind="object">
+          <Property name="action">
+            <Value kind="string">keep</Value>
+          </Property>
+          <Property name="conditions">
+            <Value kind="array" />
+          </Property>
+          <Property name="fileName">
+            <Value kind="string" />
+          </Property>
+          <Property name="filename">
+            <Value kind="formula">
+              <literal>
+                <Property name="value">
+                  <Value kind="string">filtrado.xml</Value>
+                </Property>
+              </literal>
+            </Value>
+          </Property>
+          <Property name="group">
+            <Value kind="string" />
+          </Property>
+          <Property name="match">
+            <Value kind="string">all</Value>
+          </Property>
+        </Value>
+      </Property>
+      <Property name="filterPresets">
+        <Value kind="array" />
+      </Property>
+      <Property name="headersByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="array" />
+          </Property>
+          <Property name="return">
+            <Value kind="array" />
+          </Property>
+        </Value>
+      </Property>
+      <Property name="inputByMode">
+        <Value kind="object" />
+      </Property>
+      <Property name="inputGroup">
+        <Value kind="string" />
+      </Property>
+      <Property name="inputNotes">
+        <Value kind="object" />
+      </Property>
+      <Property name="inputXml">
+        <Value kind="string" />
+      </Property>
+      <Property name="manual">
+        <Value kind="object">
+          <Property name="confirmed">
+            <Value kind="boolean">false</Value>
+          </Property>
+          <Property name="fileName">
+            <Value kind="string" />
+          </Property>
+          <Property name="recordCount">
+            <Value kind="number">1</Value>
+          </Property>
+          <Property name="recordGroup">
+            <Value kind="string" />
+          </Property>
+          <Property name="templateXml">
+            <Value kind="string" />
+          </Property>
+          <Property name="values">
+            <Value kind="object" />
+          </Property>
+        </Value>
+      </Property>
+      <Property name="mode">
+        <Value kind="string">return</Value>
+      </Property>
+      <Property name="outputGroup">
+        <Value kind="string" />
+      </Property>
+      <Property name="outputNotesByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="object" />
+          </Property>
+          <Property name="return">
+            <Value kind="object" />
+          </Property>
+        </Value>
+      </Property>
+      <Property name="outputXml">
+        <Value kind="string" />
+      </Property>
+      <Property name="presenceByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="object" />
+          </Property>
+          <Property name="return">
+            <Value kind="object" />
+          </Property>
+        </Value>
+      </Property>
+      <Property name="recordCount">
+        <Value kind="number">1</Value>
+      </Property>
+      <Property name="returnModels">
+        <Value kind="array" />
+      </Property>
+      <Property name="returnSource">
+        <Value kind="string">first</Value>
+      </Property>
+      <Property name="rulesByMode">
+        <Value kind="object">
+          <Property name="new">
+            <Value kind="object" />
+          </Property>
+          <Property name="return">
+            <Value kind="object" />
+          </Property>
+        </Value>
+      </Property>
+    </Value>
+  </Configuration>
+  <Context>
+    <Value kind="object">
+      <Property name="timeZone">
+        <Value kind="string">America/Fortaleza</Value>
+      </Property>
+    </Value>
+  </Context>
+  <PayloadHash algorithm="sha256">31477d3528733445c2a9d192b82e1b13225bd484c5c67b94d3f363f589704bc0</PayloadHash>
+</MockAiZePreset>

@@ -278,6 +278,24 @@ try {
 } finally { if($script:Rng){$script:Rng.Dispose()} }
 '''
 
+
+def serialize_runner_config(config: dict) -> bytes:
+    """Serialize only the normalized fields used by the new/return runner.
+
+    Filter and manual settings belong to the Studio and are not implemented by
+    this standalone runner. In particular, filter metadata and its filename
+    formula have names that differ only by case, which PowerShell 5.1 cannot
+    deserialize into a PSObject. Omitting those unsupported modes preserves
+    the full configuration in the preset/database while keeping the exported
+    runner compatible.
+    """
+    # create_bundle passes a normalized configuration. Tests and internal
+    # callers may pass an already prepared runner configuration directly.
+    runner_config = dict(config)
+    for key in ("filter", "filterPresets", "activeFilterPresetId", "manual"):
+        runner_config.pop(key, None)
+    return json.dumps(runner_config, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
 BAT = r'''@echo off
 setlocal
 powershell.exe -NoLogo -NoProfile -NonInteractive -File "%~dp0MockAize.ps1" -OutputDirectory "%~dp0"
@@ -294,7 +312,8 @@ def create_bundle(variation_id: str, expected_revision: int) -> dict:
     config = storage.normalize_config(item["config"])
     if config["mode"] in {"manual", "filter"}:
         raise ValueError("Nos modos Manual e Filtragem, use a exportação de XML no estúdio.")
-    serialized = json.dumps({**config, "name": item["name"], "fileIndex": item["file_index"]}, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    runner_config = {**config, "name": item["name"], "fileIndex": item["file_index"]}
+    serialized = serialize_runner_config(runner_config)
     ps1 = PS_ENGINE.replace("__CONFIG_B64__", base64.b64encode(serialized).decode("ascii")).encode("utf-8")
     bat = BAT.encode("ascii")
     bundle_id = str(uuid.uuid4())

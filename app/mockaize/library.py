@@ -121,8 +121,8 @@ def command(payload):
         raise ValueError('Operação inválida.')
     action = payload.get('action')
     now = datetime.now(timezone.utc).isoformat()
-    with storage.connect() as db:
-        db.execute('BEGIN IMMEDIATE')
+    def mutate(db):
+        before = storage._preset_updates(db)
         if action in {'move_many', 'copy_many', 'delete_many'}:
             ids = payload.get('ids')
             if not isinstance(ids, list) or not ids or len(ids) > 500 or any(not isinstance(value, str) for value in ids):
@@ -139,4 +139,9 @@ def command(payload):
             result_ids = [_apply_command(db, {**payload, 'action': action.removesuffix('_many'), 'id': node_id}, now) for node_id in roots]
         else:
             result_ids = [_apply_command(db, payload, now)]
+        updates = storage._changed_preset_updates(before, storage._preset_updates(db))
+        return result_ids, updates
+    from .preset_store import run_operation
+    # Ancestor and many commands can change the whole catalog's visible shape.
+    result_ids = run_operation(mutate, kind='batch', catalog_wide=True)
     return {'id': result_ids[0], 'ids': result_ids, 'library': snapshot()}

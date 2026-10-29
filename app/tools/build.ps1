@@ -33,6 +33,11 @@ try {
     & $python -m pip install 'PyInstaller==6.22.3'
     if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar PyInstaller (código $LASTEXITCODE)." }
   }
+  & $python -c "from importlib.metadata import version; from packaging.version import Version; from zoneinfo import ZoneInfo; assert Version(version('tzdata')) >= Version('2025.2'); ZoneInfo('America/Fortaleza')" *> $null
+  if ($LASTEXITCODE -ne 0) {
+    & $python -m pip install 'tzdata>=2025.2'
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar os dados de fuso horário (código $LASTEXITCODE)." }
+  }
   $version = & $python -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"
   if ($LASTEXITCODE -ne 0) { throw 'Falha ao ler a versao do projeto.' }
   $release = Join-Path $dist ("MockAiZe-{0}.exe" -f $version.Trim())

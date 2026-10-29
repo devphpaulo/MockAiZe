@@ -9,7 +9,12 @@ globalThis.StudioApi = (() => {
       headers: { ...headers, ...(method === 'GET' ? {} : { 'X-CSRF-Token': token }) }, ...options });
     if (response.status === 204) return null;
     const body = await response.json();
-    if (!response.ok) throw new Error(body.error || `Erro ${response.status}`);
+    if (!response.ok) {
+      const error = new Error(body.error || `Erro ${response.status}`);
+      error.status = response.status;
+      error.synchronization = body.synchronization || null;
+      throw error;
+    }
     return body;
   }
   const json = (url, method, body) => request(url, { method,
@@ -84,13 +89,17 @@ globalThis.StudioApi = (() => {
       expectedRevision: draft.revision, name: draft.name, config: configForSave(draft) });
     return configFromRecord(record);
   }
+  async function recover(id) {
+    const result = await json(`/api/variations/${encodeURIComponent(id)}/recover`, 'POST', {});
+    return configFromRecord(result.variation);
+  }
   async function publish(draft, snapshot) {
     return request(`/api/variations/${encodeURIComponent(draft.id)}/artifacts`, { method: 'POST',
       headers: { 'Content-Type': 'application/xml; charset=utf-8',
         'X-Expected-Revision': String(draft.revision), 'X-File-Name': encodeURIComponent(snapshot.name) },
       body: snapshot.xml });
   }
-  return { bootstrap, select, save, publish, report, configForSave,
+  return { bootstrap, select, save, recover, publish, report, configForSave,
     theme: theme => json('/api/settings', 'PUT', { theme }),
     layout: studioLayout => json('/api/settings', 'PUT', { studioLayout }),
     load: async id => configFromRecord(await request(`/api/variations/${encodeURIComponent(id)}`)),
