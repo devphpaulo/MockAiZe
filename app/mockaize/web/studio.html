@@ -1,24 +1,18 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="__CSRF_TOKEN__"><meta name="theme-color" content="#121212"><link rel="icon" type="image/png" href="/assets/mockaize-favicon.png"><link rel="shortcut icon" href="/favicon.ico"><title>MockAíZé — Estúdio XML</title><link rel="stylesheet" href="/studio.css"><link rel="stylesheet" href="/library.css"></head>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="__CSRF_TOKEN__"><meta name="theme-color" content="#121212"><link rel="icon" type="image/png" href="/assets/mockaize-favicon.png"><link rel="shortcut icon" href="/favicon.ico"><title>MockAíZé — Estúdio XML</title><link rel="stylesheet" href="/studio.css"><link rel="stylesheet" href="/library.css"><link rel="stylesheet" href="/select.css"><link rel="stylesheet" href="/ui-motion.css"><link rel="stylesheet" href="/editor-components.css"><script src="/alerts.js" defer></script><script src="/form-fields.js" defer></script><script src="/select.js" defer></script><script src="/ui-motion.js" defer></script><script src="/date-picker.js" defer></script><script src="/record-pagination.js" defer></script><link rel="stylesheet" href="/navigation.css"><script src="/navigation.js" defer></script><link rel="stylesheet" href="/components.css"></head>
 <body>
+<div id="navigation"></div>
 <div class="app">
- <aside class="sidebar" id="sidebar" aria-label="Workspaces e configurações">
-  <div class="brand"><img class="brandmark" src="/assets/mockaize-favicon.png" alt="">MockAíZé</div>
-  <div><p class="section-caption">Workspace</p><button class="workspace-select" id="workspaceButton"></button></div>
-  <nav><p class="section-caption">Pastas e arquivos</p><div class="config-list" id="configList"></div><button class="ghost" id="newConfig">＋ Organizar biblioteca</button></nav>
-  <div class="sidebar-bottom"><button id="backHome" class="ghost">⌂ Visão geral</button><button id="exportPowerShell">↗ Exportar PS1 + BAT</button><span class="prototype-badge">Armazenamento local<br>Documentos\MockAíZé</span></div>
-  <div id="sidebarResize" class="panel-resize sidebar-resize" role="separator" aria-label="Redimensionar navegação" aria-orientation="vertical" aria-valuemin="192" aria-valuemax="448" tabindex="0"></div>
- </aside>
- <main class="workspace">
-  <header class="topbar"><button class="mobile-menu ghost" id="mobileMenu" aria-label="Abrir navegação" aria-expanded="false">☰</button><div class="breadcrumbs" id="breadcrumbs"></div><div class="top-actions"><button class="ghost small" id="themeToggle" aria-label="Alternar tema">Tema: escuro</button><span class="saved-state" id="savedState">✓ Salvo</span><button class="primary small" id="saveConfig">Salvar configuração</button></div></header>
+<main class="workspace">
+  <header class="topbar"><div id="fileHeading"><h1></h1><p></p></div><div class="top-actions"><div id="fileNameSummary" class="filename-summary-block"><span>Nome do XML</span><code></code></div><button id="filterUndoButton" class="ghost small" data-action="undo" hidden><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-5 5 5 5M3 10h10a7 7 0 0 1 7 7"/></svg>Desfazer</button><button id="filenameButton" data-action="filename" aria-label="Configurar fórmula do nome do arquivo">ƒ Nome do arquivo</button><button class="theme-toggle" id="themeToggle" type="button" aria-label="Alternar tema"></button><span class="saved-state" id="savedState" role="status" aria-live="polite"></span><button class="primary small" id="saveConfig" title="Salvar configuração"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h14l3 3v15H3V3zm3 0v6h10V3M7 21v-8h10v8"/></svg>Salvar</button></div></header>
   <section class="page-head" id="pageHead"></section>
   <div class="editor-toolbar" id="editorToolbar"></div>
   <section class="load-error" id="studioLoadError" role="alert" hidden><h2>Não foi possível abrir esta variação</h2><p id="studioLoadErrorMessage"></p><div><button class="primary" id="retryStudio">Tentar novamente</button><a href="/?view=library">Voltar à biblioteca</a></div></section>
   <div class="processing" id="processing" hidden><span id="processingText" role="status">Gerando registros…</span><button class="small" id="cancelGeneration">Cancelar</button></div>
   <div class="mobile-tabs" id="mobileTabs"><button data-mobile-tab="input" class="active">Entrada</button><button data-mobile-tab="output">Saída</button></div>
-  <div class="work-area" id="workArea">
+  <div class="work-area inspector-closed" id="workArea">
    <div class="code-workspace"><div class="code-pair" id="codePair"><section class="xml-panel input-panel" id="inputPanel" aria-label="XML de entrada"></section><div class="connection-gap" id="connectionRail"><div class="connection-tools"><button id="syncScroll" type="button" class="ghost sync-button" aria-label="Sincronizar rolagem dos XMLs" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v16m-4-4 4 4 4-4M16 20V4m-4 4 4-4 4 4"/></svg></button><span id="connectionCount" class="connection-count" aria-label="Quantidade de vínculos">0</span></div></div><section class="xml-panel output-panel" id="outputPanel" aria-label="XML de saída"></section><svg class="connections" id="connections" aria-hidden="true"></svg></div></div>
-   <div class="inspector-dock" id="inspectorDock"><div id="inspectorResize" class="panel-resize inspector-resize" role="separator" aria-label="Redimensionar painel de fórmulas" aria-orientation="vertical" aria-valuemin="272" aria-valuemax="720" tabindex="0"></div><aside class="inspector" id="inspector" aria-label="Configurar campo"></aside></div>
+   <div class="inspector-dock" id="inspectorDock" hidden><div id="inspectorResize" class="panel-resize inspector-resize" role="separator" aria-label="Redimensionar painel de fórmulas" aria-orientation="vertical" aria-valuemin="272" aria-valuemax="720" tabindex="0"></div><aside class="inspector" id="inspector" aria-label="Configurar campo"></aside></div>
   </div>
   <footer class="bottom-bar" id="bottomBar"></footer>
  </main>
@@ -29,5 +23,5 @@
 <input type="file" id="xmlFileInput" accept=".xml,.txt,application/xml,text/xml" hidden>
 
 
-<script src="/engine.js" defer></script><script src="/studio-api.js" defer></script><script src="/studio-layout.js" defer></script><script src="/library.js" defer></script><script src="/manual-studio.js" defer></script><script src="/studio.js" defer></script>
+<script src="/engine.js" defer></script><script src="/return-combobox.js" defer></script><script src="/return-selection.js" defer></script><script src="/return-models.js" defer></script><script src="/studio-api.js" defer></script><script src="/studio-layout.js" defer></script><script src="/library.js" defer></script><script src="/manual-studio.js" defer></script><script src="/presence-editor.js" defer></script><script src="/filter-studio.js" defer></script><script src="/studio.js" defer></script>
 </body></html>

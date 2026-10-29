@@ -15,7 +15,7 @@ MockAíZé é um gerador local de mocks XML para Windows. Ele permite importar u
 
 - **100% local** — XMLs, configurações, SQLite, snapshots e exports ficam em `Documentos\\MockAíZé`.
 - **Estúdio visual** — XML de entrada e saída lado a lado, vínculos por arrasto, linhas de conexão e inspetor de campos.
-- **Operações completas** — Retorno, Novos registros e preenchimento Manual com paginação de registros.
+- **Operações completas** — Novos Registros, Retorno, Filtragem e preenchimento Manual, com paginação de registros.
 - **Fórmulas reutilizáveis** — datas, valores aleatórios, sequenciais, concatenação, soma por grupos e cópia de regras entre campos.
 - **Executável portátil** — um único `.exe` para Windows, gerado pelo GitHub Actions.
 - **Privacidade total** — não usa `%AppData%`, `%LocalAppData%` nem serviços remotos para armazenar o produto.
@@ -43,11 +43,15 @@ O aplicativo abre a interface no navegador padrão e permanece disponível na ba
 
 1. Crie ou selecione um workspace.
 2. Cole ou importe o XML de entrada.
-3. Escolha **Retorno**, **Novos registros** ou **Manual**.
+3. Escolha **Novos Registros**, **Retorno**, **Filtragem** ou **Manual**.
 4. Mapeie os campos e configure fórmulas no painel lateral ou no modal.
 5. Gere, revise e exporte o XML.
 
-O modo Manual começa com um registro, permite adicionar outros por páginas e exporta somente os registros confirmados.
+O modo Manual começa com um registro, permite adicionar outros por páginas e exporta somente os registros confirmados. Os exemplos do modelo aparecem dentro dos campos vazios, sem serem preenchidos ou exportados. Alterne entre **Manual** e **Fórmulas**: o botão **ƒ** abre o editor abaixo de cada campo e mostra o resultado no próprio valor. Clique novamente em **ƒ** ou fora do editor para recolher. Novos registros herdam as fórmulas do registro atual; digitar no modo Manual substitui a fórmula somente naquele campo e registro. Fórmulas e valores calculados ficam salvos, incluindo resultados aleatórios. O botão **ƒ Nome do arquivo** alterna o painel esquerdo entre preenchimento e fórmula do nome. A fórmula pode usar os valores preenchidos e a quantidade de registros, permanece salva e define o nome do XML exportado.
+
+Em **Filtragem**, selecione o grupo do XML de entrada e combine condições de presença, ausência ou valor de campos. A partir da segunda condição, escolha **E** ou **OU** entre cada par e mantenha ou exclua os grupos correspondentes. **E** tem prioridade sobre **OU**: `Condição 1 E Condição 2 OU Condição 3` equivale a `(Condição 1 E Condição 2) OU Condição 3`. A tela mostra a combinação com parênteses; presets antigos mantêm a combinação original. Os filtros ficam no painel esquerdo e atualizam o XML completo à direita em tempo real, preservando os cabeçalhos marcados e a estrutura externa ao grupo. **Versão anterior** mostra o XML original com as linhas dos grupos excluídos em vermelho claro; os botões **−/+** recolhem ou expandem as tags apenas na tela Filtragem. Use **Salvar configuração** para guardar as condições. O botão **ƒ Nome do arquivo** alterna o painel esquerdo entre os filtros e o editor de fórmula do nome, compartilhando os geradores dos modos Retorno e Novos registros. A fórmula pode combinar campos da entrada, valores do XML filtrado, datas, sequenciais e a quantidade mantida; ela também é guardada nos presets. **Exportar XML** baixa o documento filtrado completo, inclusive quando nenhum grupo permanece. As condições e o XML de entrada ficam salvos separadamente das demais operações. Em **Preset do filtro**, salve combinações com nomes próprios e selecione-as pelo combobox com pesquisa. Cada arquivo mantém seus presets; você pode atualizar, renomear ou excluir com confirmação. A exportação PS1 + BAT continua disponível para Retorno e Novos registros.
+
+Em **Retorno**, use **+ Adicionar retorno** para criar outros modelos XML, cada um com seus vínculos, fórmulas, cabeçalhos e nome de arquivo. O seletor abaixo do XML de saída permite alternar o modelo em edição, renomear e excluir com confirmação. Em **Retornos**, no topo, marque os modelos desejados antes de gerar: um modelo é exportado como XML; vários são baixados juntos em um ZIP. A quantidade e o botão **Gerar** ficam na barra inferior, depois do nome do arquivo; no retorno, a quantidade corresponde aos registros da entrada. O indicador circular fica vermelho sem arquivo gerado, laranja após alterações e verde quando o resultado está pronto para exportar.
 
 ## Build no Windows
 

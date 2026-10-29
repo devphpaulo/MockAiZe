@@ -4,30 +4,31 @@ globalThis.StudioLayout = (() => {
   const $ = id => document.getElementById(id);
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   function create({ preferences = {}, save, redraw, closeInspector, notify }) {
-    const prefs = { sidebarWidth: 224, inspectorWidth: 320, editorMode: 'panel', syncScroll: false, ...preferences };
-    let saveTimer, frame, dragging = null, presented = false;
-    const expectedScroll = new WeakMap();
+    const prefs = { sidebarWidth: 224, inspectorWidth: 360, editorMode: 'panel', syncScroll: false, ...preferences };
+    let saveTimer, frame, dragging = null, presented = false, presentation = 'closed', sheetAnimation = null, sheetVersion = 0;
+    const expectedScroll = new WeakMap(), boundScroll = new WeakSet();
     const scheduleDraw = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(redraw); };
-    const persist = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => save({ ...prefs }).catch(error => notify(error.message)), 250); };
+    const persist = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => save({ ...prefs }).catch(error => notify(error.message,'error')), 250); };
     function widths() {
       if (innerWidth > 850) {
-        prefs.sidebarWidth = clamp(prefs.sidebarWidth, 192, Math.max(192, Math.floor(Math.min(448, innerWidth - 672) / 8) * 8));
-        prefs.inspectorWidth = clamp(prefs.inspectorWidth, 272, Math.max(272, Math.floor(Math.min(720, innerWidth - prefs.sidebarWidth - 400) / 8) * 8));
+        // Retain the legacy preference for settings/backup compatibility; no rail is rendered.
+        prefs.sidebarWidth = clamp(prefs.sidebarWidth, 192, 448);
+        prefs.inspectorWidth = clamp(prefs.inspectorWidth, 272, Math.max(272, Math.floor(Math.min(720, innerWidth - 400) / 8) * 8));
       }
-      document.documentElement.style.setProperty('--sidebar-width', `${prefs.sidebarWidth}px`);
+      document.documentElement.style.setProperty('--sidebar-width', '0px');
       document.documentElement.style.setProperty('--inspector-width', `${prefs.inspectorWidth}px`);
-      for (const [id, value] of [['sidebarResize', prefs.sidebarWidth], ['inspectorResize', prefs.inspectorWidth]]) $(id).setAttribute('aria-valuenow', String(value));
+      for (const [id, value] of [['sidebarResize', prefs.sidebarWidth], ['inspectorResize', prefs.inspectorWidth]]) $(id)?.setAttribute('aria-valuenow', String(value));
       scheduleDraw();
     }
     function resize(which, value, commit = true) {
       const min = which === 'sidebar' ? 192 : 272;
-      const available = which === 'sidebar' ? innerWidth - prefs.inspectorWidth - 400 : innerWidth - prefs.sidebarWidth - 400;
+      const available = which === 'sidebar' ? innerWidth - prefs.inspectorWidth - 400 : innerWidth - 400;
       const max = Math.max(min, Math.min(which === 'sidebar' ? 448 : 720, available));
       prefs[`${which}Width`] = clamp(Math.round(value / 8) * 8, min, max);
       widths(); if (commit) persist();
     }
     for (const [id, which] of [['sidebarResize', 'sidebar'], ['inspectorResize', 'inspector']]) {
-      const handle = $(id);
+      const handle = $(id);if(!handle)continue;
       handle.addEventListener('pointerdown', event => {
         if (event.button !== 0) return;
         event.preventDefault(); handle.setPointerCapture(event.pointerId);
@@ -51,6 +52,14 @@ globalThis.StudioLayout = (() => {
       handle.addEventListener('dblclick', () => resize(which, which === 'sidebar' ? 224 : 320));
     }
     function controls() {
+      const inspectorToggle = document.querySelector('[data-action="inspector"]');
+      if (inspectorToggle) {
+        inspectorToggle.disabled = !presented;
+        inspectorToggle.setAttribute('aria-expanded', String(presented));
+        inspectorToggle.setAttribute('aria-controls', 'inspector');
+        inspectorToggle.setAttribute('aria-label', 'Ocultar editor de fórmulas');
+        inspectorToggle.title = presented ? 'Ocultar editor de fórmulas' : 'Clique em um campo do XML de saída para abrir as fórmulas';
+      }
       const toggle = $('editorModalMode'); if (toggle) toggle.checked = prefs.editorMode === 'modal';
       const sync = $('syncScroll');
       sync.setAttribute('aria-pressed', String(prefs.syncScroll));
@@ -84,7 +93,8 @@ globalThis.StudioLayout = (() => {
     }
     function bindScroll() {
       for (const [id, other] of [['inputCode', 'outputCode'], ['outputCode', 'inputCode']]) {
-        const element = $(id); if (!element) continue;
+        const element = $(id); if (!element || boundScroll.has(element)) continue;
+        boundScroll.add(element);
         element.addEventListener('scroll', () => {
           const expected = expectedScroll.get(element); expectedScroll.delete(element);
           if (prefs.syncScroll && (expected === undefined || Math.abs(expected - element.scrollTop) > 1)) alignTo(element, $(other));
@@ -98,14 +108,43 @@ globalThis.StudioLayout = (() => {
       controls(); persist(); scheduleDraw();
     });
     function present(open) {
-      presented = open; const modal = prefs.editorMode === 'modal';
-      const dialog = $('inspectorDialog'), pane = $('inspector'), dock = $('inspectorDock');
-      const host = modal ? $('inspectorModalHost') : dock;
-      if (pane.parentElement !== host) host.append(pane);
-      dock.hidden = !open || modal; pane.hidden = !open;
-      $('workArea').classList.toggle('inspector-closed', !open || modal);
-      if (modal && open && !dialog.open) dialog.showModal();
-      if ((!modal || !open) && dialog.open) dialog.close();
+      presented = Boolean(open); const modal = prefs.editorMode === 'modal';
+      const dialog = $('inspectorDialog'), pane = $('inspector'), dock = $('inspectorDock'), area = $('workArea');
+      const next = open ? (modal ? 'modal' : 'panel') : 'closed';
+      if (next !== presentation) {
+        const previous = presentation, version = ++sheetVersion;
+        sheetAnimation?.cancel(); sheetAnimation = null; presentation = next;
+        const restoreFocus = !open && pane.contains(document.activeElement);
+        if ((!modal || !open) && dialog.open) dialog.close();
+        if (restoreFocus) {
+          const anchor = pane.dataset.editorKey?.startsWith('filename:')
+            ? document.querySelector('[data-action="filename"]')
+            : $('outputPanel').querySelector('.xml-row.selected .field-content') || $('outputPanel').querySelector('.field-content,[data-group]');
+          anchor?.focus({preventScroll: true});
+        }
+        const finishClose = () => {
+          if (version !== sheetVersion) return;
+          pane.hidden = true; dock.hidden = true; area.classList.add('inspector-closed'); scheduleDraw();
+        };
+        const slide = closing => {
+          if (matchMedia('(prefers-reduced-motion: reduce)').matches) { if (closing) finishClose(); return; }
+          sheetAnimation = pane.animate(closing
+            ? [{opacity: 1, translate: '0 0'}, {opacity: 0, translate: '40px 0'}]
+            : [{opacity: 0, translate: '40px 0'}, {opacity: 1, translate: '0 0'}],
+            {duration: 200, easing: 'ease-in-out', fill: closing ? 'forwards' : 'none'});
+          sheetAnimation.finished.then(() => { if (closing) finishClose(); }, () => {});
+        };
+        if (next === 'closed') {
+          dock.inert = true;
+          if (previous === 'panel' && !dock.hidden) slide(true); else finishClose();
+        } else {
+          const host = modal ? $('inspectorModalHost') : dock;
+          if (pane.parentElement !== host) host.append(pane);
+          pane.hidden = false; dock.hidden = modal; dock.inert = false;
+          area.classList.toggle('inspector-closed', modal);
+          if (modal && !dialog.open) dialog.showModal(); else if (!modal) slide(false);
+        }
+      }
       const title = pane.querySelector('.inspector-title');
       if (title && !title.querySelector('[data-action="editor-presentation"]')) {
         const button = document.createElement('button'); button.type = 'button';
@@ -139,6 +178,9 @@ globalThis.StudioLayout = (() => {
     for (const [target, rule] of Object.entries(rules)) {
       const source = sourceFor(rule), a = ports.input.get(source), b = ports.output.get(target); if (!a || !b) continue;
       const start = point(a), end = point(b);
+      const visibleA = start.y >= aBox.top && start.y <= aBox.bottom;
+      const visibleB = end.y >= bBox.top && end.y <= bBox.bottom;
+      if (!visibleA && !visibleB) continue;
       links.push({ target, source, a: start, b: end, clippedA: start.y < top || start.y > bottom, clippedB: end.y < top || end.y > bottom });
     }
     for (const side of ['a', 'b']) {
@@ -170,7 +212,7 @@ globalThis.StudioLayout = (() => {
       }
     });
     $('connectionCount').textContent = String(links.length);
-    $('connectionCount').title = `${links.length} vínculo(s). Linhas tracejadas continuam fora da área visível.`;
+    $('connectionCount').title = `${links.length} vínculo(s) visível(is). Linhas tracejadas têm uma ponta fora da área visível.`;
     if (drag?.moved) {
       const origin = ports.input.get(drag.key); if (!origin) return; const start = point(origin);
       appendPath(`M${start.x - bounds.left},${clamp(start.y, top, bottom) - bounds.top} L${drag.x - bounds.left},${drag.y - bounds.top}`, true, 'Novo vínculo');

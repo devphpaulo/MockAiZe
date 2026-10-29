@@ -96,6 +96,9 @@ function Is-Connected($Node,$Document){if($null -eq $Node){return $false};$curre
 function Set-NodeValue($Node,[string]$Value){if($Node -is [Xml.XmlAttribute]){$Node.Value=$Value;return};$characters=New-Object 'System.Collections.Generic.List[Xml.XmlCharacterData]';foreach($child in @($Node.ChildNodes)){if($child.NodeType -in @([Xml.XmlNodeType]::Text,[Xml.XmlNodeType]::CDATA,[Xml.XmlNodeType]::Whitespace,[Xml.XmlNodeType]::SignificantWhitespace)){$characters.Add([Xml.XmlCharacterData]$child)}};if($characters.Count -eq 0){[void]$Node.InsertBefore($Node.OwnerDocument.CreateTextNode($Value),$Node.FirstChild);return};$first=$characters[0];if($first.NodeType -eq [Xml.XmlNodeType]::CDATA -and $Value.Contains(']]>')){$replacement=$Node.OwnerDocument.CreateTextNode($Value);[void]$Node.ReplaceChild($replacement,$first)}else{$first.Data=$Value};for($i=1;$i -lt $characters.Count;$i++){[void]$Node.RemoveChild($characters[$i])}}
 function Remove-Node($Node){if($Node -is [Xml.XmlAttribute]){[void]$Node.OwnerElement.Attributes.Remove($Node)}elseif($Node.ParentNode){[void]$Node.ParentNode.RemoveChild($Node)}}
 function Check-Length([string]$Value,$Expected){if($null -ne $Expected -and [string]$Expected -ne ''){$length=Get-CodePointCount $Value;if($length -ne [int]$Expected){throw "O valor tem $length caracteres; o campo exige exatamente $Expected."}};return $Value}
+function Limit-Length([string]$Value,$Expected){if($null -eq $Expected -or [string]$Expected -eq ''){return $Value};$size=[int]$Expected;if($size -lt 1 -or $size -gt 4096){throw 'Quantidade de caracteres inválida.'};$symbols=Get-Symbols $Value;$take=[Math]::Min($symbols.Count,$size);$text=if($take -gt 0){[string]::Concat($symbols[0..($take-1)])}else{''};return Check-Length $text $size}
+function Limit-Input([string]$Value,$Context){return Limit-Length $Value $Context.inputLimit}
+
 function Get-List($Values){if($Values -is [Array]){$items=@($Values|ForEach-Object{[string]$_})}else{$items=@(([string]$Values -split "`r?`n")|ForEach-Object{[string]$_})};$items=@($items|ForEach-Object{$_.Trim()}|Where-Object{$_});if($items.Count -eq 0){throw 'Lista vazia.'};if($items.Count -gt 1000){throw 'A lista excede 1.000 valores.'};return ,$items}
 function New-CPF([bool]$Mask){$base=Random-Text 9 '0123456789';if($base -match '^(\d)\1+$'){$base=$base.Substring(0,8)+$(if($base[0] -eq '0'){'1'}else{'0'})};$calc={param($s)$sum=0;for($i=0;$i -lt $s.Length;$i++){$sum+=([int][string]$s[$i])*($s.Length+1-$i)};$d=($sum*10)%11;if($d -eq 10){return '0'};return [string]$d}.GetNewClosure();$first=$base+(& $calc $base);$result=$first+(& $calc $first);if($Mask){return $result.Substring(0,3)+'.'+$result.Substring(3,3)+'.'+$result.Substring(6,3)+'-'+$result.Substring(9,2)};return $result}
 function CNPJ-Digits([string]$Base){$calc={param($s,$weights)$sum=0;for($i=0;$i -lt $s.Length;$i++){$sum+=([int][char]$s[$i]-48)*$weights[$i]};$r=$sum%11;if($r -lt 2){return '0'};return [string](11-$r)}.GetNewClosure();$first=&$calc $Base @(5,4,3,2,9,8,7,6,5,4,3,2);return [string]$first+(&$calc ($Base+$first) @(6,5,4,3,2,9,8,7,6,5,4,3,2))}
@@ -154,7 +157,7 @@ function Get-GroupValues($Formula,$Context){
    if(-not (Starts-WithSegments $field $group)){throw 'Escolha um campo dentro do grupo somado.'}
    $node=if($Formula.source -eq 'input'){Resolve-Absolute $Context.source ([string]$Formula.path) $Context.inputGroup $index}else{Resolve-Record $local.currentRecord ([string]$Formula.path) $Context.outputGroup}
    if(-not $node){throw 'Campo ausente em um registro do somatório.'}
-   if($Formula.source -ne 'input' -and $null -ne $Context.jobs){Invoke-GeneratedNode $node $Context.jobs}else{Get-Value $node '' '' 0}
+   if($Formula.source -ne 'input' -and $null -ne $Context.jobs){Invoke-GeneratedNode $node $Context.jobs}elseif($Formula.source -eq 'input'){Limit-Input (Get-Value $node '' '' 0) $Context}else{Get-Value $node '' '' 0}
   }else{Get-LocalGroupValues $Formula $local}
  }
 }
@@ -179,7 +182,7 @@ function Get-LocalGroupValues($Formula,$Context){
    else{$matches=@(foreach($child in $node.ChildNodes){if($child -is [Xml.XmlElement] -and $child.LocalName -ceq $segment.name -and $child.NamespaceURI -ceq $segment.ns){$child}});$node=if([int]$segment.index -ge 1 -and [int]$segment.index -le $matches.Count){$matches[[int]$segment.index-1]}else{$null}}
    if($null -eq $node){throw 'Campo ausente em uma ocorrência do grupo somado.'}
   }
-  if($Formula.source -ne 'input' -and $null -ne $Context.jobs){Invoke-GeneratedNode $node $Context.jobs}else{Get-Value $node '' '' 0}
+  if($Formula.source -ne 'input' -and $null -ne $Context.jobs){Invoke-GeneratedNode $node $Context.jobs}elseif($Formula.source -eq 'input'){Limit-Input (Get-Value $node '' '' 0) $Context}else{Get-Value $node '' '' 0}
  }
 }
 function Sum-DecimalValues($values){
@@ -188,8 +191,8 @@ $precision=0;$parsed=@();foreach($v in $values){if($v -notmatch '^[-+]?\d+(\.\d+
 }
 function Evaluate-Formula($Formula,$Context,[int]$Depth=0){if($Depth -gt 6){throw 'Composição excedeu seis níveis.'};switch -CaseSensitive ([string]$Formula.type){
   literal{return [string]$Formula.value}
-  copy{$sourceIndex=if($Context.returnSource -eq 'all'){$Context.recordIndex}else{0};$node=Resolve-Absolute $Context.source ([string]$Formula.path) $Context.inputGroup $sourceIndex;if(-not $node){throw "Origem não encontrada: $($Formula.path)"};return Get-Value $node $Formula.path $Context.inputGroup $sourceIndex}
-  field{if($Formula.source -eq 'input'){$sourceIndex=if($Context.returnSource -eq 'all'){$Context.recordIndex}else{0};$node=Resolve-Absolute $Context.source ([string]$Formula.path) $Context.inputGroup $sourceIndex}else{if($Context.currentRecord){$node=Resolve-Record $Context.currentRecord ([string]$Formula.path) $Context.outputGroup};if(-not $node){$node=Resolve-Absolute $Context.output ([string]$Formula.path) $Context.outputGroup $Context.recordIndex}};if(-not $node){throw "Campo não encontrado: $($Formula.path)"};if($Formula.source -ne 'input' -and $null -ne $Context.jobs){if(-not (Is-Connected $node $Context.output)){throw 'Campo de saída omitido.'};return Invoke-GeneratedNode $node $Context.jobs};return Get-Value $node $Formula.path '' 0}
+  copy{$sourceIndex=if($Context.returnSource -eq 'all'){$Context.recordIndex}else{0};$node=Resolve-Absolute $Context.source ([string]$Formula.path) $Context.inputGroup $sourceIndex;if(-not $node){throw "Origem não encontrada: $($Formula.path)"};return Limit-Input (Get-Value $node $Formula.path $Context.inputGroup $sourceIndex) $Context}
+  field{if($Formula.source -eq 'input'){$sourceIndex=if($Context.returnSource -eq 'all'){$Context.recordIndex}else{0};$node=Resolve-Absolute $Context.source ([string]$Formula.path) $Context.inputGroup $sourceIndex}else{if($Context.currentRecord){$node=Resolve-Record $Context.currentRecord ([string]$Formula.path) $Context.outputGroup};if(-not $node){$node=Resolve-Absolute $Context.output ([string]$Formula.path) $Context.outputGroup $Context.recordIndex}};if(-not $node){throw "Campo não encontrado: $($Formula.path)"};if($Formula.source -ne 'input' -and $null -ne $Context.jobs){if(-not (Is-Connected $node $Context.output)){throw 'Campo de saída omitido.'};return Invoke-GeneratedNode $node $Context.jobs};if($Formula.source -eq 'input'){return Limit-Input (Get-Value $node $Formula.path '' 0) $Context};return Get-Value $node $Formula.path '' 0}
   groupSum{$values=@(Get-GroupValues $Formula $Context);return Sum-DecimalValues $values}
   config{return ([string]$Context.configName -replace '\s+','')}
   count{return [string]$Context.count}
@@ -217,8 +220,9 @@ function Invoke-GeneratedNode($Node,$Jobs){
  $job.status='visiting'
  try{
   $rule=$job.rule
-  $value=if($null -ne $rule.fixed){[string]$rule.fixed}elseif($rule.generator){Evaluate-Formula $rule.generator $job.context}else{Get-Value $Node '' '' 0}
-  $job.value=Check-Length ([string]$value) $rule.exactLength
+  $evaluationContext=$job.context.Clone();$evaluationContext.inputLimit=if($rule.lengthTarget -eq 'input'){$rule.exactLength}else{$null}
+  $value=if($null -ne $rule.fixed){[string]$rule.fixed}elseif($rule.generator){Evaluate-Formula $rule.generator $evaluationContext}else{Get-Value $Node '' '' 0}
+  $job.value=if($rule.lengthTarget -eq 'output'){Limit-Length ([string]$value) $rule.exactLength}elseif($rule.lengthTarget -eq 'input'){[string]$value}else{Check-Length ([string]$value) $rule.exactLength}
   Set-NodeValue $Node $job.value
   $job.status='done'
   return [string]$job.value
@@ -274,6 +278,24 @@ try {
 } finally { if($script:Rng){$script:Rng.Dispose()} }
 '''
 
+
+def serialize_runner_config(config: dict) -> bytes:
+    """Serialize only the normalized fields used by the new/return runner.
+
+    Filter and manual settings belong to the Studio and are not implemented by
+    this standalone runner. In particular, filter metadata and its filename
+    formula have names that differ only by case, which PowerShell 5.1 cannot
+    deserialize into a PSObject. Omitting those unsupported modes preserves
+    the full configuration in the preset/database while keeping the exported
+    runner compatible.
+    """
+    # create_bundle passes a normalized configuration. Tests and internal
+    # callers may pass an already prepared runner configuration directly.
+    runner_config = dict(config)
+    for key in ("filter", "filterPresets", "activeFilterPresetId", "manual"):
+        runner_config.pop(key, None)
+    return json.dumps(runner_config, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
 BAT = r'''@echo off
 setlocal
 powershell.exe -NoLogo -NoProfile -NonInteractive -File "%~dp0MockAize.ps1" -OutputDirectory "%~dp0"
@@ -288,9 +310,10 @@ def create_bundle(variation_id: str, expected_revision: int) -> dict:
     if isinstance(expected_revision, bool) or item["revision"] != expected_revision:
         raise RuntimeError("A variação mudou. Salve e tente exportar novamente.")
     config = storage.normalize_config(item["config"])
-    if config["mode"] == "manual":
-        raise ValueError("No modo Manual, exporte o XML de entrada preenchido.")
-    serialized = json.dumps({**config, "name": item["name"], "fileIndex": item["file_index"]}, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    if config["mode"] in {"manual", "filter"}:
+        raise ValueError("Nos modos Manual e Filtragem, use a exportação de XML no estúdio.")
+    runner_config = {**config, "name": item["name"], "fileIndex": item["file_index"]}
+    serialized = serialize_runner_config(runner_config)
     ps1 = PS_ENGINE.replace("__CONFIG_B64__", base64.b64encode(serialized).decode("ascii")).encode("utf-8")
     bat = BAT.encode("ascii")
     bundle_id = str(uuid.uuid4())

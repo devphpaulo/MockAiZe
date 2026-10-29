@@ -1,0 +1,74 @@
+/* Shadcn component contract. Application spacing: 8 px. Optical borders/rings,
+   type sizes and radii are independent from the spacing grid. */
+:root{--field-gap:8px;--field-height:40px;--compact-height:32px;--control-radius:6px;--menu-radius:8px;--field-ring:color-mix(in srgb,var(--green) 28%,transparent);--alert-success:#4ade80;--alert-warning:#fbbf24;--alert-error:#fb7185;--alert-info:var(--green);--alert-info-ink:#07190d}
+:root[data-theme="light"]{--alert-success:#15803d;--alert-warning:#a16207;--alert-error:#b91c1c;--alert-info:var(--green);--alert-info-ink:#fff}
+/* The boundary contains the label: 8 px -> label -> 8 px -> control -> 8 px. */
+.app .page-head,.app.manual-mode .page-head,.app.filter-mode .page-head{padding:8px 24px}
+.page-head :is(.mode-row,.filter-head,.manual-head-controls){min-height:0;margin:0;align-items:flex-end}
+.page-head :is(.operation-field,.group-field),.manual-head-controls>div:first-child{display:grid;gap:8px;padding:0}
+.page-head label{display:block;margin:0;font-size:11px;line-height:16px;font-weight:400;color:var(--muted)}
+.page-head :is(.group-field select,.nav-operation-current>button){height:32px;min-height:32px}
+.form-field,.filter-control,.manual-field,.home-page .create-field{display:grid;gap:8px;padding-block:8px;margin-block:0;min-width:0}
+.form-field>label,.filter-control>label,.manual-field>label,.home-page .create-field>label{margin:0;font-size:12px;line-height:16px;font-weight:500}
+.form-field>label:has(input,select,textarea){display:grid;gap:8px}
+.form-field label :is(input,select,textarea){margin-top:0}
+.form-field .hint,.form-field .app-alert,.filter-control .app-alert,.manual-field .app-alert{margin:0}
+.library-dialog label{display:grid;gap:8px;padding-block:8px;margin:0;font-size:12px;line-height:16px;font-weight:500}
+:is(input:not([type=checkbox],[type=radio],[type=range],[type=file]),select,textarea,.date-picker-trigger,.return-combobox-trigger){border-radius:var(--control-radius)}
+.library-dialog :is(input,select),.home-page .create :is(input,select){height:40px;min-height:40px;border-color:var(--control-border);border-radius:var(--control-radius);font-size:12px;line-height:16px}
+.home-page .create-submit{height:40px;min-height:40px;margin-bottom:8px}
+:is(input,select,textarea,.date-picker-trigger,.return-combobox-trigger):focus-visible{outline:2px solid var(--green);outline-offset:2px;border-color:var(--green);box-shadow:0 0 0 2px var(--field-ring)}
+:is(input,select,textarea,[role=combobox])[aria-invalid=true]{border-color:var(--alert-error)}
+:is(input,select,textarea)[aria-invalid=true]:focus-visible{outline-color:var(--alert-error);box-shadow:0 0 0 2px color-mix(in srgb,var(--alert-error) 24%,transparent)}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.55}
+.pill-success{border-radius:6px}
+.lib-search{padding-block:8px}.lib-toolbar>.lib-action-button{margin-bottom:8px}
+.lib-context-menu,.return-combobox-content,.return-menu-content,.date-picker-popup,.nav-popover{border-radius:var(--menu-radius);border-color:var(--control-border);background:var(--elevated);box-shadow:var(--shadow)}
+.lib-context-menu>button,.return-combobox-content button{font-weight:400;text-align:left}
+.library-dialog,.navigation-search-dialog,dialog#modal,dialog#inspectorDialog{border-radius:8px}
+.library-dialog,.lib-manager{color:var(--ink)}
+.lib-dialog-body,.dialog-body,.inspector-body,.filter-form,.manual-form{scroll-padding:8px}
+/* Alert 23–26: icon + title + description, no heavy outline. */
+.app-alert{--alert-tone:var(--alert-info);display:flex;align-items:flex-start;gap:16px;width:100%;min-width:0;padding:16px;margin:16px 0;border:0;border-radius:10px;background:var(--alert-info);color:var(--alert-info-ink);font:12px/20px 'Segoe UI',sans-serif;overflow-wrap:anywhere;text-align:left;box-sizing:border-box}
+.app-alert[data-alert-type=success]{--alert-tone:var(--alert-success)}.app-alert[data-alert-type=warning]{--alert-tone:var(--alert-warning)}.app-alert[data-alert-type=error]{--alert-tone:var(--alert-error)}
+.app-alert:is([data-alert-type=success],[data-alert-type=warning],[data-alert-type=error]){background:color-mix(in srgb,var(--alert-tone) 10%,var(--surface));color:var(--alert-tone)}
+.app-alert>.alert-icon{flex:none;width:20px;height:20px;margin:0}
+.alert-content{display:grid;gap:8px;min-width:0;flex:1}
+.alert-title{font-size:13px;font-weight:600;line-height:20px;letter-spacing:0}
+.alert-description{font-size:12px;line-height:20px;font-weight:400;color:inherit;opacity:.85;min-width:0;white-space:pre-wrap}
+.alert-description :is(p,ol,ul){margin:0}.alert-description button{margin-top:8px}.alert-description a{color:inherit;text-decoration:underline}
+.app-alert .alert-dismiss{display:grid;place-items:center;flex:none;width:24px;height:24px;min-height:24px;margin:0;padding:0;border:0;border-radius:6px;background:transparent;color:inherit;cursor:pointer}
+.alert-dismiss>.alert-icon{width:16px;height:16px}.alert-dismiss:hover{background:color-mix(in srgb,currentColor 12%,transparent)}.alert-dismiss:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+#toast.alert-stack{position:fixed;inset:auto 24px 80px auto;display:flex;flex-direction:column;gap:8px;width:432px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 112px);overflow:auto;padding:0;margin:0;border:0;border-radius:0;background:transparent;color:inherit;transform:none;box-shadow:none;pointer-events:none;z-index:2000;scrollbar-width:thin}
+#toast.alert-stack>.app-alert{margin:0;flex:none;pointer-events:auto;box-shadow:0 8px 24px #0003}
+.app-alert[hidden],#toast.alert-stack[hidden]{display:none!important}
+.field-validation{grid-column:1/-1}
+.manual-error.app-alert,.lib-error.app-alert,.date-preview.app-alert{font-weight:400}
+@media(max-width:960px){.app .page-head,.app.manual-mode .page-head,.app.filter-mode .page-head{padding:8px 16px}}
+@media(max-width:680px){#toast.alert-stack{right:16px;bottom:128px;max-height:calc(100dvh - 160px)}.app-alert{gap:8px}.home-page .create-submit{margin-bottom:0}}
+@media(forced-colors:active){.app-alert{border:1px solid CanvasText}.alert-dismiss{border:1px solid ButtonText}}
+
+/* Native select has a higher-specificity enhancement rule in select.css. */
+:root select:not([multiple]):not([size]):focus-visible{outline:2px solid var(--green);outline-offset:2px;border-color:var(--green);box-shadow:0 0 0 2px var(--field-ring)}
+:root select:not([multiple]):not([size])[aria-invalid=true]:focus-visible{outline-color:var(--alert-error);border-color:var(--alert-error)}
+.length-field{display:grid;gap:8px;padding-block:8px}.length-field>label{margin:0}
+.library-dialog :is(input,select),.lib-search input{background:var(--control);color:var(--ink)}
+.library-dialog button,.lib-toolbar button,.lib-manager-heading button,.lib-selection button,.lib-table button{background:var(--control);color:var(--ink)}
+.library-dialog button.primary,.lib-manager-heading button.primary{background:var(--green);border-color:var(--green);color:var(--alert-info-ink)}
+.library-dialog button.danger,.lib-selection button.danger{color:var(--alert-error);background:color-mix(in srgb,var(--alert-error) 10%,var(--surface))}
+.lib-table-row.active,.lib-table-row:hover{background:var(--selection)}
+.lib-table-head{background:var(--elevated)}
+.lib-table-row>button{background:transparent}
+.library-dialog input[type=checkbox],.library-dialog input[type=radio]{width:16px;height:16px;min-height:16px;padding:0}
+
+/* Manual/filter previews share a single header row after removing helper bands. */
+.app:is(.manual-mode,.filter-mode) .pane-head{height:64px;min-height:64px;padding:8px 16px;gap:0;justify-content:center}
+.app:is(.manual-mode,.filter-mode) .pane-title-row{min-height:48px;align-items:center;margin:0}
+.app.manual-mode .pane-title-row{flex-wrap:nowrap}
+.app.manual-mode .pane-title-row>.pane-title{flex:1 1 auto;flex-basis:auto}
+.app.manual-mode .pane-title-row>.pane-actions{margin-left:auto}
+.app.manual-mode .manual-record-group{margin-left:auto;flex:0 1 640px;max-width:640px;justify-content:flex-end}
+.app.manual-mode .manual-record-group select{min-width:0;max-width:none;flex:1;width:0}
+@media(max-width:1280px){.app.manual-mode .manual-record-group{flex-basis:48vw}}
+@media(max-width:960px){.app:is(.manual-mode,.filter-mode) .pane-head{height:auto;min-height:64px}.app.filter-mode .pane-title-row{flex-wrap:wrap}.app.manual-mode .pane-title-row{flex-wrap:wrap}.app.manual-mode .pane-title-row>.pane-title{flex-basis:100%}}
+@media(max-width:680px){.app.manual-mode .manual-record-group{flex-basis:100%;max-width:none}.app.manual-mode .editor-toolbar{flex-wrap:wrap}.app.manual-mode .pane-title-row{gap:8px}.app.manual-mode .pane-title-row>.pane-actions{margin-left:auto}}

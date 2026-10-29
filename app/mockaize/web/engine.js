@@ -33,6 +33,19 @@ globalThis.MockEngine = (() => {
     if(actual!==expected)throw Error(`O valor tem ${actual} caracteres; o campo exige exatamente ${expected}. Ajuste a fórmula ou o tamanho do campo.`);
     return text;
   }
+  function limitLength(value,length){
+    if(length==null||length==='')return String(value);
+    const size=integer(length,1,4096,'Quantidade de caracteres');
+    return checkLength(Array.from(String(value)).slice(0,size).join(''),size);
+  }
+  function ruleContext(context,rule){
+    if(rule.lengthTarget!=='input'||rule.exactLength==null||rule.exactLength==='')return context;
+    return {...context,sourceValue:path=>limitLength(context.sourceValue(path),rule.exactLength),
+      groupValues:formula=>formula.source==='input'?context.groupValues(formula).map(value=>limitLength(value,rule.exactLength)):context.groupValues(formula)};
+  }
+  function ruleValue(value,rule){
+    return rule.lengthTarget==='output'?limitLength(value,rule.exactLength):rule.lengthTarget==='input'?String(value):checkLength(value,rule.exactLength);
+  }
   function listValues(values){const items=(Array.isArray(values)?values:String(values??'').split(/\r?\n/)).map(v=>String(v).trim()).filter(Boolean);if(!items.length)throw Error('Lista: informe ao menos um valor, um por linha.');if(items.length>1000)throw Error('A lista aceita até 1.000 valores.');return items;}
   const pick=values=>values[randomInt(0,values.length-1)];
   const slug=value=>value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'.').replace(/^\.|\.$/g,'');
@@ -78,7 +91,7 @@ globalThis.MockEngine = (() => {
     field:(f,c)=>(f.source==='input'?c.sourceValue:c.outputValue)(f.path),
     groupSum:(f,c)=>sumDecimals(c.groupValues(f)),
     config:(_,c)=>String(c.configName||'mock').replace(/\s+/g,''),
-    count:(_,c)=>String(c.count||1),
+    count:(_,c)=>String(c.count??1),
     cpf:f=>cpf(f.mask), cnpj,
     list:f=>{const values=listValues(f.values);return f.mode==='random'?pick(values):values[integer(f.index??0,0,values.length-1,'Posição na lista')];},
     hash:f=>chars(integer(f.length??32,1,4096,'Quantidade de caracteres'),f.format==='alphanumeric'?'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789':f.format==='HEX'?'0123456789ABCDEF':'0123456789abcdef'),
@@ -96,7 +109,7 @@ globalThis.MockEngine = (() => {
   function filename(value){let name=String(value||'').trim();if(!name)throw Error('O nome do arquivo não pode estar vazio.');if(/[<>:"/\\|?*\u0000-\u001F]/.test(name))throw Error('O nome não pode conter barras ou caracteres < > : " | ? *.');if(/[. ]$/.test(name))throw Error('O nome não pode terminar com ponto ou espaço.');if(/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name))throw Error('Nome reservado pelo sistema operacional.');if(!/\.xml$/i.test(name))name+='.xml';if(name.length>180)throw Error('O nome deve ter no máximo 180 caracteres.');return name;}
   function defaults(type){const values={literal:{value:''},copy:{path:''},field:{source:'output',path:''},groupSum:{source:'output',group:'',path:'',allRecords:false},cpf:{mask:false},cnpj:{mode:'N',mask:false,establishment:'0001'},list:{values:'Ativo\nInativo',mode:'single',index:0},hash:{length:32,format:'hex'},person:{field:'name',group:'cliente'},company:{field:'legalName',group:'empresa'},address:{field:'street',state:'any',group:'endereco'},date:{mode:'offset',days:5,format:'yyyy-MM-dd',value:'2026-10-17',holidays:''},zeros:{length:8},sequence:{start:1,step:1,width:4,scope:'record'},alpha:{length:9,alphabet:ALPHA},random:{min:100,max:5000,decimals:2},id:{mode:'common',prefix:'CT',length:12},compose:{operation:'concat',separator:'',parts:[{type:'literal',value:'CT'},{type:'sequence',start:1,step:1,width:4}]},config:{},count:{}};return{type,...structuredCopy(values[type]||{})};}
   function structuredCopy(v){return JSON.parse(JSON.stringify(v));}
-  return{evaluate,filename,cnpjDigits,validCPF,validCNPJ,checkLength,listValues,locations:LOCATIONS,parseDate,formatDate,dateMask,dateCustomDefaults,defaults,clone:structuredCopy};
+  return{evaluate,filename,cnpjDigits,validCPF,validCNPJ,checkLength,limitLength,ruleContext,ruleValue,listValues,locations:LOCATIONS,parseDate,formatDate,dateMask,dateCustomDefaults,defaults,clone:structuredCopy};
 })();
 
 globalThis.MockXml=(()=>{
@@ -110,9 +123,42 @@ globalThis.MockXml=(()=>{
  function resolve(root,path){let parts;try{parts=typeof path==='string'?JSON.parse(path):path;}catch{return null;}let current=root.nodeType===9?root:root.ownerDocument;for(const part of parts){if(part.attribute)return Array.from(current.attributes||[]).find(n=>(n.namespaceURI||'')===part.ns&&n.localName===part.name)||null;const matches=Array.from(current.children||[]).filter(n=>(n.namespaceURI||'')===part.ns&&n.localName===part.name);current=matches[(part.index||1)-1];if(!current)return null;}return current;}
  function fields(doc){const out=[];function walk(node){for(const attr of Array.from(node.attributes||[])){if(attr.namespaceURI==='http://www.w3.org/2000/xmlns/'||attr.name==='xmlns')continue;out.push({key:key(attr),display:display(key(attr)),name:attr.localName,ns:attr.namespaceURI||'',value:attr.value,node:attr});}if(!node.children.length)out.push({key:key(node),display:display(key(node)),name:node.localName,ns:node.namespaceURI||'',value:node.textContent,node});for(const child of node.children)walk(child);}walk(doc.documentElement);return out;}
  function nodes(doc){const out=[];function walk(node){const path=key(node);out.push({key:path,display:display(path),name:node.localName,ns:node.namespaceURI||'',value:node.textContent,isGroup:!!node.children.length,node});for(const attr of Array.from(node.attributes||[])){if(attr.namespaceURI==='http://www.w3.org/2000/xmlns/'||attr.name==='xmlns')continue;const path=key(attr);out.push({key:path,display:display(path),name:attr.localName,ns:attr.namespaceURI||'',value:attr.value,isGroup:false,node:attr});}for(const child of node.children)walk(child);}walk(doc.documentElement);return out;}
- function groups(doc){const out=[];function walk(node){if(siblings(node)[0]===node){out.push({key:key(node),name:node.localName,display:display(key(node)),count:siblings(node).length,depth:trail(node).length});}for(const child of node.children)walk(child);}walk(doc.documentElement);return out.sort((a,b)=>(b.count>1)-(a.count>1)||a.depth-b.depth);}
+ function groups(doc){
+  const out=[],identity=node=>JSON.stringify([node.namespaceURI||'',node.localName]);
+  function walk(parent,trail){
+   const counts=new Map(),seen=new Map();
+   for(const child of parent.children){const id=identity(child);counts.set(id,(counts.get(id)||0)+1);}
+   for(const child of parent.children){
+    const id=identity(child),index=(seen.get(id)||0)+1;seen.set(id,index);
+    const path=[...trail,{ns:child.namespaceURI||'',name:child.localName,index}];
+    if(index===1){const key=JSON.stringify(path);out.push({key,name:child.localName,display:display(key),count:counts.get(id),depth:path.length});}
+    walk(child,path);
+   }
+  }
+  walk(doc,[]);return out.sort((a,b)=>(b.count>1)-(a.count>1)||a.depth-b.depth);
+ }
+ function recordGroups(doc,headers=[]){
+  const paths=headers.map(path=>JSON.parse(path));
+  return groups(doc).filter(group=>{
+   const node=resolve(doc,group.key);
+   return !!node?.children.length&&!paths.some(header=>hasPrefix(JSON.parse(group.key),header));
+  });
+ }
  function records(doc,path){const node=resolve(doc,path);return node?siblings(node):[];}
- function project(doc,path,index=0){const copy=doc.cloneNode(true);const items=records(copy,path);if(items.length>1){const keep=items[Math.min(index,items.length-1)];for(const item of items)if(item!==keep)item.remove();}return copy;}
+ function project(doc,path,index=0){
+  const items=records(doc,path);
+  if(items.length<2)return doc.cloneNode(true);
+  const keep=items[Math.min(index,items.length-1)],excluded=new Set(items.filter(item=>item!==keep)),ancestors=new Set();
+  for(let node=items[0].parentNode;node;node=node.parentNode)ancestors.add(node);
+  // Clone only retained branches; never copy every record just to discard it.
+  function copy(node){
+   if(!ancestors.has(node))return node.cloneNode(true);
+   const result=node.cloneNode(false);
+   for(const child of node.childNodes)if(!excluded.has(child))result.appendChild(copy(child));
+   return result;
+  }
+  return copy(doc);
+ }
  function setValue(node,value){
   const text=String(value);if(node.nodeType===2){node.value=text;return;}
   const characterNodes=Array.from(node.childNodes).filter(child=>child.nodeType===3||child.nodeType===4);
@@ -234,8 +280,8 @@ globalThis.MockXml=(()=>{
    if(job.status==='visiting')throw Error('Dependência circular entre fórmulas: '+job.field.display);
    job.status='visiting';
    try{
-    const rule=job.rule,value=rule.fixed!=null?String(rule.fixed):rule.generator?E.evaluate(rule.generator,job.ctx):target.nodeType===2?target.value:target.textContent;
-    job.value=E.checkLength(value,rule.exactLength);setValue(target,job.value);job.status='done';return job.value;
+    const rule=job.rule,value=rule.fixed!=null?String(rule.fixed):rule.generator?E.evaluate(rule.generator,E.ruleContext(job.ctx,rule)):target.nodeType===2?target.value:target.textContent;
+    job.value=E.ruleValue(value,rule);setValue(target,job.value);job.status='done';return job.value;
    }catch(error){job.status='pending';throw Error(job.field.display+': '+error.message);}
   }
   for(let index=0;index<count;index++){
@@ -285,5 +331,5 @@ globalThis.MockXml=(()=>{
   if(!node)throw Error('O campo não foi encontrado na saída da prévia.');
   return node.nodeType===2?node.value:node.textContent;
  }
- return{parse,fields,nodes,groups,groupValues,resolve,records,project,display,key,serialize,automap,outputPath,templatePath,generate,generateAsync,testFormula};
+ return{parse,fields,nodes,groups,recordGroups,groupValues,resolve,records,project,display,key,serialize,automap,outputPath,templatePath,generate,generateAsync,testFormula};
 })();

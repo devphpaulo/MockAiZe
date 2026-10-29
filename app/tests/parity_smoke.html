@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smoke de paridade do preset — MockAíZé</title>
+<style>
+  body { max-width: 64rem; margin: 2rem auto; padding: 0 1rem; color: #20252b; font: 16px/1.5 system-ui, sans-serif; }
+  h1 { font-size: 1.35rem; }
+  #result { padding: 1rem; border: 1px solid #aaa; border-radius: .4rem; white-space: pre-wrap; }
+  #result[data-state="pass"] { border-color: #27864a; background: #effaf2; }
+  #result[data-state="fail"] { border-color: #b42318; background: #fff1f0; }
+</style>
+<h1>Smoke local de geração com fixture de paridade</h1>
+<p>Executa o motor JavaScript existente com DOMParser/XMLSerializer do navegador. Não chama servidor nem transmite dados.</p>
+<pre id="result" data-state="running">Executando…</pre>
+<script src="../mockaize/web/engine.js"></script>
+<script src="./parity_smoke.js"></script>
+</html>

@@ -17,6 +17,7 @@ from importlib.resources import files
 from urllib.parse import quote, unquote, urlparse
 
 from . import storage
+from .preset_store import PresetSyncError
 
 
 def _report_startup_error(message: str) -> None:
@@ -50,15 +51,34 @@ class Handler(BaseHTTPRequestHandler):
     def _send(self, status: int, body: bytes, content_type: str, extra_headers: dict | None = None):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
+        if status != 304:
+            self.send_header("Content-Length", str(len(body)))
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
-        self.send_header("Cache-Control", "no-store")
+        self.send_header("Cache-Control", (extra_headers or {}).get("Cache-Control", "no-store"))
         for name, value in (extra_headers or {}).items():
-            self.send_header(name, value)
+            if name != "Cache-Control":
+                self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_preset_sync_error(self, exc, variation_id=None):
+        revision = exc.revisions.get(variation_id) if isinstance(exc.revisions, dict) else None
+        message = ("A gravação precisa ser recuperada antes de continuar." if variation_id else
+                   "A operação pode já ter sido aplicada. Feche e abra o MockAíZé para recuperar a sincronização antes de repetir a operação.")
+        body = json.dumps({"error": message,
+            "synchronization": {"pending": True, "operationId": exc.operation_id,
+                "committed": exc.committed, "revision": revision}}, ensure_ascii=False).encode()
+        return self._send(503, body, "application/json; charset=utf-8")
+
+    def _send_asset(self, body: bytes, content_type: str):
+        # Revalidate static resources across pages; API responses remain no-store.
+        etag = '"' + hashlib.sha256(body).hexdigest() + '"'
+        headers = {"Cache-Control": "private, no-cache", "ETag": etag}
+        if self.headers.get("If-None-Match") == etag:
+            return self._send(304, b"", content_type, headers)
+        return self._send(200, body, content_type, headers)
 
     def _is_local_request(self) -> bool:
         expected_host = f"127.0.0.1:{self.server.server_port}"
@@ -138,6 +158,14 @@ class Handler(BaseHTTPRequestHandler):
             filename = "MockAize.ps1" if parts[3] == "ps1" else "MockAize.bat"
             content_type = "text/plain; charset=utf-8" if parts[3] == "ps1" else "application/octet-stream"
             return self._send(200, content, content_type, {"Content-Disposition": f'attachment; filename="{filename}"'})
+        if len(parts) == 4 and parts[:2] == ["api", "variations"] and parts[3] == "artifacts.zip":
+            from urllib.parse import parse_qs
+            try:
+                ids = parse_qs(urlparse(self.path).query).get("id", [])
+                body = storage.artifact_archive(parts[2], ids)
+            except ValueError as exc:
+                return self._send(400, json.dumps({"error": str(exc)}).encode(), "application/json; charset=utf-8")
+            return self._send(200, body, "application/zip", {"Content-Disposition": 'attachment; filename="MockAiZe-retornos.zip"'})
         if len(parts) == 4 and parts[:2] == ["api", "variations"] and parts[3] == "artifacts":
             body = json.dumps(storage.artifacts_for_variation(parts[2]), ensure_ascii=False).encode()
             return self._send(200, body, "application/json; charset=utf-8")
@@ -166,26 +194,26 @@ class Handler(BaseHTTPRequestHandler):
             if filename not in {"mockaize-banner-v3.png", "mockaize-favicon.png"}:
                 return self._send(404, b"Not found", "text/plain; charset=utf-8")
             asset = files("mockaize").joinpath("web/assets", filename).read_bytes()
-            return self._send(200, asset, "image/png")
-        if route in {"/studio.js", "/studio-api.js", "/studio-layout.js", "/manual-studio.js", "/library.js", "/library.css", "/studio.css"}:
+            return self._send_asset(asset, "image/png")
+        if route in {"/alerts.js", "/form-fields.js", "/components.css", "/navigation.js", "/navigation.css", "/home.css", "/studio.js", "/studio-api.js", "/return-models.js", "/studio-layout.js", "/manual-studio.js", "/library.js", "/library.css", "/studio.css", "/select.css", "/select.js", "/ui-motion.css", "/ui-motion.js", "/date-picker.js", "/record-pagination.js", "/editor-components.css", "/return-combobox.js", "/return-selection.js", "/presence-editor.js", "/filter-studio.js"}:
             asset = files("mockaize").joinpath("web", route.removeprefix("/")).read_bytes()
             content_type = "text/css; charset=utf-8" if route.endswith(".css") else "text/javascript; charset=utf-8"
-            return self._send(200, asset, content_type)
+            return self._send_asset(asset, content_type)
         if route == "/engine.js":
             engine = files("mockaize").joinpath("web", "engine.js").read_bytes()
-            return self._send(200, engine, "text/javascript; charset=utf-8")
+            return self._send_asset(engine, "text/javascript; charset=utf-8")
         if route == "/app.js":
             app = files("mockaize").joinpath("web", "app.js").read_bytes()
-            return self._send(200, app, "text/javascript; charset=utf-8")
+            return self._send_asset(app, "text/javascript; charset=utf-8")
         if route == "/style.css":
             style = files("mockaize").joinpath("web", "style.css").read_bytes()
-            return self._send(200, style, "text/css; charset=utf-8")
+            return self._send_asset(style, "text/css; charset=utf-8")
         if route == "/favicon.ico":
             icon_path = files("mockaize").joinpath("assets", "mockaize.ico")
             if icon_path.is_file():
-                return self._send(200, icon_path.read_bytes(), "image/vnd.microsoft.icon")
+                return self._send_asset(icon_path.read_bytes(), "image/vnd.microsoft.icon")
             asset = files("mockaize").joinpath("web/assets", "mockaize-favicon.png").read_bytes()
-            return self._send(200, asset, "image/png")
+            return self._send_asset(asset, "image/png")
         if route not in ("/", "/index.html", "/studio"):
             return self._send(404, b"Not found", "text/plain; charset=utf-8")
         page_name = "studio.html" if route == "/studio" else "index.html"
@@ -198,13 +226,32 @@ class Handler(BaseHTTPRequestHandler):
         if not self._is_local_request() or not self._has_session(mutation=True):
             return self._send(403, b"Forbidden", "text/plain; charset=utf-8")
         parts = urlparse(self.path).path.strip("/").split("/")
+        if len(parts) == 4 and parts[:2] == ["api", "variations"] and parts[3] == "recover":
+            from . import preset_store
+            try:
+                payload = json.loads(self._read_body(1024, "application/json"))
+                if payload != {}:
+                    raise ValueError("Solicitação de recuperação inválida.")
+                preset_store.recover()
+                variation = storage.get_variation(parts[2])
+                if variation is None:
+                    return self._send(404, b"Not found", "application/json; charset=utf-8")
+                body = json.dumps({"recovered": True, "variation": variation}, ensure_ascii=False).encode()
+                return self._send(200, body, "application/json; charset=utf-8")
+            except preset_store.PresetSyncError as exc:
+                return self._send_preset_sync_error(exc, parts[2])
+            except (ValueError, TypeError, json.JSONDecodeError) as exc:
+                return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if len(parts) == 4 and parts[:2] == ["api", "variations"] and parts[3] == "artifacts":
+            from . import preset_store
             try:
                 revision = int(self.headers.get("X-Expected-Revision", ""))
                 file_name = unquote(self.headers.get("X-File-Name", ""), errors="strict")
                 xml = self._read_body(100_000_000, "application/xml").decode("utf-8", errors="strict")
                 artifact = storage.publish_xml(parts[2], revision, file_name, xml)
                 return self._send(201, json.dumps(artifact, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except preset_store.PresetSyncError as exc:
+                return self._send_preset_sync_error(exc, parts[2])
             except (ValueError, TypeError, UnicodeError, KeyError, RuntimeError) as exc:
                 body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode()
                 return self._send(409 if isinstance(exc, RuntimeError) else 400, body, "application/json; charset=utf-8")
@@ -236,6 +283,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._read_body(1024, "application/json")
                 result = storage.create_operational_backup()
                 return self._send(201, json.dumps(result, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, OSError, sqlite3.DatabaseError) as exc:
                 return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if len(parts) == 4 and parts[:2] == ["api", "backups"] and parts[3] == "restore":
@@ -244,6 +293,8 @@ class Handler(BaseHTTPRequestHandler):
                 if payload != {"confirm": True}: raise ValueError("Confirme a restauração do snapshot.")
                 result = storage.restore_operational_backup(parts[2])
                 return self._send(200, json.dumps(result, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, KeyError, OSError, sqlite3.DatabaseError, RuntimeError) as exc:
                 status = 404 if isinstance(exc, KeyError) else 400
                 return self._send(status, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
@@ -252,6 +303,8 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(self._read_body(15_000_000, "application/json"))
                 result = storage.import_workspace_backup(payload)
                 return self._send(200, json.dumps({"imported": result}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, json.JSONDecodeError) as exc:
                 return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if parts == ["api", "library"]:
@@ -260,6 +313,8 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(self._read_body(16_384, "application/json"))
                 result = library.command(payload)
                 return self._send(200, json.dumps(result, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, KeyError, sqlite3.DatabaseError) as exc:
                 return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if parts != ["api", "entities"]:
@@ -269,6 +324,8 @@ class Handler(BaseHTTPRequestHandler):
             entity = storage.create_entity(payload.get("kind", ""), payload.get("parentId"), payload.get("name", ""))
             body = json.dumps({"entity": entity}, ensure_ascii=False).encode()
             return self._send(201, body, "application/json; charset=utf-8")
+        except PresetSyncError as exc:
+            return self._send_preset_sync_error(exc)
         except (ValueError, TypeError, json.JSONDecodeError) as exc:
             body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode()
             return self._send(400, body, "application/json; charset=utf-8")
@@ -285,21 +342,25 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(self._read_body(16_384, "application/json"))
                 result = storage.save_settings(payload)
                 return self._send(200, json.dumps(result, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            except PresetSyncError as exc:
+                return self._send_preset_sync_error(exc)
             except (ValueError, TypeError, json.JSONDecodeError) as exc:
                 return self._send(400, json.dumps({"error": str(exc)}, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         if len(parts) != 3 or parts[:2] != ["api", "variations"]:
             return self._send(404, b"Not found", "text/plain; charset=utf-8")
+        from . import preset_store
         try:
             payload = json.loads(self._read_body(16_200_000, "application/json"))
             variation = storage.save_variation(parts[2], payload.get("expectedRevision"), payload.get("config"), name=payload.get("name"))
             return self._send(200, json.dumps(variation, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+        except preset_store.PresetSyncError as exc:
+            return self._send_preset_sync_error(exc, parts[2])
         except (ValueError, TypeError, json.JSONDecodeError, KeyError, RuntimeError) as exc:
             body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode()
             return self._send(409 if isinstance(exc, RuntimeError) else 400, body, "application/json; charset=utf-8")
         except Exception as exc:
             body = json.dumps({"error": str(exc)}, ensure_ascii=False).encode()
             return self._send(400, body, "application/json; charset=utf-8")
-
 
 def serve():
     from .singleton import InstanceGuard

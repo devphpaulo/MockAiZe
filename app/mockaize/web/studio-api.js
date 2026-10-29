@@ -9,7 +9,12 @@ globalThis.StudioApi = (() => {
       headers: { ...headers, ...(method === 'GET' ? {} : { 'X-CSRF-Token': token }) }, ...options });
     if (response.status === 204) return null;
     const body = await response.json();
-    if (!response.ok) throw new Error(body.error || `Erro ${response.status}`);
+    if (!response.ok) {
+      const error = new Error(body.error || `Erro ${response.status}`);
+      error.status = response.status;
+      error.synchronization = body.synchronization || null;
+      throw error;
+    }
     return body;
   }
   const json = (url, method, body) => request(url, { method,
@@ -21,6 +26,11 @@ globalThis.StudioApi = (() => {
       filenameByMode: { new: { type: 'literal', value: 'mock' }, return: { type: 'literal', value: 'mock' } },
       inputNotes: {}, outputNotesByMode: { new: {}, return: {} }, headersByMode: { new: [], return: [] }, ...record.config };
     config.manual={templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:'',...config.manual};
+    config.manual.formulas??={};config.manual.generated??={};config.manual.entryMode??='manual';
+    config.manual.filename??={type:'literal',value:config.manual.fileName||record.name+'_manual.xml'};
+    const filterName=f=>({...f,filename:f.filename||{type:'literal',value:f.fileName||'filtrado.xml'}});
+    config.filter=filterName(config.filter||{group:'',action:'keep',match:'all',conditions:[],fileName:''});
+    config.filterPresets=(config.filterPresets||[]).map(p=>({...p,filter:filterName(p.filter)}));
     config.returnSource = 'all';
     for (const mode of ['new', 'return']) {
       config.rulesByMode[mode] ||= {};
@@ -32,14 +42,14 @@ globalThis.StudioApi = (() => {
     if (config.rules) config.rulesByMode[config.mode] = config.rules;
     if (config.presence) config.presenceByMode[config.mode] = config.presence;
     if (config.filename) config.filenameByMode[config.mode] = config.filename;
-    return { ...structuredClone(config), id: record.id, name: record.name,
+    return ReturnModels.ensure({ ...structuredClone(config), id: record.id, name: record.name,
       sourceTemplate: config.inputXml, outputTemplate: config.outputXml,
       count: config.recordCount, fileIndex: record.file_index, revision: record.revision,
       baseDate: config.baseDate || new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Fortaleza',
-        year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) };
+        year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) });
   }
   function configForSave(draft) {
-    return { manual: draft.manual || {templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:''}, inputByMode: draft.inputByMode || {}, inputXml: draft.sourceTemplate, outputXml: draft.outputTemplate,
+    return { filterPresets:draft.filterPresets||[], activeFilterPresetId:draft.activeFilterPresetId||'', filter:draft.filter||{group:'',action:'keep',match:'all',conditions:[],fileName:''}, returnModels: ReturnModels.forSave(draft), activeReturnId: draft.activeReturnId, manual: draft.manual || {templateXml:'',values:{},confirmed:false,fileName:'',recordCount:1,recordGroup:''}, inputByMode: draft.inputByMode || {}, inputXml: draft.sourceTemplate, outputXml: draft.outputTemplate,
       recordCount: draft.count, fileName: draft.fileName || 'mock', mode: draft.mode,
       inputGroup: draft.inputGroup, outputGroup: draft.outputGroup, returnSource: draft.returnSource,
       baseDate: draft.baseDate, rulesByMode: draft.rulesByMode,
@@ -79,13 +89,17 @@ globalThis.StudioApi = (() => {
       expectedRevision: draft.revision, name: draft.name, config: configForSave(draft) });
     return configFromRecord(record);
   }
+  async function recover(id) {
+    const result = await json(`/api/variations/${encodeURIComponent(id)}/recover`, 'POST', {});
+    return configFromRecord(result.variation);
+  }
   async function publish(draft, snapshot) {
     return request(`/api/variations/${encodeURIComponent(draft.id)}/artifacts`, { method: 'POST',
       headers: { 'Content-Type': 'application/xml; charset=utf-8',
         'X-Expected-Revision': String(draft.revision), 'X-File-Name': encodeURIComponent(snapshot.name) },
       body: snapshot.xml });
   }
-  return { bootstrap, select, save, publish, report, configForSave,
+  return { bootstrap, select, save, recover, publish, report, configForSave,
     theme: theme => json('/api/settings', 'PUT', { theme }),
     layout: studioLayout => json('/api/settings', 'PUT', { studioLayout }),
     load: async id => configFromRecord(await request(`/api/variations/${encodeURIComponent(id)}`)),

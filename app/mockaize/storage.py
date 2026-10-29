@@ -13,6 +13,7 @@ import uuid
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 PRODUCT = "MockAíZé"
 FOLDERID_Documents = ctypes.c_byte * 16
@@ -23,8 +24,9 @@ DB_LOCK = threading.RLock()
 class ManagedConnection(sqlite3.Connection):
     """Make `with connect()` release file handles after committing/rolling back."""
     def __enter__(self):
-        DB_LOCK.acquire()
-        self._mockaize_locked = True
+        if not getattr(self, "_mockaize_locked", False):
+            DB_LOCK.acquire()
+            self._mockaize_locked = True
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -32,6 +34,11 @@ class ManagedConnection(sqlite3.Connection):
             return super().__exit__(exc_type, exc_value, traceback)
         finally:
             self.close()
+
+    def close(self):
+        try:
+            return super().close()
+        finally:
             if getattr(self, "_mockaize_locked", False):
                 self._mockaize_locked = False
                 DB_LOCK.release()
@@ -58,6 +65,24 @@ def documents_directory() -> Path:
 def data_directory() -> Path:
     path = documents_directory() / PRODUCT
     path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def presets_directory() -> Path:
+    """Local, optional override; restore never changes this machine's path."""
+    root = data_directory()
+    config_path = root / "presets-config.json"
+    try:
+        settings = json.loads(config_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return root / "Presets"
+    if (not isinstance(settings, dict) or set(settings) != {"presetsDirectory"}
+            or not isinstance(settings["presetsDirectory"], str)
+            or not settings["presetsDirectory"].strip()):
+        raise ValueError("A configuração local do diretório de presets é inválida.")
+    path = Path(settings["presetsDirectory"])
+    if not path.is_absolute():
+        raise ValueError("O diretório de presets deve ser um caminho absoluto.")
     return path
 
 
@@ -107,11 +132,22 @@ def _initialize_root() -> str:
 
 
 def connect() -> sqlite3.Connection:
-    db = sqlite3.connect(data_directory() / "mockaize.sqlite3", timeout=10, factory=ManagedConnection)
-    db.row_factory = sqlite3.Row
-    db.execute("PRAGMA foreign_keys = ON")
-    db.execute("PRAGMA journal_mode = WAL")
-    return db
+    # Opening a handle must also serialize with a whole-database restore.
+    DB_LOCK.acquire()
+    db = None
+    try:
+        db = sqlite3.connect(data_directory() / "mockaize.sqlite3", timeout=10, factory=ManagedConnection)
+        db._mockaize_locked = True
+        db.row_factory = sqlite3.Row
+        db.execute("PRAGMA foreign_keys = ON")
+        db.execute("PRAGMA journal_mode = WAL")
+        return db
+    except Exception:
+        if db is None:
+            DB_LOCK.release()
+        else:
+            db.close()
+        raise
 
 
 def initialize() -> None:
@@ -166,6 +202,13 @@ def initialize() -> None:
         db.execute("INSERT OR IGNORE INTO app_meta(key,value) VALUES('root_id',?)", (root_id,))
         db.execute("INSERT OR IGNORE INTO schema_meta(key,value) VALUES('version','2')")
         db.execute("INSERT OR IGNORE INTO user_settings(key,value_json) VALUES('theme','\"system\"')")
+        from .preset_store import ensure_schema
+        ensure_schema(db)
+    from .preset_store import recover
+    recover()
+    from .preset_store import _cleanup_restore_snapshots
+    _cleanup_restore_snapshots()
+    _ensure_preset_backfill(reconcile=True)
 
 
 def tree() -> dict:
@@ -185,12 +228,123 @@ def tree() -> dict:
 PARENT_TABLE = {"application": ("applications", "workspace_id"), "communication_group": ("communication_groups", "application_id"), "specific_file": ("specific_files", "communication_group_id"), "variation": ("variations", "specific_file_id")}
 
 
+def _preset_updates(db, identifiers=None, *, rotate_ids=()):
+    """Snapshots from this transaction, including visibility and ancestor names."""
+    from .library import ensure_schema
+    from .preset_store import PresetUpdate
+    ensure_schema(db)
+    nodes = {row["id"]: dict(row) for row in db.execute("SELECT * FROM library_nodes")}
+    setting = db.execute("SELECT value_json FROM user_settings WHERE key='timeZone'").fetchone()
+    time_zone = json.loads(setting[0]) if setting else "America/Fortaleza"
+    selected = set(identifiers) if identifiers is not None else None
+    rotate = set(rotate_ids)
+    updates = []
+    for row in db.execute("SELECT id,name,config_json,revision,file_index FROM variations ORDER BY id"):
+        identifier = row["id"]
+        if selected is not None and identifier not in selected:
+            continue
+        node = nodes.get(identifier)
+        if node is None:
+            raise ValueError("Variação sem posição na biblioteca.")
+        names, active, seen = [], not bool(node["deleted_at"]), {identifier}
+        parent_id = node["parent_id"]
+        while parent_id is not None:
+            if parent_id in seen or parent_id not in nodes:
+                raise ValueError("Cadeia de pais inválida na biblioteca.")
+            seen.add(parent_id)
+            parent = nodes[parent_id]
+            names.append(parent["name"])
+            active = active and not bool(parent["deleted_at"])
+            parent_id = parent["parent_id"]
+        metadata = {"id": identifier, "name": row["name"], "libraryPath": "/".join(reversed(names)),
+                    "revision": row["revision"], "fileIndex": row["file_index"], "active": active}
+        updates.append(PresetUpdate(metadata, normalize_config(json.loads(row["config_json"])),
+                                    {"timeZone": time_zone}, identifier in rotate))
+    return updates
+
+
+def _changed_preset_updates(before, after):
+    previous = {item.metadata["id"]: item for item in before}
+    return [item for item in after if previous.get(item.metadata["id"]) != item]
+
+
+def _reconciliation_updates(db, *, include_orphans=False):
+    from . import preset_store
+    from .preset_codec import canonical_payload, decode_preset
+    updates = {item.metadata["id"]: item for item in _preset_updates(db)}
+    root, _ = preset_store._directories()
+    if include_orphans:
+        for path in root.iterdir():
+            if path.name.endswith(".OLD.mockaize.xml") or not path.name.endswith(".mockaize.xml"):
+                continue
+            identifier = preset_store._identifier(path.name.removesuffix(".mockaize.xml"))
+            if identifier not in updates:
+                payload = decode_preset(preset_store._read(path))
+                if payload["metadata"]["id"] != identifier:
+                    raise ValueError("ID do preset diverge do nome físico durante reconciliação.")
+                updates[identifier] = preset_store.PresetUpdate({**payload["metadata"], "active": False},
+                                                               payload["configuration"], payload["context"])
+    changed = []
+    for identifier, update in sorted(updates.items()):
+        current = preset_store._read(root / f"{identifier}.mockaize.xml")
+        expected = {"metadata": update.metadata, "configuration": update.configuration, "context": update.context}
+        if current is None or canonical_payload(**decode_preset(current)) != canonical_payload(**expected):
+            changed.append(update)
+    return changed
+
+
+def _backup_before_preset_upgrade():
+    """One SQLite snapshot plus available public current/OLD before backfill."""
+    import zipfile
+    from . import preset_store
+    backup = create_operational_backup()
+    root = data_directory()
+    archive_path = root / "Backups" / (backup["id"] + ".presets.zip")
+    temporary = archive_path.with_suffix(".zip.tmp")
+    presets, _ = preset_store._directories()
+    try:
+        with zipfile.ZipFile(temporary, "x", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("manifest.json", json.dumps({"schemaVersion": 1, "rootId": backup["rootId"], "databaseBackupId": backup["id"]}))
+            for path in sorted(presets.iterdir()):
+                if re.fullmatch(r"[A-Za-z0-9_-]+(?:\.OLD)?\.mockaize\.xml", path.name):
+                    archive.writestr("Presets/" + path.name, preset_store._read(path))
+        with temporary.open("rb+") as stream:
+            os.fsync(stream.fileno())
+        os.replace(temporary, archive_path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    with connect() as db:
+        db.execute("INSERT INTO app_meta(key,value) VALUES('presets_upgrade_backup',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (backup["id"],))
+
+
+def _ensure_preset_backfill(*, reconcile=False):
+    from . import preset_store
+    with DB_LOCK:
+        with connect() as db:
+            initialized = db.execute("SELECT 1 FROM app_meta WHERE key='presets_backfill_v1'").fetchone() is not None
+            if initialized and not reconcile:
+                return
+            has_data = db.execute("SELECT 1 FROM variations LIMIT 1").fetchone() is not None
+            backed_up = db.execute("SELECT 1 FROM app_meta WHERE key='presets_upgrade_backup'").fetchone() is not None
+        root, _ = preset_store._directories()
+        if not initialized and not backed_up and (has_data or any(root.glob("*.mockaize.xml"))):
+            _backup_before_preset_upgrade()
+        with connect() as db:
+            changes = _reconciliation_updates(db)
+        if initialized and not changes:
+            return
+        def mutate(db):
+            db.execute("INSERT INTO app_meta(key,value) VALUES('presets_backfill_v1','1') ON CONFLICT(key) DO UPDATE SET value='1'")
+            return None, _reconciliation_updates(db)
+        preset_store.run_operation(mutate, kind="backfill", catalog_wide=True)
+
+
 def create_entity(kind: str, parent_id: str | None, name: str) -> dict:
     name = name.strip()
     if not name or len(name) > 128 or any(ord(char) < 32 or 0x7F <= ord(char) <= 0x9F for char in name):
         raise ValueError("Informe um nome entre 1 e 128 caracteres, sem caracteres de controle.")
     now, entity_id = datetime.now(timezone.utc).isoformat(), str(uuid.uuid4())
-    with connect() as db:
+    def mutate(db):
         if kind == "workspace":
             db.execute("INSERT INTO workspaces(id,name,created_at) VALUES(?,?,?)", (entity_id, name, now))
         elif kind in PARENT_TABLE:
@@ -203,6 +357,9 @@ def create_entity(kind: str, parent_id: str | None, name: str) -> dict:
                 db.execute(f"INSERT INTO {table}(id,{parent_column},name,created_at) VALUES(?,?,?,?)", (entity_id, parent_id, name, now))
         else:
             raise ValueError("Tipo de item inválido.")
+        return None, _preset_updates(db, [entity_id] if kind == "variation" else [])
+    from .preset_store import run_operation
+    run_operation(mutate, kind="metadata")
     return {"id": entity_id, "kind": kind, "parentId": parent_id, "name": name, "createdAt": now}
 
 
@@ -219,6 +376,8 @@ def get_variation(variation_id: str) -> dict | None:
 
 
 CONFIG_DEFAULTS = {
+    "filterPresets": [], "activeFilterPresetId": "",
+    "filter": {"group": "", "action": "keep", "match": "all", "conditions": [], "fileName": ""},
     "manual": {"templateXml": "", "values": {}, "confirmed": False, "fileName": "", "recordCount": 1, "recordGroup": ""},
     "inputByMode": {}, "inputXml": "", "outputXml": "", "recordCount": 1, "fileName": "mock",
     "mode": "return", "inputGroup": "", "outputGroup": "", "returnSource": "first",
@@ -227,6 +386,7 @@ CONFIG_DEFAULTS = {
     "filenameByMode": {"new": {"type": "literal", "value": "mock"}, "return": {"type": "literal", "value": "mock"}},
     "inputNotes": {}, "outputNotesByMode": {"new": {}, "return": {}},
     "headersByMode": {"new": [], "return": []},
+    "returnModels": [], "activeReturnId": "",
 }
 GENERATOR_TYPES = {"literal", "copy", "field", "config", "count", "cpf", "cnpj", "list", "hash", "person", "company", "address", "zeros", "sequence", "date", "alpha", "random", "id", "compose", "groupSum"}
 FORMULA_FIELDS = {
@@ -302,6 +462,30 @@ def validate_formula(formula: object, depth: int = 0) -> None:
         for child in parts: validate_formula(child, depth + 1)
 
 
+def validate_filter(filters: object) -> None:
+    if not isinstance(filters, dict) or set(filters) - {"group", "action", "match", "conditions", "fileName", "filename"} or not {"group", "action", "match", "conditions", "fileName"} <= set(filters):
+        raise ValueError("Configuração de filtro inválida.")
+    if filters["action"] not in ("keep", "remove") or filters["match"] not in ("all", "any"):
+        raise ValueError("Ação ou combinação de filtros inválida.")
+    if not isinstance(filters["group"], str) or not isinstance(filters["fileName"], str) or len(filters["fileName"]) > 180:
+        raise ValueError("Grupo ou nome de filtro inválido.")
+    filters.setdefault("filename", {"type": "literal", "value": filters["fileName"] or "filtrado.xml"})
+    validate_formula(filters["filename"])
+    if filters["group"]: validate_structural_path(filters["group"])
+    if not isinstance(filters["conditions"], list) or len(filters["conditions"]) > 100:
+        raise ValueError("Informe até 100 condições de filtro.")
+    for condition in filters["conditions"]:
+        if not isinstance(condition, dict) or set(condition) - {"path", "operator", "value", "connector"} or not {"path", "operator", "value"} <= set(condition):
+            raise ValueError("Condição de filtro inválida.")
+        if not isinstance(condition["path"], str) or not isinstance(condition["value"], str) or len(condition["value"]) > 2000:
+            raise ValueError("Campo ou valor de filtro inválido.")
+        if condition.get("connector", "and") not in ("and", "or"):
+            raise ValueError("Conector de condição inválido. Use E ou OU.")
+        if condition["path"]: validate_structural_path(condition["path"])
+        if condition["operator"] not in ("exists", "missing", "equals", "notEquals", "contains", "notContains", "empty", "notEmpty"):
+            raise ValueError("Operador de filtro inválido.")
+
+
 def normalize_config(config: object) -> dict:
     legacy = {"rules", "presence", "filename"}
     if not isinstance(config, dict) or set(config) - (set(CONFIG_DEFAULTS) | legacy):
@@ -327,12 +511,44 @@ def normalize_config(config: object) -> dict:
                 ET.fromstring(normalized[key])
             except ET.ParseError as exc:
                 raise ValueError(f"Modelo XML inválido: {exc}") from exc
+    validate_filter(normalized["filter"])
+    presets = normalized["filterPresets"]
+    active_preset = normalized["activeFilterPresetId"]
+    if not isinstance(presets, list) or len(presets) > 50 or not isinstance(active_preset, str):
+        raise ValueError("Lista de presets de filtros inválida. O limite é 50 presets por arquivo.")
+    preset_ids, preset_names = set(), set()
+    for preset in presets:
+        if not isinstance(preset, dict) or set(preset) != {"id", "name", "filter"}:
+            raise ValueError("Preset de filtro inválido.")
+        identifier, name = preset["id"], preset["name"]
+        if not isinstance(identifier, str) or not 1 <= len(identifier) <= 80 or identifier in preset_ids:
+            raise ValueError("Identificador de preset inválido ou duplicado.")
+        if not isinstance(name, str) or not 1 <= len(name.strip()) <= 120 or name.strip().casefold() in preset_names:
+            raise ValueError("Nome de preset inválido ou duplicado.")
+        preset_ids.add(identifier); preset_names.add(name.strip().casefold())
+        validate_filter(preset["filter"])
+    if active_preset and active_preset not in preset_ids:
+        raise ValueError("Preset de filtro selecionado não encontrado.")
     manual = normalized["manual"]
-    if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
+    if (not isinstance(manual, dict) or (set(manual) - {"templateXml", "values", "confirmed", "fileName", "recordCount", "recordGroup", "filename", "formulas", "generated", "entryMode"} or not {"templateXml", "values", "confirmed", "fileName"} <= set(manual))
         or not isinstance(manual["templateXml"], str) or not isinstance(manual["values"], dict)
         or not isinstance(manual["confirmed"], bool) or not isinstance(manual["fileName"], str)
         or len(manual["fileName"]) > 180):
         raise ValueError("Preenchimento manual inválido.")
+    if manual.get("entryMode", "manual") not in ("manual", "formula"):
+        raise ValueError("Modo de preenchimento manual inválido.")
+    if not isinstance(manual.get("formulas", {}), dict) or not isinstance(manual.get("generated", {}), dict):
+        raise ValueError("Fórmulas de preenchimento inválidas.")
+    for path, formula in manual.get("formulas", {}).items():
+        validate_structural_path(path)
+        validate_formula(formula)
+    for path, entry in manual.get("generated", {}).items():
+        validate_structural_path(path)
+        if not isinstance(entry, dict) or set(entry) != {"signature", "value"} or not all(isinstance(entry[key], str) for key in entry):
+            raise ValueError("Valor calculado manual inválido.")
+    if len(json.dumps({key: manual.get(key, {}) for key in ("formulas", "generated")}, ensure_ascii=False).encode("utf-8")) > 8_000_000:
+        raise ValueError("As fórmulas e valores calculados excedem 8 MB.")
+    if "filename" in manual: validate_formula(manual["filename"])
     manual.setdefault("recordCount", 1)
     manual.setdefault("recordGroup", "")
     if isinstance(manual["recordCount"], bool) or not isinstance(manual["recordCount"], int) or not 1 <= manual["recordCount"] <= 500:
@@ -351,7 +567,7 @@ def normalize_config(config: object) -> dict:
     if len(json.dumps(manual["values"], ensure_ascii=False).encode("utf-8")) > 4_000_000:
         raise ValueError("Os valores manuais excedem 4 MB.")
     inputs = normalized["inputByMode"]
-    if not isinstance(inputs, dict) or set(inputs) - {"new", "return"}:
+    if not isinstance(inputs, dict) or set(inputs) - {"new", "return", "filter"}:
         raise ValueError("Documentos por operação inválidos.")
     for document in inputs.values():
         if not isinstance(document, dict) or set(document) != {"xml", "group"} or not isinstance(document["xml"], str) or not isinstance(document["group"], str):
@@ -365,7 +581,7 @@ def normalize_config(config: object) -> dict:
         raise ValueError("A quantidade deve ser um inteiro entre 1 e 500.")
     if not isinstance(normalized["fileName"], str) or not normalized["fileName"].strip() or len(normalized["fileName"]) > 120:
         raise ValueError("Informe um nome de arquivo entre 1 e 120 caracteres.")
-    if (not isinstance(normalized["mode"], str) or normalized["mode"] not in {"new", "return", "manual"}
+    if (not isinstance(normalized["mode"], str) or normalized["mode"] not in {"new", "return", "manual", "filter"}
         or not isinstance(normalized["returnSource"], str) or normalized["returnSource"] not in {"first", "all"}):
         raise ValueError("Modo de geração inválido.")
     if not isinstance(normalized["inputGroup"], str) or not isinstance(normalized["outputGroup"], str):
@@ -384,7 +600,7 @@ def normalize_config(config: object) -> dict:
             raise ValueError("A configuração por operação tem formato inválido.")
         for path, rule in normalized["rulesByMode"][mode].items():
             validate_structural_path(path)
-            if not isinstance(rule, dict) or set(rule) - {"generator", "sourcePath", "fixed", "exactLength", "comment", "formulaComment", "lineComment"}:
+            if not isinstance(rule, dict) or set(rule) - {"generator", "sourcePath", "fixed", "exactLength", "lengthTarget", "comment", "formulaComment", "lineComment"}:
                 raise ValueError("Regra de campo inválida.")
             if rule.get("generator") is not None: validate_formula(rule["generator"])
             if rule.get("sourcePath") is not None: validate_structural_path(rule["sourcePath"])
@@ -392,6 +608,8 @@ def normalize_config(config: object) -> dict:
             exact = rule.get("exactLength")
             if exact is not None and (isinstance(exact, bool) or not isinstance(exact, int) or not 1 <= exact <= 4096):
                 raise ValueError("Comprimento exato deve estar entre 1 e 4096.")
+            if not isinstance(rule.get("lengthTarget", "validate"), str) or rule.get("lengthTarget", "validate") not in {"validate", "input", "output"}:
+                raise ValueError("Destino do limite de caracteres inválido.")
             for comment in (rule.get("comment", ""), rule.get("formulaComment", ""), rule.get("lineComment", "")):
                 if not isinstance(comment, str) or len(comment) > 2000: raise ValueError("Comentário de regra inválido.")
         for path, policy in normalized["presenceByMode"][mode].items():
@@ -416,6 +634,28 @@ def normalize_config(config: object) -> dict:
             validate_structural_path(path)
         if len(set(paths)) != len(paths):
             raise ValueError("A marcação de cabeçalhos contém tags repetidas.")
+    models = normalized["returnModels"]
+    if not isinstance(models, list) or len(models) > 20:
+        raise ValueError("Use no máximo 20 modelos de retorno por arquivo.")
+    seen_ids, seen_names = set(), set()
+    for model in models:
+        expected = {"id", "name", "selected", "outputXml", "outputGroup", "rules", "presence", "filename", "outputNotes", "headers"}
+        if not isinstance(model, dict) or set(model) != expected:
+            raise ValueError("Modelo de retorno inválido.")
+        if not isinstance(model["id"], str) or not 1 <= len(model["id"]) <= 64 or model["id"] in seen_ids:
+            raise ValueError("Identificador de retorno inválido ou repetido.")
+        if not isinstance(model["name"], str) or not model["name"].strip() or len(model["name"]) > 120 or model["name"].strip().casefold() in seen_names:
+            raise ValueError("Nome de retorno inválido ou repetido.")
+        if not isinstance(model["selected"], bool):
+            raise ValueError("Seleção de retorno inválida.")
+        seen_ids.add(model["id"]); seen_names.add(model["name"].strip().casefold())
+        # Reuse the existing validation for XML, formulas, policies and headers.
+        normalize_config({"outputXml": model["outputXml"], "outputGroup": model["outputGroup"],
+            "rulesByMode": {"return": model["rules"]}, "presenceByMode": {"return": model["presence"]},
+            "filenameByMode": {"return": model["filename"]}, "outputNotesByMode": {"return": model["outputNotes"]},
+            "headersByMode": {"return": model["headers"]}})
+    if not isinstance(normalized["activeReturnId"], str) or (models and normalized["activeReturnId"] not in seen_ids):
+        raise ValueError("Selecione um modelo de retorno existente.")
     if len(json.dumps(normalized, ensure_ascii=False).encode("utf-8")) > 12_000_000:
         raise ValueError("A configuração excede 12 MB.")
     return normalized
@@ -430,7 +670,7 @@ def save_variation(variation_id: str, expected_revision: int, config: object, *,
         if not isinstance(name, str) or not name.strip() or len(name.strip()) > 128:
             raise ValueError("Informe um nome de variação entre 1 e 128 caracteres.")
         name = name.strip()
-    with connect() as db:
+    def mutate(db):
         if db.execute("SELECT 1 FROM library_nodes WHERE id=? AND deleted_at IS NOT NULL", (variation_id,)).fetchone(): raise KeyError("Arquivo excluído da biblioteca.")
         if name is not None: db.execute("UPDATE library_nodes SET name=? WHERE id=?", (name, variation_id))
         cursor = db.execute("UPDATE variations SET config_json=?,name=COALESCE(?,name),revision=revision+1 WHERE id=? AND revision=?", (serialized, name, variation_id, expected_revision))
@@ -439,7 +679,12 @@ def save_variation(variation_id: str, expected_revision: int, config: object, *,
             if exists is None:
                 raise KeyError("Variação não encontrada.")
             raise RuntimeError("A variação foi alterada em outra aba. Recarregue para continuar.")
-    return get_variation(variation_id)
+        row = db.execute("SELECT id,specific_file_id,name,config_json,file_index,revision,created_at FROM variations WHERE id=?", (variation_id,)).fetchone()
+        saved = dict(row)
+        saved["config"] = json.loads(saved.pop("config_json"))
+        return saved, _preset_updates(db, [variation_id], rotate_ids=[variation_id])
+    from .preset_store import run_operation
+    return run_operation(mutate, kind="config-save")
 
 
 def get_settings() -> dict:
@@ -459,9 +704,21 @@ def validate_studio_layout(layout: object) -> None:
         raise ValueError("Modo de edição ou sincronização inválido.")
 
 
+def _validate_time_zone(value):
+    if (not isinstance(value, str) or len(value) > 128
+            or not re.fullmatch(r"(?:UTC|GMT|[A-Za-z][A-Za-z0-9_+-]*(?:/[A-Za-z0-9_+-]+)+)", value)):
+        raise ValueError("Informe um fuso no formato IANA, como America/Fortaleza.")
+    try:
+        ZoneInfo(value)
+    except ZoneInfoNotFoundError as exc:
+        raise ValueError("Fuso IANA desconhecido. Informe um identificador válido.") from exc
+
+
 def save_settings(patch: object) -> dict:
-    if not isinstance(patch, dict) or not patch or set(patch) - {"theme", "lastSelection", "studioLayout"}:
+    if not isinstance(patch, dict) or not patch or set(patch) - {"theme", "lastSelection", "studioLayout", "timeZone"}:
         raise ValueError("Configuração de preferências inválida.")
+    if "timeZone" in patch:
+        _validate_time_zone(patch["timeZone"])
     if "studioLayout" in patch:
         validate_studio_layout(patch["studioLayout"])
     if "theme" in patch and patch["theme"] not in {"light", "dark", "system"}:
@@ -491,10 +748,17 @@ def save_settings(patch: object) -> dict:
                 if expected is not None and row[0] != expected: raise ValueError("A seleção contém uma cadeia de pais incoerente.")
             if selection["workspaceId"] is not None and not db.execute("SELECT 1 FROM workspaces WHERE id=?", (selection["workspaceId"],)).fetchone():
                 raise ValueError("A seleção contém um workspace inexistente.")
-    with connect() as db:
+    def mutate(db):
         for key, value in patch.items():
             db.execute("INSERT INTO user_settings(key,value_json) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json",
                        (key, json.dumps(value, ensure_ascii=False, separators=(",", ":"))))
+        return None, _preset_updates(db) if "timeZone" in patch else []
+    if "timeZone" in patch:
+        from .preset_store import run_operation
+        run_operation(mutate, kind="metadata", catalog_wide=True)
+    else:
+        with connect() as db:
+            mutate(db)
     return get_settings()
 
 
@@ -518,7 +782,6 @@ def export_workspace_backup() -> dict:
                     application["communicationGroups"].append(comm)
                 workspace["applications"].append(application)
             result["hierarchy"].append(workspace)
-    with connect() as db:
         result["library"] = {"nodes": [dict(row) for row in db.execute("SELECT * FROM library_nodes")], "backingIds": [row[0] for row in db.execute("SELECT id FROM library_backing")]}
     return result
 
@@ -571,8 +834,10 @@ def _validate_backup(backup: object) -> dict:
     if backup["format"] != "mockaize-workspace-backup" or backup["version"] != 2 or backup["pathEncodingVersion"] != 2 or not isinstance(backup["hierarchy"], list):
         raise ValueError("Versão de backup não suportada.")
     settings = backup["settings"]
-    if not isinstance(settings, dict) or set(settings) - {"theme", "lastSelection", "studioLayout"}:
+    if not isinstance(settings, dict) or set(settings) - {"theme", "lastSelection", "studioLayout", "timeZone"}:
         raise ValueError("Preferências do backup inválidas.")
+    if "timeZone" in settings:
+        _validate_time_zone(settings["timeZone"])
     if "studioLayout" in settings:
         validate_studio_layout(settings["studioLayout"])
     count = 0
@@ -638,7 +903,8 @@ def import_workspace_backup(backup: object) -> dict:
     now = datetime.now(timezone.utc).isoformat()
     counts = {"workspaces": 0, "applications": 0, "communicationGroups": 0, "specificFiles": 0, "variations": 0}
     mapping = {}
-    with connect() as db:
+    def mutate(db):
+        before = _preset_updates(db)
         for ws in backup["hierarchy"]:
             wid = str(uuid.uuid4()); mapping[ws["id"]] = wid; db.execute("INSERT INTO workspaces VALUES(?,?,?)", (wid, ws["name"], now)); counts["workspaces"] += 1
             for app in ws["applications"]:
@@ -669,7 +935,11 @@ def import_workspace_backup(backup: object) -> dict:
         ensure_schema(db)
         theme = backup["settings"].get("theme")
         if theme in {"light", "dark", "system"}: db.execute("INSERT INTO user_settings VALUES('theme',?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json", (json.dumps(theme),))
-    return counts
+        if "timeZone" in backup["settings"]:
+            db.execute("INSERT INTO user_settings VALUES('timeZone',?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json", (json.dumps(backup["settings"]["timeZone"]),))
+        return counts, _changed_preset_updates(before, _preset_updates(db))
+    from .preset_store import run_operation
+    return run_operation(mutate, kind="import", catalog_wide=True)
 
 
 def publish_xml(variation_id: str, expected_revision: int, file_name: str, xml: str) -> dict:
@@ -704,7 +974,9 @@ def publish_xml(variation_id: str, expected_revision: int, file_name: str, xml: 
             output.write(content)
             output.flush()
             os.fsync(output.fileno())
-        with connect() as db:
+        def mutate(db):
+            if db.execute("SELECT 1 FROM library_nodes WHERE id=? AND deleted_at IS NOT NULL", (variation_id,)).fetchone():
+                raise KeyError("Arquivo excluído da biblioteca.")
             cursor = db.execute("UPDATE variations SET file_index=file_index+1,revision=revision+1 WHERE id=? AND revision=?", (variation_id, expected_revision))
             if cursor.rowcount != 1:
                 exists = db.execute("SELECT revision FROM variations WHERE id=?", (variation_id,)).fetchone()
@@ -715,8 +987,14 @@ def publish_xml(variation_id: str, expected_revision: int, file_name: str, xml: 
                        (artifact_id, variation_id, file_name, relative_path, digest, len(content), now))
             revision = expected_revision + 1
             file_index = db.execute("SELECT file_index FROM variations WHERE id=?", (variation_id,)).fetchone()[0]
-    except Exception:
-        shutil.rmtree(artifact_dir, ignore_errors=True)
+            return {"revision": revision, "fileIndex": file_index}, _preset_updates(db, [variation_id])
+        from .preset_store import run_operation
+        published = run_operation(mutate, kind="metadata")
+        revision, file_index = published["revision"], published["fileIndex"]
+    except Exception as exc:
+        from .preset_store import PresetSyncError
+        if not isinstance(exc, PresetSyncError) or exc.committed is False:
+            shutil.rmtree(artifact_dir, ignore_errors=True)
         raise
     return {"id": artifact_id, "variationId": variation_id, "fileName": file_name, "byteLength": len(content),
             "sha256": digest, "createdAt": now, "downloadUrl": f"/api/artifacts/{artifact_id}", "revision": revision,
@@ -735,6 +1013,34 @@ def get_artifact(artifact_id: str) -> tuple[dict, Path] | None:
     artifact = dict(row)
     artifact_path = data_directory() / "Gerados" / artifact["id"] / artifact["file_name"]
     return artifact, artifact_path
+
+
+def artifact_archive(variation_id: str, artifact_ids: list[str]) -> bytes:
+    """Download selected published returns without changing their contents."""
+    import io
+    import zipfile
+    if not artifact_ids or len(artifact_ids) > 20 or len(set(artifact_ids)) != len(artifact_ids):
+        raise ValueError("Selecione entre 1 e 20 artefatos distintos.")
+    members, size = [], 0
+    for artifact_id in artifact_ids:
+        result = get_artifact(artifact_id)
+        if result is None or result[0]["variation_id"] != variation_id or not result[1].is_file():
+            raise ValueError("Artefato não encontrado neste arquivo.")
+        artifact, path = result
+        size += artifact["byte_length"]
+        if size > 100_000_000:
+            raise ValueError("A exportação selecionada excede 100 MB.")
+        members.append((artifact, path))
+    output, names = io.BytesIO(), set()
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for artifact, path in members:
+            filename = artifact["file_name"]
+            base, suffix = Path(filename).stem, 2
+            while filename.casefold() in names:
+                filename = f"{base}_{suffix}.xml"; suffix += 1
+            names.add(filename.casefold())
+            archive.write(path, filename)
+    return output.getvalue()
 
 
 def artifacts_for_variation(variation_id: str) -> list[dict]:
@@ -771,6 +1077,8 @@ def create_operational_backup() -> dict:
     root_id = _manifest_root_id()
     try:
         with DB_LOCK:
+            from .preset_store import recover
+            recover()
             with connect() as source:
                 target = sqlite3.connect(staging)
                 try:
@@ -824,8 +1132,13 @@ def restore_operational_backup(backup_id: str) -> dict:
     if _has_reparse_point(backup_root): raise OSError("ROOT_AMBIGUOUS: a pasta de backups é um ponto de redirecionamento.")
     staging = backup_root / (".restore-" + str(uuid.uuid4()) + ".tmp")
     rollback = backup_root / (".rollback-" + str(uuid.uuid4()) + ".tmp")
+    pending = False
     with DB_LOCK:
         try:
+            from . import preset_store
+            preset_store.recover()
+            preset_store._cleanup_restore_snapshots()
+            _ensure_preset_backfill()
             record_path = get_operational_backup(backup_id)
             if record_path is None: raise KeyError("Snapshot não encontrado.")
             record, source_path = record_path
@@ -852,25 +1165,29 @@ def restore_operational_backup(backup_id: str) -> dict:
             live_source = sqlite3.connect(live); rollback_target = sqlite3.connect(rollback)
             try: live_source.backup(rollback_target, pages=256, sleep=0.01)
             finally: rollback_target.close(); live_source.close()
-            with connect() as db: db.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            target = sqlite3.connect(staging)
             try:
-                os.replace(staging, live)
-                check = sqlite3.connect(live)
-                try:
-                    valid = check.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
-                    root_meta = dict(check.execute("SELECT key,value FROM app_meta").fetchall()).get("root_id")
-                    if not valid or root_meta != record["root_id"]: raise sqlite3.DatabaseError("A validação pós-restauração falhou.")
-                finally: check.close()
-                with connect() as db:
-                    from .library import ensure_schema
-                    ensure_schema(db)
-                    db.execute("INSERT OR IGNORE INTO operational_backups(id,sha256,byte_length,root_id,created_at) VALUES(?,?,?,?,?)",
+                target.row_factory = sqlite3.Row
+                target.execute("PRAGMA journal_mode=DELETE")
+                target.execute("PRAGMA synchronous=FULL")
+                from .library import ensure_schema
+                ensure_schema(target)
+                preset_store.ensure_schema(target)
+                target.execute("INSERT OR IGNORE INTO operational_backups(id,sha256,byte_length,root_id,created_at) VALUES(?,?,?,?,?)",
                                (record["id"], record["sha256"], record["byte_length"], record["root_id"], record["created_at"]))
-            except Exception:
-                if rollback.exists(): os.replace(rollback, live)
-                raise
+                target.execute("INSERT INTO app_meta(key,value) VALUES('presets_backfill_v1','1') ON CONFLICT(key) DO UPDATE SET value='1'")
+                updates = _reconciliation_updates(target, include_orphans=True)
+                target.commit()
+            finally:
+                target.close()
+            preset_store.replace_database(staging, updates)
+        except Exception as exc:
+            from .preset_store import PresetSyncError
+            pending = isinstance(exc, PresetSyncError) and exc.operation_id is not None
+            raise
         finally:
-            for path in (staging, rollback):
-                try: path.unlink()
-                except FileNotFoundError: pass
+            if not pending:
+                for path in (staging, rollback):
+                    try: path.unlink()
+                    except FileNotFoundError: pass
     return {"restoredBackupId": backup_id, "rootId": record["root_id"], "restoredAt": datetime.now(timezone.utc).isoformat()}

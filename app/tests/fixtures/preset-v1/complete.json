@@ -1,0 +1,623 @@
+{
+  "metadata": {
+    "id": "fixture-1",
+    "name": "São & XML",
+    "libraryPath": "Equipe/Pasta",
+    "revision": 3,
+    "fileIndex": 0,
+    "active": true
+  },
+  "configuration": {
+    "filterPresets": [
+      {
+        "id": "f1",
+        "name": "Filtro",
+        "filter": {
+          "group": "",
+          "action": "keep",
+          "match": "all",
+          "conditions": [],
+          "fileName": "",
+          "filename": {
+            "type": "literal",
+            "value": "filtrado.xml"
+          }
+        }
+      }
+    ],
+    "activeFilterPresetId": "f1",
+    "filter": {
+      "group": "",
+      "action": "keep",
+      "match": "all",
+      "conditions": [],
+      "fileName": "",
+      "filename": {
+        "type": "literal",
+        "value": "filtrado.xml"
+      }
+    },
+    "manual": {
+      "templateXml": "",
+      "values": {},
+      "confirmed": false,
+      "fileName": "",
+      "recordCount": 1,
+      "recordGroup": "",
+      "formulas": {
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "type": "compose",
+          "operation": "sum",
+          "parts": [
+            {
+              "type": "literal",
+              "value": "1.25"
+            },
+            {
+              "type": "literal",
+              "value": "2.75"
+            }
+          ]
+        }
+      },
+      "filename": {
+        "type": "literal",
+        "value": "manual"
+      }
+    },
+    "inputByMode": {},
+    "inputXml": "<R xmlns=\"urn:example\"><N a=\"&amp;\">1</N><N>2</N></R>",
+    "outputXml": "<R xmlns=\"urn:example\"><N/></R>",
+    "recordCount": 1,
+    "fileName": "mock",
+    "mode": "return",
+    "inputGroup": "",
+    "outputGroup": "",
+    "returnSource": "first",
+    "baseDate": "2026-10-27",
+    "rulesByMode": {
+      "new": {
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N0\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "address"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N1\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "alpha"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N2\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "cnpj"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N3\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "company"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N4\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "config"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N5\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "copy",
+            "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N6\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "count"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N7\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "cpf"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N8\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "date"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N9\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "field",
+            "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N10\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "groupSum",
+            "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]",
+            "group": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1}]"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N11\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "hash"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N12\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "id"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N13\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "list"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N14\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "literal",
+            "value": "São ]]> < & \r\n\t"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N15\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "person"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N16\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "random"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N17\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "sequence"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N18\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "zeros"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N19\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "compose",
+            "operation": "sum",
+            "parts": [
+              {
+                "type": "literal",
+                "value": "1.25"
+              },
+              {
+                "type": "literal",
+                "value": "2.75"
+              }
+            ]
+          }
+        }
+      },
+      "return": {
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N0\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "address"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N1\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "alpha"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N2\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "cnpj"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N3\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "company"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N4\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "config"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N5\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "copy",
+            "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N6\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "count"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N7\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "cpf"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N8\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "date"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N9\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "field",
+            "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N10\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "groupSum",
+            "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]",
+            "group": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1}]"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N11\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "hash"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N12\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "id"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N13\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "list"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N14\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "literal",
+            "value": "São ]]> < & \r\n\t"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N15\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "person"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N16\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "random"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N17\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "sequence"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N18\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "zeros"
+          }
+        },
+        "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N19\",\"ns\":\"urn:example\",\"index\":1}]": {
+          "generator": {
+            "type": "compose",
+            "operation": "sum",
+            "parts": [
+              {
+                "type": "literal",
+                "value": "1.25"
+              },
+              {
+                "type": "literal",
+                "value": "2.75"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "presenceByMode": {
+      "new": {},
+      "return": {}
+    },
+    "filenameByMode": {
+      "new": {
+        "type": "literal",
+        "value": "mock"
+      },
+      "return": {
+        "type": "literal",
+        "value": "mock"
+      }
+    },
+    "inputNotes": {
+      "types": [
+        false,
+        null,
+        0,
+        -2,
+        1.5,
+        "",
+        "001",
+        {
+          "type": "literal",
+          "value": "ordinary object"
+        }
+      ]
+    },
+    "outputNotesByMode": {
+      "new": {},
+      "return": {}
+    },
+    "headersByMode": {
+      "new": [],
+      "return": []
+    },
+    "returnModels": [
+      {
+        "id": "r1",
+        "name": "Retorno 1",
+        "selected": true,
+        "outputXml": "<R><N/></R>",
+        "outputGroup": "",
+        "rules": {
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N0\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "address"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N1\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "alpha"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N2\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "cnpj"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N3\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "company"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N4\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "config"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N5\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "copy",
+              "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N6\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "count"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N7\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "cpf"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N8\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "date"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N9\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "field",
+              "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N10\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "groupSum",
+              "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]",
+              "group": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1}]"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N11\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "hash"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N12\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "id"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N13\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "list"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N14\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "literal",
+              "value": "São ]]> < & \r\n\t"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N15\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "person"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N16\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "random"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N17\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "sequence"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N18\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "zeros"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N19\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "compose",
+              "operation": "sum",
+              "parts": [
+                {
+                  "type": "literal",
+                  "value": "1.25"
+                },
+                {
+                  "type": "literal",
+                  "value": "2.75"
+                }
+              ]
+            }
+          }
+        },
+        "presence": {},
+        "filename": {
+          "type": "count"
+        },
+        "outputNotes": {},
+        "headers": []
+      },
+      {
+        "id": "r2",
+        "name": "Retorno 2",
+        "selected": true,
+        "outputXml": "<R><N/></R>",
+        "outputGroup": "",
+        "rules": {
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N0\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "address"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N1\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "alpha"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N2\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "cnpj"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N3\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "company"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N4\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "config"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N5\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "copy",
+              "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N6\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "count"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N7\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "cpf"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N8\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "date"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N9\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "field",
+              "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N10\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "groupSum",
+              "path": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N\",\"ns\":\"urn:example\",\"index\":1}]",
+              "group": "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1}]"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N11\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "hash"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N12\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "id"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N13\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "list"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N14\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "literal",
+              "value": "São ]]> < & \r\n\t"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N15\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "person"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N16\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "random"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N17\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "sequence"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N18\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "zeros"
+            }
+          },
+          "[{\"name\":\"R\",\"ns\":\"urn:example\",\"index\":1},{\"name\":\"N19\",\"ns\":\"urn:example\",\"index\":1}]": {
+            "generator": {
+              "type": "compose",
+              "operation": "sum",
+              "parts": [
+                {
+                  "type": "literal",
+                  "value": "1.25"
+                },
+                {
+                  "type": "literal",
+                  "value": "2.75"
+                }
+              ]
+            }
+          }
+        },
+        "presence": {},
+        "filename": {
+          "type": "count"
+        },
+        "outputNotes": {},
+        "headers": []
+      }
+    ],
+    "activeReturnId": "r1"
+  },
+  "context": {
+    "timeZone": "America/Fortaleza"
+  }
+}
+

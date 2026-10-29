@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,7 @@ import time
 import unittest
 from email.message import Message
 from pathlib import Path
+from runtime_support import cleanup_temporary
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,16 +36,7 @@ class ProductCase(unittest.TestCase):
 
     def tearDown(self):
         self.docs_patch.stop()
-        if not Path(self.temp.name).resolve().is_relative_to((ROOT / ".test-runtime").resolve()):
-            raise RuntimeError("Temporary test directory escaped the workspace.")
-        for attempt in range(5):
-            try:
-                self.temp.cleanup()
-                break
-            except OSError as exc:
-                if getattr(exc, "winerror", None) not in {32, 145} or attempt == 4:
-                    raise
-                time.sleep(0.1 * (attempt + 1))
+        cleanup_temporary(self.temp)
 
     def hierarchy(self):
         workspace = storage.create_entity("workspace", None, "Integração")
@@ -151,7 +144,7 @@ class ProductCase(unittest.TestCase):
                     config.update(name="soma",fileIndex=0)
                     work = Path(self.temp.name) / f"group-{count}-{source}"
                     work.mkdir()
-                    encoded = base64.b64encode(json.dumps(config).encode()).decode()
+                    encoded = base64.b64encode(powershell_export.serialize_runner_config(config)).decode()
                     script = work / "runner.ps1"
                     script.write_text(powershell_export.PS_ENGINE.replace("__CONFIG_B64__",encoded),encoding="utf-8-sig")
                     command = f"& ([scriptblock]::Create([IO.File]::ReadAllText('{script}'))) -OutputDirectory '{work}'"
@@ -176,7 +169,7 @@ class ProductCase(unittest.TestCase):
                             rulesByMode={"new":{header:{"generator":formula},field:{"generator":dict(type="literal",value="50")}},"return":{}}))
                         config.update(name="global",fileIndex=0)
                         work=Path(self.temp.name)/f"global-{count}-{source}-{all_records}";work.mkdir()
-                        encoded=base64.b64encode(json.dumps(config).encode()).decode()
+                        encoded=base64.b64encode(powershell_export.serialize_runner_config(config)).decode()
                         script=work/"runner.ps1";script.write_text(powershell_export.PS_ENGINE.replace("__CONFIG_B64__",encoded),encoding="utf-8-sig")
                         command=f"& ([scriptblock]::Create([IO.File]::ReadAllText('{script}'))) -OutputDirectory '{work}'"
                         result=subprocess.run(["powershell","-NoProfile","-Command",command],capture_output=True,text=True)
@@ -188,7 +181,7 @@ class ProductCase(unittest.TestCase):
         config["recordCount"]=2
         config["rulesByMode"]["new"][header]["generator"]["group"]=path("R")
         work=Path(self.temp.name)/"global-ancestor";work.mkdir()
-        encoded=base64.b64encode(json.dumps(config).encode()).decode()
+        encoded=base64.b64encode(powershell_export.serialize_runner_config(config)).decode()
         script=work/"runner.ps1";script.write_text(powershell_export.PS_ENGINE.replace("__CONFIG_B64__",encoded),encoding="utf-8-sig")
         command=f"& ([scriptblock]::Create([IO.File]::ReadAllText('{script}'))) -OutputDirectory '{work}'"
         result=subprocess.run(["powershell","-NoProfile","-Command",command],capture_output=True,text=True)
@@ -217,7 +210,7 @@ class ProductCase(unittest.TestCase):
             config=storage.normalize_config(dict(inputXml=xml,outputXml=model,inputGroup=source_group,outputGroup=output_group,mode="return",returnSource="first",recordCount=100,rulesByMode={"new":{},"return":rules}))
             config.update(name="retorno",fileIndex=0)
             work=Path(self.temp.name)/f"return-{count}";work.mkdir()
-            encoded=base64.b64encode(json.dumps(config).encode()).decode();script=work/"runner.ps1"
+            encoded=base64.b64encode(powershell_export.serialize_runner_config(config)).decode();script=work/"runner.ps1"
             script.write_text(powershell_export.PS_ENGINE.replace("__CONFIG_B64__",encoded),encoding="utf-8-sig")
             command=f"& ([scriptblock]::Create([IO.File]::ReadAllText('{script}'))) -OutputDirectory '{work}'"
             result=subprocess.run(["powershell","-NoProfile","-Command",command],capture_output=True,text=True)
@@ -339,6 +332,10 @@ class ProductCase(unittest.TestCase):
         ps1 = powershell_export.get_bundle_member(bundle["id"], "ps1")
         bat = powershell_export.get_bundle_member(bundle["id"], "bat")
         self.assertIn(b"ConvertFrom-Json", ps1[1]); self.assertIn(b"MockAize.ps1", bat[1])
+        embedded = re.search(rb"FromBase64String\('([^']+)'\)", ps1[1])
+        self.assertIsNotNone(embedded)
+        runner_config = json.loads(base64.b64decode(embedded.group(1)))
+        self.assertTrue({"filter", "filterPresets", "activeFilterPresetId", "manual"}.isdisjoint(runner_config))
         self.assertIsNone(powershell_export.get_bundle_member(bundle["id"], "zip"))
 
     @unittest.skipUnless(os.name == "nt", "mutex nomeado é específico do Windows")
@@ -375,6 +372,75 @@ class ProductCase(unittest.TestCase):
         endpoint.headers.replace_header("X-CSRF-Token", "wrong")
         self.assertFalse(server.Handler._has_session(endpoint, mutation=True))
 
+    def test_preset_sync_save_returns_sanitized_recovery_details_and_endpoint_recovers(self):
+        from mockaize.preset_store import PresetSyncError
+
+        def endpoint(path, payload):
+            handler = object.__new__(server.Handler)
+            handler.path = path
+            handler._is_local_request = lambda: True
+            handler._has_session = lambda mutation=False: True
+            handler._read_body = lambda limit, content_type=None: json.dumps(payload).encode("utf-8")
+            handler._send = lambda status, body, content_type, extra_headers=None: (status, body, content_type)
+            return handler
+
+        variation_id = "variation-test"
+        failure = PresetSyncError("internal path must not leak", operation_id="operation-test", committed=True,
+                                  revisions={variation_id: 7})
+        handler = endpoint(f"/api/variations/{variation_id}",
+                           {"expectedRevision": 6, "name": "Rascunho", "config": {}})
+        with patch.object(storage, "save_variation", side_effect=failure):
+            status, body, _ = server.Handler.do_PUT(handler)
+        self.assertEqual(status, 503)
+        response = json.loads(body)
+        self.assertNotIn("internal path", body.decode("utf-8"))
+        self.assertEqual(response["synchronization"], {"pending": True, "operationId": "operation-test",
+                                                       "committed": True, "revision": 7})
+
+        recovered_record = {"id": variation_id, "name": "Rascunho", "revision": 7, "file_index": 0, "config": {}}
+        handler = endpoint(f"/api/variations/{variation_id}/recover", {})
+        with patch("mockaize.preset_store.recover"), patch.object(storage, "get_variation", return_value=recovered_record):
+            status, body, _ = server.Handler.do_POST(handler)
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"recovered": True, "variation": recovered_record})
+
+        handler = endpoint(f"/api/variations/{variation_id}/artifacts", {})
+        handler.headers = Message()
+        handler.headers["X-Expected-Revision"] = "7"
+        handler.headers["X-File-Name"] = "resultado.xml"
+        handler._read_body = lambda limit, content_type=None: b"<R/>"
+        artifact = {"id": "artifact-test", "revision": 8, "fileIndex": 1}
+        with patch.object(storage, "publish_xml", return_value=artifact):
+            status, body, _ = server.Handler.do_POST(handler)
+        self.assertEqual(status, 201)
+        self.assertEqual(json.loads(body), artifact)
+
+    def test_sync_failures_have_a_json_response_for_all_coordinated_mutations(self):
+        from mockaize.preset_store import PresetSyncError
+        failure = PresetSyncError('private path must not leak', operation_id='operation-test', committed=True)
+        cases = [
+            ('POST', '/api/library', {}, library, 'command'),
+            ('POST', '/api/backup/import', {}, storage, 'import_workspace_backup'),
+            ('POST', '/api/backups', {}, storage, 'create_operational_backup'),
+            ('POST', '/api/backups/snapshot/restore', {'confirm': True}, storage, 'restore_operational_backup'),
+            ('POST', '/api/entities', {}, storage, 'create_entity'),
+            ('PUT', '/api/settings', {'theme': 'dark'}, storage, 'save_settings'),
+        ]
+        for method, path, payload, owner, operation in cases:
+            with self.subTest(path=path):
+                handler = object.__new__(server.Handler)
+                handler.path = path
+                handler._is_local_request = lambda: True
+                handler._has_session = lambda mutation=False: True
+                handler._read_body = lambda limit, content_type=None: json.dumps(payload).encode()
+                handler._send = lambda status, body, content_type: (status, json.loads(body))
+                with patch.object(owner, operation, side_effect=failure):
+                    status, response = getattr(server.Handler, 'do_' + method)(handler)
+                self.assertEqual(status, 503)
+                self.assertTrue(response['synchronization']['committed'])
+                self.assertIn('pode já ter sido aplicada', response['error'])
+                self.assertNotIn('private path', response['error'])
+
     @unittest.skipUnless(os.name == "nt" and shutil.which("powershell.exe"), "PowerShell 5.1 disponível somente no Windows")
     def test_standalone_powershell_runner_has_valid_syntax_without_policy_bypass(self):
         in_group = [{"ns": "", "name": "Root", "index": 1}, {"ns": "", "name": "Records", "index": 1}, {"ns": "", "name": "Record", "index": 1}]
@@ -386,7 +452,7 @@ class ProductCase(unittest.TestCase):
             "outputGroup": json.dumps(out_group, separators=(",", ":")), "recordCount": 2, "returnSource": "all", "baseDate": "2026-10-18", "fileIndex": 0,
             "rulesByMode": {"new": {}, "return": {target_path: {"generator": {"type": "copy", "path": source_path}, "fixed": None, "exactLength": None}}},
             "presenceByMode": {"new": {}, "return": {}}, "filenameByMode": {"new": {"type": "literal", "value": "x"}, "return": {"type": "literal", "value": "smoke"}}}
-        encoded = base64.b64encode(json.dumps(config, ensure_ascii=False, separators=(",", ":")).encode()).decode("ascii")
+        encoded = base64.b64encode(powershell_export.serialize_runner_config(config)).decode("ascii")
         runner = ROOT / "tests" / "_runner-smoke.ps1"
         script = powershell_export.PS_ENGINE.replace("__CONFIG_B64__", encoded)
         runner.write_text(script, encoding="utf-8")
