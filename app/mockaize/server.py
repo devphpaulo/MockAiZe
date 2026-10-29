@@ -209,9 +209,6 @@ class Handler(BaseHTTPRequestHandler):
             style = files("mockaize").joinpath("web", "style.css").read_bytes()
             return self._send_asset(style, "text/css; charset=utf-8")
         if route == "/favicon.ico":
-            icon_path = files("mockaize").joinpath("assets", "mockaize.ico")
-            if icon_path.is_file():
-                return self._send_asset(icon_path.read_bytes(), "image/vnd.microsoft.icon")
             asset = files("mockaize").joinpath("web/assets", "mockaize-favicon.png").read_bytes()
             return self._send_asset(asset, "image/png")
         if route not in ("/", "/index.html", "/studio"):

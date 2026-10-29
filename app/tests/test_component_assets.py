@@ -30,6 +30,24 @@ class ComponentAssetsCase(unittest.TestCase):
             server.server_close()
             thread.join(timeout=3)
 
+    def test_favicon_matches_the_mascot_asset(self):
+        mascot = (ROOT / "mockaize" / "web" / "assets" / "mockaize-favicon.png").read_bytes()
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with urlopen(f"http://127.0.0.1:{server.server_port}/favicon.ico", timeout=3) as response:
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.headers.get_content_type(), "image/png")
+                self.assertEqual(response.read(), mascot)
+            for page in ("index.html", "studio.html"):
+                html = (ROOT / "mockaize" / "web" / page).read_text(encoding="utf-8")
+                self.assertIn('<link rel="shortcut icon" type="image/png" href="/assets/mockaize-favicon.png">', html)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=3)
+
     def test_shared_assets_load_before_application_and_are_packaged(self):
         spec = (ROOT / "packaging" / "mockaize.spec").read_text(encoding="utf-8")
         for name in ("alerts.js", "form-fields.js", "components.css"):
