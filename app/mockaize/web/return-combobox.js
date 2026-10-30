@@ -13,7 +13,7 @@ globalThis.ReturnCombobox = (() => {
     const empty=document.createElement('p');empty.className='return-combobox-empty';empty.textContent=copy.empty;empty.setAttribute('role','status');
     const separator=document.createElement('div');separator.className='return-combobox-separator';separator.setAttribute('role','separator');
     const add=document.createElement('button');add.type='button';add.className='return-combobox-add';const plus=document.createElement('span');plus.setAttribute('aria-hidden','true');plus.textContent='＋';const addText=document.createElement('span');addText.textContent=copy.add;add.append(plus,addText);
-    content.append(input,list,empty,separator,add);host.replaceChildren(trigger,content);
+    separator.hidden=add.hidden=!onAdd;content.append(input,list,empty,separator,add);host.replaceChildren(trigger,content);
     let filtered=items,activeIndex=Math.max(0,items.findIndex(item=>item.id===value));
     const normalize=text=>text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase();
     function highlight() {
@@ -55,7 +55,7 @@ globalThis.ReturnCombobox = (() => {
       }
       if(event.key==='Enter'){event.preventDefault();if(filtered[activeIndex])choose(filtered[activeIndex].id);}
     };
-    add.onclick=()=>{close(false);onAdd();};
+    add.onclick=()=>{close(false);onAdd?.();};
     content.addEventListener('focusout',event=>{const next=event.relatedTarget;if(next&&!content.contains(next)&&next!==trigger)close(false);});
     content.addEventListener('toggle',event=>{const expanded=event.newState==='open';trigger.setAttribute('aria-expanded',String(expanded));input.setAttribute('aria-expanded',String(expanded));if(expanded){position();input.focus({preventScroll:true});}});
     content.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();}});

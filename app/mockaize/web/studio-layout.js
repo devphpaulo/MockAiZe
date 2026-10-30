@@ -163,7 +163,7 @@ globalThis.StudioLayout = (() => {
     widths(); controls();
     return { prefs, controls, captureScroll, restoreScroll, bindScroll, present, setMode, scheduleDraw };
   }
-  function drawConnections({ rules, sourceFor, selectedKey, drag }) {
+  function drawConnections({ rules, sourceFor, selectedKey, drag, selectedConnection, onSelectConnection }) {
     const svg = $('connections'), bounds = $('codePair').getBoundingClientRect(); svg.replaceChildren();
     $('connectionCount').textContent = '0';
     const rail = $('connectionRail').getBoundingClientRect(), input = $('inputCode'), output = $('outputCode');
@@ -192,10 +192,19 @@ globalThis.StudioLayout = (() => {
     }
     links.sort((a, b) => a.b.y - b.b.y || a.a.y - b.a.y || a.target.localeCompare(b.target));
     const svgNS = 'http://www.w3.org/2000/svg';
-    function appendPath(d, active, label, dashed = false) {
+    function appendPath(d, active, label, dashed = false, target = null) {
       const path = document.createElementNS(svgNS, 'path'); path.setAttribute('d', d);
       path.setAttribute('class', `connection${active ? ' active' : ''}${dashed ? ' clipped' : ''}`);
       const title = document.createElementNS(svgNS, 'title'); title.textContent = label; path.append(title); svg.append(path);
+      if(target!==null){
+        if(target===selectedConnection)path.classList.add('connection-selected');
+        const hit=document.createElementNS(svgNS,'path');hit.setAttribute('d',d);hit.setAttribute('class','connection-hit');hit.dataset.connectionTarget=target;hit.setAttribute('tabindex','0');hit.setAttribute('role','button');hit.setAttribute('aria-label',label+'. Selecionar vínculo; Delete para desconectar.');hit.setAttribute('aria-pressed',String(target===selectedConnection));
+        hit.addEventListener('pointerdown',event=>{if(event.button===0)event.preventDefault();});
+        hit.addEventListener('click',event=>{event.stopPropagation();onSelectConnection?.(target);});
+        hit.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();onSelectConnection?.(target);}});
+        svg.append(hit);
+      }
+
     }
     links.forEach((link, index) => {
       const lane = rail.left + 12 + (rail.width - 24) * (index + 1) / (links.length + 1);
@@ -205,7 +214,7 @@ globalThis.StudioLayout = (() => {
       const route = Math.abs(by - ay) < 8
         ? `M${startX},${ay} C${x},${ay} ${x},${by} ${endX},${by}`
         : `M${startX},${ay} C${startX + 8},${ay} ${x},${ay} ${x},${ay + (by >= ay ? 4 : -4)} L${x},${by - (by >= ay ? 4 : -4)} C${x},${by} ${endX - 8},${by} ${endX},${by}`;
-      appendPath(route, link.target === selectedKey, `${MockXml.display(link.source)} → ${MockXml.display(link.target)}`, link.clippedA || link.clippedB);
+      appendPath(route, link.target === selectedKey, `${MockXml.display(link.source)} → ${MockXml.display(link.target)}`, link.clippedA || link.clippedB, link.target);
       for (const [clipped, xPoint, y] of [[link.clippedA, startX, ay], [link.clippedB, endX, by]]) {
         if (!clipped) continue; const marker = document.createElementNS(svgNS, 'circle');
         marker.setAttribute('cx', xPoint); marker.setAttribute('cy', y); marker.setAttribute('r', '3'); marker.setAttribute('class', 'connection-edge'); svg.append(marker);

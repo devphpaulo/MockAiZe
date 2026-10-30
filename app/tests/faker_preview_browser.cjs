@@ -11,6 +11,9 @@ const {chromium} = require(process.env.MOCKAIZE_PLAYWRIGHT_MODULE || 'playwright
  try{
   const page=await browser.newPage();
   await page.addScriptTag({path:path.join(__dirname,'../mockaize/web/engine.js')});
+  await page.addScriptTag({path:path.join(__dirname,'../mockaize/web/return-combobox.js')});
+  await page.addScriptTag({path:path.join(__dirname,'../mockaize/web/alerts.js')});
+  for(const css of ['studio.css','editor-components.css','navigation.css','components.css'])await page.addStyleTag({path:path.join(__dirname,'../mockaize/web',css)});
   const studioSource=fs.readFileSync(path.join(__dirname,'../mockaize/web/studio.js'),'utf8');
   const manifest=JSON.parse(execFileSync(path.join(__dirname,'../.venv/Scripts/python.exe'),['-c','import json; from mockaize.faker_catalog import manifest; print(json.dumps(manifest()))'],{cwd:path.join(__dirname,'..'),encoding:'utf8'}));
   await page.evaluate(({studioSource,manifest})=>{
@@ -21,16 +24,28 @@ const {chromium} = require(process.env.MOCKAIZE_PLAYWRIGHT_MODULE || 'playwright
    const render=new Function('fakerCatalog','h','control','selectControl','return ('+extract('extraParameters')+')')(manifest,h,control,select);
    document.body.innerHTML=render({type:'faker',category:'address',catalogId:'address.address',params:{}},'');
    if(document.querySelectorAll('[data-faker-components]').length!==7)throw Error('Address component checkboxes missing.');
+   if(getComputedStyle(document.querySelector('.date-components')).display!=='grid')throw Error('Components must use the date layout.');
+   if(getComputedStyle(document.querySelector('.date-check')).display!=='flex')throw Error('Checkbox label must share its row.');
    if(document.querySelectorAll('[data-faker-components]:checked').length!==6)throw Error('Address defaults differ from server.');
    document.body.innerHTML=render({type:'faker',category:'person',catalogId:'person.name',params:{}},'');
    if(document.querySelectorAll('[data-faker-components]:checked').length!==2)throw Error('Name component checkboxes missing.');
    document.body.innerHTML='<select data-f="type"><option value="person">Pessoa fictícia</option><option value="company">Empresa fictícia</option></select>';
    new Function(extract('installSourceSearch')+';installSourceSearch();')();
+   if(!document.querySelector('select').hidden)throw Error('Native source select must be replaced.');
+   document.querySelector('.return-combobox-trigger').click();
    const search=document.querySelector('input[type=search]');
    search.value='empresa';search.dispatchEvent(new Event('input'));
-   if(!document.querySelector('option[value=person]').hidden)throw Error('Source search did not filter options.');
+   if(document.querySelectorAll('.return-combobox-option').length!==1)throw Error('Source popup search did not filter options.');
    search.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
    if(document.querySelector('select').value!=='company')throw Error('Source search keyboard selection failed.');
+   document.body.innerHTML='<div class="callout mapping-summary"><p class="hint">Origem vinculada</p><button data-action="disconnect">Desconectar origem</button></div><button class="primary">Testar fórmula</button>';
+   AppAlerts.enhance(document);
+   for(const theme of ['light','dark']){
+    document.documentElement.dataset.theme=theme;
+    const alert=document.querySelector('.mapping-summary'),primary=document.querySelector('.primary');
+    if(getComputedStyle(alert).backgroundColor!==getComputedStyle(primary).backgroundColor)throw Error('Information green must match the formula action in '+theme);
+    if(getComputedStyle(alert.querySelector('.hint')).color!==getComputedStyle(primary).color)throw Error('Information ink must match the formula action in '+theme);
+   }
   },{studioSource,manifest});
   const results=await page.evaluate(async()=>{
    const X=MockXml,E=MockEngine;

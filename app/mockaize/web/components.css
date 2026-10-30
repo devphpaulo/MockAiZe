@@ -77,3 +77,9 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.55}
 @media(max-width:1280px){.app.manual-mode .manual-record-group{flex-basis:48vw}}
 @media(max-width:960px){.app:is(.manual-mode,.filter-mode) .pane-head{height:auto;min-height:64px}.app.filter-mode .pane-title-row{flex-wrap:wrap}.app.manual-mode .pane-title-row{flex-wrap:wrap}.app.manual-mode .pane-title-row>.pane-title{flex-basis:100%}}
 @media(max-width:680px){.app.manual-mode .manual-record-group{flex-basis:100%;max-width:none}.app.manual-mode .editor-toolbar{flex-wrap:wrap}.app.manual-mode .pane-title-row{gap:8px}.app.manual-mode .pane-title-row>.pane-actions{margin-left:auto}}
+
+/* Mapping information uses the same green and ink as the formula action. */
+.mapping-summary.app-alert{--alert-info:#1ed760;--alert-info-ink:#08160d}
+.source-combobox.return-combobox{width:100%;min-width:0}
+.source-combobox .return-combobox-trigger{width:100%;height:40px}
+.faker-components .date-components{margin-bottom:0}

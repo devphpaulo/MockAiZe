@@ -418,3 +418,8 @@ dialog.wide { width:min(960px,calc(100vw - 32px)); }
  .multiple-returns .top-actions { flex-wrap:wrap; justify-content:flex-end; }
  .multiple-returns .pane-head,.multiple-returns .connection-tools { height:144px; }
 }
+
+.connection-hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer;outline:none}
+.connections .connection-hit:focus{outline:none}
+.connection.connection-selected{stroke:var(--green);stroke-width:3;opacity:1;filter:drop-shadow(0 0 3px var(--green))}
+.connection-hit:focus-visible{outline:none;stroke:var(--green);stroke-opacity:.25}
